@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>게시글 상세보기 - 라이트케어</title>
+    <link href="/css/common.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+    <div th:replace="~{layout/header :: header}"></div>
+
+    <div class="container mt-4">
+        <div class="row">
+            <div class="col-md-9">
+                <!-- 게시글 상세 -->
+                <div class="card">
+                    <div class="card-header">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <span class="badge bg-primary" th:text="${board.category}">카테고리</span>
+                            <small class="text-muted">
+                                <i class="fas fa-eye"></i> <span th:text="${board.viewCount ?: 0}">0</span>회 |
+                                <i class="fas fa-calendar"></i> <span th:text="${#temporals.format(board.createdAt, 'yyyy-MM-dd HH:mm')}">작성일</span>
+                            </small>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <!-- 제목 및 작성자 정보 -->
+                        <h3 th:text="${board.title}">게시글 제목</h3>
+                        <div class="author-info mb-4 pb-3 border-bottom">
+                            <div class="d-flex align-items-center">
+                                <i class="fas fa-user-circle fa-2x text-secondary me-2"></i>
+                                <div>
+                                    <strong th:text="${board.author ?: '작성자'}">작성자</strong>
+                                    <br>
+                                    <small class="text-muted" th:text="${#temporals.format(board.createdAt, 'yyyy-MM-dd HH:mm')}">작성일시</small>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 게시글 내용 -->
+                        <div class="content-section">
+                            <div class="content-text" th:utext="${board.content}">
+                                게시글 내용이 여기에 표시됩니다. 팀원 D가 구현할 예정입니다.
+                            </div>
+                        </div>
+
+                        <!-- 태그 -->
+                        <div class="tags-section mt-4" th:if="${board.tags}">
+                            <div class="d-flex flex-wrap gap-1">
+                                <span class="badge bg-light text-dark" th:each="tag : ${#strings.listSplit(board.tags, ',')}" 
+                                      th:text="'#' + ${tag}">태그</span>
+                            </div>
+                        </div>
+
+                        <!-- 버튼 영역 -->
+                        <div class="d-flex justify-content-between align-items-center mt-4 pt-3 border-top">
+                            <div>
+                                <button class="btn btn-outline-secondary" onclick="window.history.back()">
+                                    <i class="fas fa-list"></i> 목록으로
+                                </button>
+                            </div>
+                            <div>
+                                <button class="btn btn-outline-primary me-2">
+                                    <i class="fas fa-thumbs-up"></i> 추천
+                                </button>
+                                <button class="btn btn-outline-warning me-2">
+                                    <i class="fas fa-edit"></i> 수정
+                                </button>
+                                <button class="btn btn-outline-danger">
+                                    <i class="fas fa-trash"></i> 삭제
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 댓글 영역 -->
+                <div class="card mt-4">
+                    <div class="card-header">
+                        <h6><i class="fas fa-comments"></i> 댓글 <span class="badge bg-secondary">0</span></h6>
+                    </div>
+                    <div class="card-body">
+                        <!-- 댓글 작성 -->
+                        <div class="comment-write mb-4">
+                            <textarea class="form-control mb-2" rows="3" placeholder="댓글을 입력해주세요"></textarea>
+                            <div class="d-flex justify-content-end">
+                                <button class="btn btn-primary btn-sm">
+                                    <i class="fas fa-comment"></i> 댓글 작성
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- 댓글 목록 -->
+                        <div class="comments-list">
+                            <div class="text-center text-muted py-4">
+                                <i class="fas fa-comments fa-2x mb-2"></i>
+                                <p>팀원 D가 댓글 기능을 구현할 예정입니다.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 사이드바 -->
+            <div class="col-md-3">
+                <!-- 이전/다음 글 -->
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h6><i class="fas fa-arrow-up-down"></i> 이전/다음 글</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-2">
+                            <small class="text-muted">다음글</small>
+                            <br>
+                            <a href="#" class="text-decoration-none">다음 게시글 제목</a>
+                        </div>
+                        <hr>
+                        <div>
+                            <small class="text-muted">이전글</small>
+                            <br>
+                            <a href="#" class="text-decoration-none">이전 게시글 제목</a>
+                        </div>
+                        <small class="text-muted">팀원 D가 이전/다음 글 기능을 구현할 예정입니다.</small>
+                    </div>
+                </div>
+
+                <!-- 같은 카테고리 인기글 -->
+                <div class="card">
+                    <div class="card-header">
+                        <h6><i class="fas fa-fire"></i> 인기 게시글</h6>
+                    </div>
+                    <div class="card-body">
+                        <ul class="list-unstyled">
+                            <li class="mb-2">
+                                <a href="#" class="text-decoration-none">
+                                    <small>요양원 선택 가이드</small>
+                                </a>
+                            </li>
+                            <li class="mb-2">
+                                <a href="#" class="text-decoration-none">
+                                    <small>간병인 자격 취득 방법</small>
+                                </a>
+                            </li>
+                        </ul>
+                        <small class="text-muted">팀원 D가 인기 게시글 기능을 구현할 예정입니다.</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div th:replace="~{layout/footer :: footer}"></div>
+</body>
+</html> 

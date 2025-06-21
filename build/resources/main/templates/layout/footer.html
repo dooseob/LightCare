@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+    <!-- 푸터 -->
+    <footer th:fragment="footer" class="bg-dark text-light mt-auto py-4">
+        <div class="container">
+            <div class="row">
+                <!-- 사이트 정보 -->
+                <div class="col-md-4 mb-3">
+                    <h5 class="fw-bold">
+                        <i class="fas fa-heart text-danger me-2"></i>
+                        CareLink
+                    </h5>
+                    <p class="mb-2">믿을 수 있는 요양원 구인구직 플랫폼</p>
+                    <p class="text-muted small">
+                        좋은 사람과 좋은 시설을 연결하여<br>
+                        더 나은 요양 서비스를 만들어갑니다.
+                    </p>
+                </div>
+                
+                <!-- 빠른 링크 -->
+                <div class="col-md-4 mb-3">
+                    <h6 class="fw-bold mb-3">빠른 링크</h6>
+                    <ul class="list-unstyled">
+                        <li class="mb-2">
+                            <a href="/facility/search" class="text-light text-decoration-none">
+                                <i class="fas fa-chevron-right me-2"></i>시설 찾기
+                            </a>
+                        </li>
+                        <li class="mb-2">
+                            <a href="/job?type=recruit" class="text-light text-decoration-none">
+                                <i class="fas fa-chevron-right me-2"></i>구인 정보
+                            </a>
+                        </li>
+                        <li class="mb-2">
+                            <a href="/job?type=search" class="text-light text-decoration-none">
+                                <i class="fas fa-chevron-right me-2"></i>구직 정보
+                            </a>
+                        </li>
+                        <li class="mb-2">
+                            <a href="/review" class="text-light text-decoration-none">
+                                <i class="fas fa-chevron-right me-2"></i>시설 리뷰
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+                
+                <!-- 고객 지원 -->
+                <div class="col-md-4 mb-3">
+                    <h6 class="fw-bold mb-3">고객 지원</h6>
+                    <ul class="list-unstyled">
+                        <li class="mb-2">
+                            <a href="/board?type=notice" class="text-light text-decoration-none">
+                                <i class="fas fa-chevron-right me-2"></i>공지사항
+                            </a>
+                        </li>
+                        <li class="mb-2">
+                            <a href="/board?type=qna" class="text-light text-decoration-none">
+                                <i class="fas fa-chevron-right me-2"></i>Q&A
+                            </a>
+                        </li>
+                        <li class="mb-2">
+                            <a href="/board?type=faq" class="text-light text-decoration-none">
+                                <i class="fas fa-chevron-right me-2"></i>자주 묻는 질문
+                            </a>
+                        </li>
+                        <li class="mb-2">
+                            <span class="text-muted">
+                                <i class="fas fa-phone me-2"></i>1588-0000
+                            </span>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+            
+            <hr class="my-4">
+            
+            <!-- 저작권 및 팀 정보 -->
+            <div class="row align-items-center">
+                <div class="col-md-6">
+                    <p class="mb-0 text-muted small">
+                        © 2024 CareLink. 4인 팀 프로젝트 - 모든 권리 보유.
+                    </p>
+                </div>
+                <div class="col-md-6 text-md-end">
+                    <small class="text-muted">
+                        <span class="me-3">팀원 A: 회원관리</span>
+                        <span class="me-3">팀원 B: 시설검색</span>
+                        <span class="me-3">팀원 C: 구인구직</span>
+                        <span>팀원 D: 리뷰&게시판</span>
+                    </small>
+                </div>
+            </div>
+        </div>
+    </footer>
+    
+    <!-- JavaScript 포함 영역 -->
+    <div th:fragment="scripts">
+        <!-- Bootstrap JS -->
+        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+        <!-- jQuery -->
+        <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
+        <!-- 공통 JavaScript -->
+        <script src="/js/common.js"></script>
+    </div>
+</body>
+</html> 
