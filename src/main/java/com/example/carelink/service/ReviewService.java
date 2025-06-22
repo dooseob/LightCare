@@ -25,7 +25,7 @@ public class ReviewService {
         try {
             // TODO: 팀원 D가 페이징 및 검색 로직 구현
             ReviewDTO searchDTO = new ReviewDTO();
-            searchDTO.setPage((page - 1) * 10);
+            searchDTO.setPage(page);
             searchDTO.setSize(10);
             return reviewMapper.getReviewList(searchDTO);
         } catch (Exception e) {

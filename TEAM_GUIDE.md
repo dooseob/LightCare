@@ -107,8 +107,8 @@ GRANT ALL PRIVILEGES ON carelink.* TO 'carelink'@'localhost';
 spring:
   datasource:
     url: jdbc:mysql://localhost:3306/carelink
-    username: your_username
-    password: your_password
+    username: root
+    password: mysql
 ```
 
 ### 5. 테이블 생성 및 샘플 데이터

@@ -10,7 +10,7 @@ spring:
     driver-class-name: com.mysql.cj.jdbc.Driver
     url: jdbc:mysql://localhost:3306/carelink?useSSL=false&serverTimezone=Asia/Seoul&characterEncoding=UTF-8
     username: root
-    password: # 각자 MySQL 비밀번호 설정
+    password: mysql
     
   # Thymeleaf 설정
   thymeleaf:
