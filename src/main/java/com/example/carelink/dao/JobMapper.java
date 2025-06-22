@@ -28,10 +28,6 @@ public interface JobMapper {
      */
     JobDTO findJobById(@Param("jobId") Long jobId);
     
-    /**
-     * 구인구직 상세 정보 조회 (기존 호환성 유지)
-     */
-    JobDTO getJobById(@Param("jobId") Long jobId);
     
     /**
      * 구인구직 등록

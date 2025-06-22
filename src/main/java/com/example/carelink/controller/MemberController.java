@@ -80,7 +80,9 @@ public class MemberController {
      */
     @GetMapping("/logout")
     public String logout(HttpSession session, RedirectAttributes redirectAttributes) {
-        session.invalidate();
+        if (session != null) {
+            session.invalidate();
+        }
         redirectAttributes.addFlashAttribute("message", "로그아웃되었습니다.");
         return "redirect:/";
     }

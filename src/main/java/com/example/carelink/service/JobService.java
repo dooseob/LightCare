@@ -25,7 +25,7 @@ public class JobService {
         try {
             // TODO: 팀원 C가 페이징 및 검색 로직 구현
             JobDTO searchDTO = new JobDTO();
-            searchDTO.setPage((page - 1) * 10);
+            searchDTO.setPage(page);
             searchDTO.setSize(10);
             return jobMapper.getJobList(searchDTO);
         } catch (Exception e) {
@@ -40,7 +40,7 @@ public class JobService {
     public JobDTO getJobById(Long id) {
         try {
             // TODO: 팀원 C가 상세 조회 로직 구현
-            return jobMapper.getJobById(id);
+            return jobMapper.findJobById(id);
         } catch (Exception e) {
             // 임시로 기본 구인구직 정보 반환 (개발 초기 에러 방지)
             JobDTO job = new JobDTO();

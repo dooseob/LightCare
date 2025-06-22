@@ -26,7 +26,7 @@ public class BoardService {
         try {
             // TODO: 팀원 D가 페이징 및 검색 로직 구현
             BoardDTO searchDTO = new BoardDTO();
-            searchDTO.setPage((page - 1) * 10);
+            searchDTO.setPage(page);
             searchDTO.setSize(10);
             searchDTO.setSearchKeyword(keyword);
             searchDTO.setSearchCategory(category);
