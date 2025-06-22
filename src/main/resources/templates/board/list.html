@@ -1,7 +1,8 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org"
       xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
-      layout:decorate="~{layout/default}">
+      layout:decorate="~{layout/default}" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+      xsi:schemaLocation="http://www.ultraq.net.nz/thymeleaf/layout " lang="ko">
 <head>
     <title>게시판 목록</title>
 </head>
@@ -112,9 +113,11 @@
                             </a>
                         </li>
                         <!-- 페이지 번호 -->
-                        <li class="page-item" th:each="page : ${#numbers.sequence(pageInfo.startPage, pageInfo.endPage)}"
+                        <li class="page-item"
+                            th:each="page : ${#numbers.sequence(pageInfo.startPage, pageInfo.endPage)}"
                             th:classappend="${page == pageInfo.currentPage} ? 'active'">
-                            <a class="page-link" th:href="@{/board(page=${page}, keyword=${keyword}, category=${category})}"
+                            <a class="page-link"
+                               th:href="@{/board(page=${page}, keyword=${keyword}, category=${category})}"
                                th:text="${page}">1</a>
                         </li>
                         <!-- 다음 페이지 -->

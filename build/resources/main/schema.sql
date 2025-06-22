@@ -4,8 +4,8 @@
 -- ================================================
 
 -- 데이터베이스 생성 (필요 시)
--- CREATE DATABASE carelink DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
--- USE carelink;
+CREATE DATABASE carelink DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+USE carelink;
 
 -- ================================================
 -- 1. 회원 테이블 (팀원 A 담당)
