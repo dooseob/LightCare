@@ -3,7 +3,7 @@
 <head th:replace="~{layout/header :: header}">
     <title>시설 검색 - CareLink</title>
     <!-- 카카오맵 API -->
-    <script type="text/javascript" src="//dapi.kakao.com/v2/maps/sdk.js?appkey=YOUR_KAKAO_MAP_API_KEY&libraries=services"></script>
+    <script type="text/javascript" src="//dapi.kakao.com/v2/maps/sdk.js?appkey=71726bd73abc79c69d665d26c0300058&libraries=services"></script>
 </head>
 <body class="d-flex flex-column min-vh-100 pt-5">
     <!-- 네비게이션 바 -->
@@ -164,11 +164,162 @@
     <div th:replace="~{layout/footer :: scripts}"></div>
 
     <script>
-        // 지도 초기화 (임시)
+        let map;
+        let markers = [];
+        let infowindows = [];
+
+        // 지도 초기화
         document.addEventListener('DOMContentLoaded', function() {
-            // TODO: 팀원 B가 카카오맵 API 연동 구현
-            console.log('지도 초기화 - 팀원 B 구현 예정');
+            // 지도 생성
+            const container = document.getElementById('map');
+            const options = {
+                center: new kakao.maps.LatLng(37.566826, 126.9786567), // 서울 시청
+                level: 7
+            };
+            map = new kakao.maps.Map(container, options);
+
+            // 검색 폼 제출 이벤트 처리
+            document.getElementById('searchForm').addEventListener('submit', function(e) {
+                e.preventDefault();
+                searchFacilities();
+            });
+
+            // 초기 검색 실행
+            searchFacilities();
         });
+
+        // 시설 검색 함수
+        function searchFacilities() {
+            const searchData = {
+                facilityName: document.getElementById('facilityName').value,
+                region: document.getElementById('region').value,
+                facilityType: document.getElementById('facilityType').value,
+                gradeRating: document.getElementById('gradeRating').value
+            };
+
+            fetch('/facility/search', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(searchData)
+            })
+            .then(response => response.json())
+            .then(facilities => {
+                updateFacilityList(facilities);
+                updateMap(facilities);
+            })
+            .catch(error => console.error('Error:', error));
+        }
+
+        // 검색 결과 목록 업데이트
+        function updateFacilityList(facilities) {
+            const facilityList = document.getElementById('facilityList');
+            const resultCount = document.getElementById('resultCount');
+            
+            // 결과 개수 업데이트
+            resultCount.textContent = `(${facilities.length}개)`;
+
+            // 목록 초기화
+            facilityList.innerHTML = '';
+
+            if (facilities.length === 0) {
+                facilityList.innerHTML = `
+                    <div class="list-group-item text-center text-muted py-4">
+                        <i class="fas fa-search fa-2x mb-2"></i><br>
+                        검색 결과가 없습니다.
+                    </div>
+                `;
+                return;
+            }
+
+            // 시설 목록 생성
+            facilities.forEach(facility => {
+                const item = document.createElement('a');
+                item.href = `/facility/detail/${facility.facilityId}`;
+                item.className = 'list-group-item list-group-item-action';
+                item.innerHTML = `
+                    <div class="d-flex w-100 justify-content-between">
+                        <h6 class="mb-1">${facility.name}</h6>
+                        <small class="text-muted">
+                            <span class="badge bg-success">${facility.gradeRating}등급</span>
+                        </small>
+                    </div>
+                    <p class="mb-1">${facility.address}</p>
+                    <small class="text-muted">
+                        전화: ${facility.phone} |
+                        평점: ${facility.averageRating}/5.0
+                    </small>
+                `;
+                
+                // 목록 항목 클릭 시 해당 마커로 지도 중심 이동
+                item.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const marker = markers.find(m => m.facilityId === facility.facilityId);
+                    if (marker) {
+                        map.setCenter(marker.getPosition());
+                        map.setLevel(3);
+                        kakao.maps.event.trigger(marker, 'click');
+                    }
+                });
+
+                facilityList.appendChild(item);
+            });
+        }
+
+        // 지도 마커 업데이트
+        function updateMap(facilities) {
+            // 기존 마커와 인포윈도우 제거
+            markers.forEach(marker => marker.setMap(null));
+            infowindows.forEach(infowindow => infowindow.close());
+            markers = [];
+            infowindows = [];
+
+            // 새로운 마커 생성
+            const bounds = new kakao.maps.LatLngBounds();
+            
+            facilities.forEach(facility => {
+                const position = new kakao.maps.LatLng(facility.latitude, facility.longitude);
+                
+                // 마커 생성
+                const marker = new kakao.maps.Marker({
+                    position: position,
+                    map: map
+                });
+                marker.facilityId = facility.facilityId;
+
+                // 인포윈도우 생성
+                const infowindow = new kakao.maps.InfoWindow({
+                    content: `
+                        <div class="p-2" style="width:250px;">
+                            <h6 class="mb-1">${facility.name}</h6>
+                            <p class="mb-1 small">${facility.address}</p>
+                            <p class="mb-0 small">
+                                <span class="badge bg-success">${facility.gradeRating}등급</span>
+                                평점: ${facility.averageRating}/5.0
+                            </p>
+                            <a href="/facility/detail/${facility.facilityId}" 
+                               class="btn btn-sm btn-info mt-2 w-100">상세보기</a>
+                        </div>
+                    `
+                });
+
+                // 마커 클릭 이벤트
+                kakao.maps.event.addListener(marker, 'click', function() {
+                    infowindows.forEach(iw => iw.close());
+                    infowindow.open(map, marker);
+                });
+
+                markers.push(marker);
+                infowindows.push(infowindow);
+                bounds.extend(position);
+            });
+
+            // 모든 마커가 보이도록 지도 범위 조정
+            if (facilities.length > 0) {
+                map.setBounds(bounds);
+            }
+        }
     </script>
 </body>
 </html> 
