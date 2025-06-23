@@ -136,44 +136,65 @@
 ### 📊 할당된 스토리
 | Story ID | Story 제목 | Story Points | 현재 상태 | 진행률 |
 |----------|------------|--------------|-----------|--------|
-| LC-010 | 시설 리뷰 작성 기능 | 13 SP | 📋 대기 | 0% |
-| LC-011 | 시설 리뷰 목록 조회 및 관리 | 13 SP | 📋 대기 | 0% |
-| LC-012 | 정보 게시판 기능 | 13 SP | 🔄 진행중 | 15% |
-| **총합** | | **39 SP** | **대기** | **15%** |
+| LC-010 | 시설 리뷰 작성 기능 | 13 SP | ✅ 완료 | 100% |
+| LC-011 | 시설 리뷰 목록 조회 및 관리 | 13 SP | ✅ 완료 | 100% |
+| LC-012 | 정보 게시판 기능 | 13 SP | ✅ 완료 | 100% |
+| **총합** | | **39 SP** | **완료** | **100%** |
 
 ### 🔧 구현 상태
 **Backend 파일**:
-- ✅ `ReviewController.java` - 리뷰 컨트롤러 (기본 틀 완료)
-- ✅ `BoardController.java` - 게시판 컨트롤러 (기본 틀 완료)
-- ✅ `ReviewService.java` - 리뷰 서비스 (기본 틀 완료)
-- ✅ `BoardService.java` - 게시판 서비스 (기본 틀 완료)
-- ✅ `ReviewMapper.java` - 리뷰 데이터 접근 인터페이스 (기본 틀 완료)
-- ✅ `BoardMapper.java` - 게시판 데이터 접근 인터페이스 (기본 틀 완료)
-- ✅ `ReviewDTO.java` - 리뷰 데이터 전송 객체 (기본 틀 완료)
-- ✅ `BoardDTO.java` - 게시판 데이터 전송 객체 (기본 틀 완료)
-- 🔄 `reviewMapper.xml` - 리뷰 MyBatis SQL 매핑 (구현 예정)
-- 🔄 `boardMapper.xml` - 게시판 MyBatis SQL 매핑 (구현 예정)
+- ✅ `ReviewController.java` - 리뷰 컨트롤러 (완전 구현)
+- ✅ `BoardController.java` - 게시판 컨트롤러 (완전 구현)
+- ✅ `ReviewService.java` - 리뷰 서비스 (완전 구현)
+- ✅ `BoardService.java` - 게시판 서비스 (완전 구현)
+- ✅ `ReviewMapper.java` - 리뷰 데이터 접근 인터페이스 (완전 구현)
+- ✅ `BoardMapper.java` - 게시판 데이터 접근 인터페이스 (완전 구현)
+- ✅ `ReviewDTO.java` - 리뷰 데이터 전송 객체 (완전 구현)
+- ✅ `BoardDTO.java` - 게시판 데이터 전송 객체 (완전 구현)
+- ✅ `reviewMapper.xml` - 리뷰 MyBatis SQL 매핑 (완전 구현)
+- ✅ `boardMapper.xml` - 게시판 MyBatis SQL 매핑 (완전 구현)
 
 **Frontend 파일**:
-- ✅ `templates/review/list.html` - 리뷰 목록 페이지 (기본 틀 완료)
-- ✅ `templates/review/write.html` - 리뷰 작성 페이지 (기본 틀 완료)
-- ✅ `templates/board/list.html` - 게시판 목록 페이지 (기본 틀 완료)
-- ✅ `templates/board/write.html` - 게시글 작성 페이지 (기본 틀 완료)
-- ✅ `templates/board/detail.html` - 게시글 상세 페이지 (기본 틀 완료)
+- ✅ `templates/review/list.html` - 리뷰 목록 페이지 (완전 구현)
+- ✅ `templates/review/write.html` - 리뷰 작성 페이지 (완전 구현)
+- ✅ `templates/board/list.html` - 게시판 목록 페이지 (완전 구현)
+- ✅ `templates/board/write.html` - 게시글 작성 페이지 (완전 구현)
+- ✅ `templates/board/detail.html` - 게시글 상세 페이지 (완전 구현)
 
 ### 🚧 현재 진행 상황
-- **정보 게시판**: 기본 CRUD 구조 설계 중
-- **리뷰 시스템**: 평점 시스템 설계 검토 중
-- **댓글 시스템**: 계층형 댓글 구조 설계 검토 중
+- **리뷰 시스템**: 완전 구현 완료
+  - CRUD 기능
+  - 평점 시스템
+  - 추천/비추천 기능
+  - 조회수 관리
+  - 페이징 및 검색
+
+- **게시판 시스템**: 완전 구현 완료
+  - CRUD 기능
+  - 페이징 처리
+  - 검색 및 필터링
+  - 인기 게시글
+  - 조회수 관리
 
 ### 📋 다음 작업 계획
-1. **정보 게시판 CRUD 기능 완성** (다음 주)
-2. **리뷰 시스템 구현** (3주차)
-3. **댓글 및 평점 시스템 구현** (3주차)
+1. **단위 테스트 작성**
+   - ReviewService 테스트
+   - BoardService 테스트
+   - 통합 테스트
+
+2. **성능 최적화**
+   - 쿼리 최적화
+   - 캐싱 적용
+   - N+1 문제 해결
+
+3. **추가 기능 개발**
+   - 댓글 시스템 고도화
+   - 파일 첨부 기능
+   - 에디터 기능 강화
 
 ### 🔗 의존성
 - 팀원 A의 회원 인증 시스템 - ✅ 완료
-- 팀원 B의 시설 정보 (리뷰 대상) - 🔄 대기
+- 팀원 B의 시설 정보 (리뷰 대상) - ✅ 완료
 
 ---
 
