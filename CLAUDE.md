@@ -221,3 +221,60 @@ XML 기반 SQL 정의:
 * `spring.datasource.password`: MySQL 비밀번호
 * DB 주소가 다를 경우 `spring.datasource.url` 수정
 * 추후 지도 API 키 등록 필요 (예정)
+
+### 🟢 팀원 D (리뷰/게시판) - 진행률: 100%
+
+#### ✅ **완료된 작업**
+**백엔드 완전 구현**:
+- ✅ `ReviewService.java` (238줄) - **완전 구현**
+  - 리뷰 CRUD 로직
+  - 트랜잭션 처리
+  - 로깅 추가
+  - 유효성 검증
+  - 평점 시스템
+  - 추천/비추천 기능
+
+- ✅ `BoardService.java` (253줄) - **완전 구현**
+  - 게시글 CRUD 로직
+  - 페이징 처리
+  - 검색 및 카테고리 필터링
+  - 인기 게시글 기능
+  - 조회수 증가 로직
+
+- ✅ `ReviewMapper.java` & `reviewMapper.xml` - **완전 구현**
+  - 모든 필요 메서드 정의
+  - XML 쿼리 매핑 완료
+
+- ✅ `BoardMapper.java` & `boardMapper.xml` - **완전 구현**
+  - 모든 필요 메서드 정의
+  - XML 쿼리 매핑 완료
+
+**프론트엔드 완성**:
+- ✅ `templates/review/list.html` (108줄) - **완전 구현**
+- ✅ `templates/review/write.html` (122줄) - **완전 구현**
+- ✅ `templates/board/list.html` - **완전 구현**
+- ✅ `templates/board/write.html` - **완전 구현**
+- ✅ `templates/board/detail.html` - **완전 구현**
+
+#### 📊 **실제 Story Point 달성률**
+- **완료**: LC-010 (리뷰 작성) - 13/13 SP ✅
+- **완료**: LC-011 (리뷰 목록 관리) - 13/13 SP ✅
+- **완료**: LC-012 (정보 게시판) - 13/13 SP ✅
+
+**총 달성**: 39/39 SP (100%)
+
+#### 🚀 **다음 단계**
+1. **단위 테스트 작성**
+   - ReviewService 테스트
+   - BoardService 테스트
+   - 통합 테스트
+
+2. **성능 최적화**
+   - 쿼리 최적화
+   - 캐싱 적용
+   - N+1 문제 해결
+
+3. **추가 기능 개발**
+   - 댓글 시스템 고도화
+   - 파일 첨부 기능
+   - 에디터 기능 강화
