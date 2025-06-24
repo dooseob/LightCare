@@ -37,4 +37,9 @@ logging:
   level:
     com.example.carelink: DEBUG
     org.springframework.web: DEBUG
-    org.mybatis: DEBUG 
+    org.mybatis: DEBUG
+
+#사용자 프로필 사진을 서버 컴퓨터의 C:/uploads/profile_images/ 폴더에 저장
+file:
+  upload-dir:
+    profile: C:/uploads/profile_images/

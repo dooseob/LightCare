@@ -15,43 +15,53 @@ public interface MemberMapper {
 
     /**
      * 사용자 ID로 회원 정보 조회
+     * is_deleted = FALSE 인 활성화된 회원만 조회하도록 XML 쿼리 수정 필요
      */
     MemberDTO findByUserId(@Param("userId") String userId);
 
     /**
      * 회원 ID로 회원 정보 조회
+     * is_deleted = FALSE 인 활성화된 회원만 조회하도록 XML 쿼리 수정 필요
      */
     MemberDTO findById(@Param("memberId") Long memberId);
 
     /**
      * 이메일로 회원 정보 조회
+     * is_deleted = FALSE 인 활성화된 회원만 조회하도록 XML 쿼리 수정 필요
      */
     MemberDTO findByEmail(@Param("email") String email);
 
     /**
      * 회원 정보 저장
      */
-    void insertMember(MemberDTO memberDTO);
+    int insertMember(MemberDTO memberDTO); // insert는 보통 int(영향받은 행 수) 반환
 
     /**
      * 회원 정보 수정
      */
-    void updateMember(MemberDTO memberDTO);
+    int updateMember(MemberDTO memberDTO); // update는 보통 int(영향받은 행 수) 반환
 
     /**
-     * 회원 탈퇴 (논리 삭제)
+     * 회원 탈퇴 (논리 삭제) - 메서드 이름을 좀 더 명확하게 변경
+     * 기존의 deleteMember를 softDeleteMember로 변경하고 파라미터도 userId로 변경
      */
-    void deleteMember(@Param("memberId") Long memberId);
+    int softDeleteMember(@Param("userId") String userId); // deleteMember -> softDeleteMember로 변경, memberId -> userId
+
+    /**
+     * 비밀번호 변경
+     * MemberDTO를 받아 password만 업데이트하는 용도
+     */
+    int updatePassword(MemberDTO memberDTO); // 새로 추가
 
     /**
      * 로그인 성공 시 정보 업데이트 (실패 횟수 초기화, 마지막 로그인 시간 업데이트)
      */
-    void updateLoginSuccess(@Param("memberId") Long memberId);
+    int updateLoginSuccess(@Param("memberId") Long memberId); // update는 보통 int(영향받은 행 수) 반환
 
     /**
      * 로그인 실패 시 실패 횟수 증가
      */
-    void updateLoginFail(@Param("memberId") Long memberId);
+    int updateLoginFail(@Param("memberId") Long memberId); // update는 보통 int(영향받은 행 수) 반환
 
     /**
      * 전체 회원 수 조회
@@ -72,4 +82,4 @@ public interface MemberMapper {
      * 회원 상태 변경 (활성화/비활성화)
      */
     void updateMemberStatus(@Param("memberId") Long memberId, @Param("isActive") boolean isActive);
-} 
+}

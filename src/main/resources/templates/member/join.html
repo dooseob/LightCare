@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="ko">
+<head th:replace="~{layout/header :: header}">
+    <title>회원가입 - CareLink</title>
+</head>
+<body class="d-flex flex-column min-vh-100">
+<nav th:replace="~{layout/header :: navbar}"></nav>
+
+<div th:replace="~{layout/header :: messages}"></div>
+
+<main class="flex-grow-1 py-5">
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-md-6 col-lg-5"> <div class="card shadow">
+                <div class="card-body p-4">
+                    <div class="text-center mb-4">
+                        <h3 class="card-title fw-bold text-primary">
+                            <i class="fas fa-user-plus me-2"></i>
+                            회원가입
+                        </h3>
+                        <p class="text-muted">새로운 CareLink 계정을 만드세요</p>
+                    </div>
+
+                    <form th:action="@{/member/join}" method="post" id="joinForm" th:object="${memberDTO}">
+                        <div class="mb-3">
+                            <label for="userId" class="form-label">
+                                <i class="fas fa-user me-1"></i>아이디 <span class="text-danger">*</span>
+                            </label>
+                            <input type="text"
+                                   class="form-control"
+                                   id="userId"
+                                   th:field="*{userId}" placeholder="아이디를 입력하세요 (4-20자 영문, 숫자)"
+                                   required>
+                            <div class="invalid-feedback" th:if="${#fields.hasErrors('userId')}" th:text="${#fields.errors('userId')[0]}"></div>
+                            <div id="userIdFeedback" class="mt-1"></div> </div>
+
+                        <div class="mb-3">
+                            <label for="password" class="form-label">
+                                <i class="fas fa-lock me-1"></i>비밀번호 <span class="text-danger">*</span>
+                            </label>
+                            <div class="input-group">
+                                <input type="password"
+                                       class="form-control"
+                                       id="password"
+                                       th:field="*{password}" placeholder="비밀번호를 입력하세요 (8-20자 영문, 숫자, 특수문자)"
+                                       required>
+                                <button class="btn btn-outline-secondary" type="button" id="togglePassword">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                                <div class="invalid-feedback" th:if="${#fields.hasErrors('password')}" th:text="${#fields.errors('password')[0]}"></div>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="passwordConfirm" class="form-label">
+                                <i class="fas fa-lock me-1"></i>비밀번호 확인 <span class="text-danger">*</span>
+                            </label>
+                            <input type="password"
+                                   class="form-control"
+                                   id="passwordConfirm"
+                                   th:field="*{passwordConfirm}" placeholder="비밀번호를 다시 입력하세요"
+                                   required>
+                            <div id="passwordMismatchFeedback" class="text-danger mt-1" style="display:none;">
+                                비밀번호가 일치하지 않습니다.
+                            </div>
+                            <div class="invalid-feedback" th:if="${#fields.hasErrors('passwordConfirm')}" th:text="${#fields.errors('passwordConfirm')[0]}"></div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="name" class="form-label">
+                                <i class="fas fa-signature me-1"></i>이름 <span class="text-danger">*</span>
+                            </label>
+                            <input type="text"
+                                   class="form-control"
+                                   id="name"
+                                   th:field="*{name}" placeholder="이름을 입력하세요"
+                                   required>
+                            <div class="invalid-feedback" th:if="${#fields.hasErrors('name')}" th:text="${#fields.errors('name')[0]}"></div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="email" class="form-label">
+                                <i class="fas fa-envelope me-1"></i>이메일
+                            </label>
+                            <input type="email"
+                                   class="form-control"
+                                   id="email"
+                                   th:field="*{email}" placeholder="이메일을 입력하세요 (선택 사항)">
+                            <div class="invalid-feedback" th:if="${#fields.hasErrors('email')}" th:text="${#fields.errors('email')[0]}"></div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="phone" class="form-label">
+                                <i class="fas fa-phone me-1"></i>휴대폰 번호
+                            </label>
+                            <input type="tel"
+                                   class="form-control"
+                                   id="phone"
+                                   th:field="*{phone}" placeholder="휴대폰 번호를 입력하세요 (예: 010-1234-5678)"
+                                   pattern="^01(?:0|1|[6-9])-(?:\\d{3}|\\d{4})-\\d{4}$">
+                            <small class="form-text text-muted">예: 010-1234-5678</small>
+                            <div class="invalid-feedback" th:if="${#fields.hasErrors('phone')}" th:text="${#fields.errors('phone')[0]}"></div>
+                        </div>
+
+                        <div class="mb-4"> <label for="address" class="form-label">
+                            <i class="fas fa-map-marker-alt me-1"></i>주소
+                        </label>
+                            <input type="text"
+                                   class="form-control"
+                                   id="address"
+                                   th:field="*{address}" placeholder="주소를 입력하세요 (선택 사항)">
+                            <div class="invalid-feedback" th:if="${#fields.hasErrors('address')}" th:text="${#fields.errors('address')[0]}"></div>
+                        </div>
+
+                        <div class="d-grid mb-3">
+                            <button type="submit" class="btn btn-primary btn-lg" id="joinSubmitButton">
+                                <i class="fas fa-user-plus me-2"></i>
+                                회원가입
+                            </button>
+                        </div>
+                    </form>
+
+                    <div class="row text-center mt-3">
+                        <div class="col">
+                            <p class="text-muted mb-0">이미 계정이 있으신가요?</p>
+                            <a th:href="@{/member/login}" class="btn btn-link">
+                                <i class="fas fa-sign-in-alt me-1"></i>
+                                로그인 페이지로 이동
+                            </a>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+            </div>
+        </div>
+    </div>
+</main>
+
+<footer th:replace="~{layout/footer :: footer}"></footer>
+
+<div th:replace="~{layout/footer :: scripts}"></div>
+
+<script th:inline="javascript">
+    $(document).ready(function() {
+        // Thymeleaf에서 전달된 에러 메시지 처리
+        /*[CDATA[*/
+        const memberDTOErrors = /*[[${#fields.hasErrors('memberDTO')} ? ${#fields.errors('memberDTO')} : null]]*/ null;
+        if (memberDTOErrors) {
+            memberDTOErrors.forEach(error => {
+                if (error.field === 'userId') {
+                    $('#userId').addClass('is-invalid');
+                    $('#userIdFeedback').addClass('text-danger').text(error.defaultMessage);
+                } else if (error.field === 'password') {
+                    $('#password').addClass('is-invalid');
+                } else if (error.field === 'passwordConfirm') {
+                    $('#passwordConfirm').addClass('is-invalid');
+                    $('#passwordMismatchFeedback').text(error.defaultMessage).show();
+                } else if (error.field === 'name') {
+                    $('#name').addClass('is-invalid');
+                } else if (error.field === 'email') {
+                    $('#email').addClass('is-invalid');
+                } else if (error.field === 'phone') {
+                    $('#phone').addClass('is-invalid');
+                } else if (error.field === 'address') {
+                    $('#address').addClass('is-invalid');
+                }
+            });
+        }
+        /*]]>*/
+
+
+        // 비밀번호 표시/숨김 토글
+        $('#togglePassword').click(function() {
+            const passwordField = $('#password');
+            const icon = $(this).find('i');
+
+            if (passwordField.attr('type') === 'password') {
+                passwordField.attr('type', 'text');
+                icon.removeClass('fa-eye').addClass('fa-eye-slash');
+            } else {
+                passwordField.attr('type', 'password');
+                icon.removeClass('fa-eye-slash').addClass('fa-eye');
+            }
+        });
+
+        // 비밀번호 일치 여부 실시간 확인 및 유효성 피드백
+        const passwordInput = $('#password');
+        const passwordConfirmInput = $('#passwordConfirm');
+        const passwordMismatchFeedback = $('#passwordMismatchFeedback');
+
+        function checkPasswordMatch() {
+            if (passwordConfirmInput.val() === '') { // 확인란이 비어있으면 오류 메시지 숨김
+                passwordMismatchFeedback.hide();
+                passwordConfirmInput.removeClass('is-invalid').removeClass('is-valid');
+                return;
+            }
+            if (passwordInput.val() !== passwordConfirmInput.val()) {
+                passwordMismatchFeedback.text('비밀번호가 일치하지 않습니다.').show();
+                passwordConfirmInput.addClass('is-invalid').removeClass('is-valid');
+            } else {
+                passwordMismatchFeedback.hide();
+                passwordConfirmInput.removeClass('is-invalid').addClass('is-valid');
+            }
+        }
+
+        passwordInput.on('keyup', checkPasswordMatch);
+        passwordConfirmInput.on('keyup', checkPasswordMatch);
+
+        // 아이디 중복 체크 (Ajax)
+        const userIdInput = $('#userId');
+        const userIdFeedback = $('#userIdFeedback');
+        const joinSubmitButton = $('#joinSubmitButton');
+        let isUserIdAvailable = false; // 아이디 사용 가능 여부 플래그
+
+        userIdInput.on('keyup blur', function() { // 키를 누르거나 포커스를 잃었을 때 체크
+            const userId = $(this).val();
+            if (userId.length >= 4) { // 최소 길이 이상일 때만 체크
+                $.ajax({
+                    url: '/member/checkUserId',
+                    type: 'POST',
+                    data: { userId: userId },
+                    success: function(response) {
+                        if (response.isDuplicate) {
+                            userIdFeedback.removeClass('text-success').addClass('text-danger').text(response.message);
+                            userIdInput.addClass('is-invalid').removeClass('is-valid');
+                            isUserIdAvailable = false;
+                        } else {
+                            userIdFeedback.removeClass('text-danger').addClass('text-success').text(response.message);
+                            userIdInput.addClass('is-valid').removeClass('is-invalid');
+                            isUserIdAvailable = true;
+                        }
+                        updateSubmitButtonState();
+                    },
+                    error: function() {
+                        userIdFeedback.removeClass('text-success').addClass('text-danger').text('아이디 중복 확인 중 오류가 발생했습니다.');
+                        userIdInput.addClass('is-invalid').removeClass('is-valid');
+                        isUserIdAvailable = false;
+                        updateSubmitButtonState();
+                    }
+                });
+            } else if (userId.length === 0) {
+                userIdFeedback.text('');
+                userIdInput.removeClass('is-invalid').removeClass('is-valid');
+                isUserIdAvailable = false;
+                updateSubmitButtonState();
+            } else {
+                userIdFeedback.removeClass('text-success').addClass('text-danger').text('아이디는 4자 이상이어야 합니다.');
+                userIdInput.addClass('is-invalid').removeClass('is-valid');
+                isUserIdAvailable = false;
+                updateSubmitButtonState();
+            }
+        });
+
+        // 폼 제출 버튼 활성화/비활성화 함수
+        function updateSubmitButtonState() {
+            const isPasswordMatch = (passwordInput.val() === passwordConfirmInput.val() && passwordInput.val() !== '');
+            const isNameValid = ($('#name').val() !== ''); // 이름 필드도 필수 조건에 추가
+
+            // 모든 필수 필드가 채워지고, 아이디 사용 가능하며, 비밀번호가 일치하는지 확인
+            if (isUserIdAvailable && isPasswordMatch && isNameValid) {
+                joinSubmitButton.prop('disabled', false);
+            } else {
+                joinSubmitButton.prop('disabled', true);
+            }
+        }
+
+        // 초기 로드 시 및 모든 입력 필드 변경 시 버튼 상태 업데이트
+        $('input').on('keyup blur', updateSubmitButtonState);
+        updateSubmitButtonState(); // 페이지 로드 시 초기 상태 설정
+
+        // 폼 제출 전 최종 유효성 검사 (서버 측 유효성 검사가 있으므로, 클라이언트 측에서 추가로 검사할 내용이 있다면 여기에 추가)
+        $('#joinForm').submit(function(event) {
+            // 비밀번호 불일치 시 제출 방지
+            if (passwordInput.val() !== passwordConfirmInput.val()) {
+                passwordMismatchFeedback.text('비밀번호 확인이 일치하지 않습니다.').show();
+                passwordConfirmInput.addClass('is-invalid');
+                event.preventDefault();
+                return false;
+            }
+
+            // 아이디 중복 확인이 완료되지 않았거나 중복인 경우 제출 방지
+            if (!isUserIdAvailable) {
+                userIdInput.addClass('is-invalid');
+                userIdFeedback.removeClass('text-success').addClass('text-danger').text('아이디 중복 확인이 필요하거나, 이미 사용중인 아이디입니다.');
+                event.preventDefault();
+                return false;
+            }
+
+            // 이름이 비어있는 경우 제출 방지
+            if ($('#name').val().trim() === '') {
+                $('#name').addClass('is-invalid');
+                event.preventDefault();
+                return false;
+            }
+
+            // 모든 유효성 검사 통과 시 폼 제출 허용
+            return true;
+        });
+    });
+</script>
+</body>
+</html>
