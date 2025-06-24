@@ -1,12 +1,18 @@
 package com.example.carelink.controller;
 
+import com.example.carelink.common.Constants;
+import com.example.carelink.common.PageInfo;
+import com.example.carelink.dto.BoardDTO;
 import com.example.carelink.dto.JobDTO;
+import com.example.carelink.dto.MemberDTO;
+import com.example.carelink.service.BoardService;
 import com.example.carelink.service.JobService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 
+import javax.servlet.http.HttpSession;
 import java.util.List;
 
 /**
@@ -19,7 +25,7 @@ import java.util.List;
 public class JobController {
     
     private final JobService jobService;
-    
+
     /**
      * 구인구직 목록 페이지
      */
@@ -28,7 +34,7 @@ public class JobController {
                           @RequestParam(defaultValue = "1") int page,
                           @RequestParam(defaultValue = "") String keyword,
                           @RequestParam(defaultValue = "") String jobType) {
-        
+
         List<JobDTO> jobList = jobService.getJobList(page, keyword, jobType);
         model.addAttribute("jobList", jobList);
         model.addAttribute("keyword", keyword);
@@ -51,10 +57,52 @@ public class JobController {
      * 구인구직 등록 처리
      */
     @PostMapping("/write")
-    public String writeJob(@ModelAttribute JobDTO jobDTO) {
+    public String writeJob(@ModelAttribute JobDTO jobDTO, HttpSession session) {
+
+        /*
         // TODO: 팀원 C가 등록 로직 구현
         jobService.insertJob(jobDTO);
         return "redirect:/job";
+        */
+
+        // 1. status 기본값 설정 (이전에 해결한 부분, JobDTO에 status 필드가 있다면)
+        if (jobDTO.getStatus() == null || jobDTO.getStatus().isEmpty()) {
+            jobDTO.setStatus("ACTIVE"); // 원하는 기본 상태값
+
+        }
+
+        // 2. 현재 로그인된 사용자(memberId) 정보 설정 (★ 이제 확실히 해결됩니다! ★)
+        try {
+            // 세션에서 로그인된 MemberDTO 객체 가져오기
+            MemberDTO loggedInMember = (MemberDTO) session.getAttribute(Constants.SESSION_MEMBER);
+
+            if (loggedInMember != null && loggedInMember.getMemberId() != null) {
+
+                jobDTO.setMemberId(loggedInMember.getMemberId()); // memberId 타입이 String이라면 String 그대로
+
+            } else {
+
+                return "redirect:/member/login"; // 로그인 페이지로 강제 이동
+            }
+        } catch (Exception e) {
+
+            e.printStackTrace();
+            // 예외 발생 시에도 로그인 페이지로 리다이렉트하거나 에러 페이지로
+            return "redirect:/member/login";
+        }
+
+        // ★ 3. priority 기본값 설정 (가장 흔한 해결책) ★
+        // 예: 새로 생성되는 게시글의 우선순위를 0 (가장 낮은 우선순위)으로 설정
+        // JobDTO의 priority 필드 타입에 맞게 설정하세요 (int, Integer, long, Long 등).
+        if (jobDTO.getPriority() == null) { // Long/Integer 타입이라면 null 체크
+            jobDTO.setPriority(0); // 또는 10, 100 등 원하는 기본 우선순위 값
+
+        }
+
+        // 4. 서비스 호출
+        jobService.insertJob(jobDTO);
+        return "redirect:/job";
+
     }
     
     /**

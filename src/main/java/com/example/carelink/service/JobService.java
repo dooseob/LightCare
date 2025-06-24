@@ -57,11 +57,22 @@ public class JobService {
      */
     public int insertJob(JobDTO jobDTO) {
         try {
+
+            /*
             // TODO: 팀원 C가 등록 로직 구현
             return jobMapper.insertJob(jobDTO);
-        } catch (Exception e) {
-            // 임시로 성공 반환 (개발 초기 에러 방지)
-            return 1;
+            */
+
+            int result = jobMapper.insertJob(jobDTO);
+            return result;
+
+        }
+        catch (Exception e) {
+
+            e.printStackTrace(); // 예외의 전체 스택 트레이스를 출력하여 상세 오류 파악
+
+            return 0; // 실패를 나타내는 값으로 변경 (이전 1 반환은 성공처럼 보였습니다)
+
         }
     }
     

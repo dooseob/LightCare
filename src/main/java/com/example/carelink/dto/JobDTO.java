@@ -60,7 +60,7 @@ public class JobDTO extends BaseDTO {
     // 상태 관리
     @NotBlank(message = "게시글 상태는 필수입니다")
     private String status;          // 게시글 상태 (ACTIVE, CLOSED, DRAFT)
-    
+
     private Integer viewCount;      // 조회수
     private Integer applyCount;     // 지원자 수
     
@@ -86,5 +86,6 @@ public class JobDTO extends BaseDTO {
     
     // 우선순위 (상단 고정용)
     private Integer priority;       // 우선순위 (숫자가 높을수록 우선)
+
     private boolean isHighlight;    // 강조 표시 여부
 } 

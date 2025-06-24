@@ -145,17 +145,17 @@
                                         <div class="col-md-8">
                                             <div class="d-flex justify-content-between align-items-start mb-2">
                                                 <h5 class="card-title mb-0" th:text="${job.title}">구인 제목</h5>
-                                                <span class="badge bg-success" th:text="${job.employmentType}">정규직</span>
+                                                <span class="badge bg-success" th:text="${job.workType}">정규직</span>
                                             </div>
-                                            <h6 class="text-primary mb-2" th:text="${job.companyName}">회사명</h6>
+                                            <h6 class="text-primary mb-2" th:text="${job.facilityName}">회사명</h6>
                                             <p class="card-text text-muted mb-2">
-                                                <i class="fas fa-map-marker-alt me-1"></i> <span th:text="${job.location}">지역</span> |
-                                                <i class="fas fa-clock me-1"></i> <span th:text="${job.workTime}">근무시간</span> |
-                                                <i class="fas fa-won-sign me-1"></i> <span th:text="${job.salary}">급여</span>
+                                                <i class="fas fa-map-marker-alt me-1"></i> <span th:text="${job.workLocation}">지역</span> |
+                                                <i class="fas fa-clock me-1"></i> <span th:text="${job.workHours}">근무시간</span> |
+                                                <i class="fas fa-won-sign me-1"></i> <span th:text="${job.salaryDescription}">급여</span>
                                             </p>
-                                            <p class="card-text" th:text="${#strings.abbreviate(job.description, 100)}">구인 내용...</p>
+                                            <p class="card-text" th:text="${#strings.abbreviate(job.content, 100)}">구인 내용...</p>
                                             <div class="d-flex flex-wrap gap-1">
-                                                <span class="badge bg-light text-dark" th:text="${job.jobType}">직종</span>
+                                                <span class="badge bg-light text-dark" th:text="${job.position}">직종</span>
                                             </div>
                                         </div>
                                         <div class="col-md-4 text-end">
@@ -188,10 +188,11 @@
                         </div>
                     </div>
 
-                    <!-- 페이징 -->
+                    <!--
+                    &lt;!&ndash; 페이징 &ndash;&gt;
                     <nav th:if="${not #lists.isEmpty(jobList)}" aria-label="구인구직 페이징">
                         <ul class="pagination justify-content-center">
-                            <!-- 이전 페이지 -->
+                            &lt;!&ndash; 이전 페이지 &ndash;&gt;
                             <li class="page-item" th:classappend="${not pageInfo.hasPrevious} ? 'disabled'">
                                 <a class="page-link" 
                                    th:href="@{/job(page=${pageInfo.currentPage - 1}, keyword=${keyword}, jobType=${jobType}, region=${region}, employmentType=${employmentType})}"
@@ -199,7 +200,7 @@
                                     <span aria-hidden="true">&laquo;</span>
                                 </a>
                             </li>
-                            <!-- 페이지 번호 -->
+                            &lt;!&ndash; 페이지 번호 &ndash;&gt;
                             <li class="page-item" 
                                 th:each="page : ${#numbers.sequence(pageInfo.startPage, pageInfo.endPage)}"
                                 th:classappend="${page == pageInfo.currentPage} ? 'active'">
@@ -207,7 +208,7 @@
                                    th:href="@{/job(page=${page}, keyword=${keyword}, jobType=${jobType}, region=${region}, employmentType=${employmentType})}"
                                    th:text="${page}">1</a>
                             </li>
-                            <!-- 다음 페이지 -->
+                            &lt;!&ndash; 다음 페이지 &ndash;&gt;
                             <li class="page-item" th:classappend="${not pageInfo.hasNext} ? 'disabled'">
                                 <a class="page-link" 
                                    th:href="@{/job(page=${pageInfo.currentPage + 1}, keyword=${keyword}, jobType=${jobType}, region=${region}, employmentType=${employmentType})}"
@@ -217,6 +218,8 @@
                             </li>
                         </ul>
                     </nav>
+                    -->
+
                 </div>
             </div>
         </div>
