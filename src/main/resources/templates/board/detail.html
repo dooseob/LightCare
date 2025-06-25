@@ -17,13 +17,14 @@
                 <div class="col-md-9">
                     <!-- 게시글 상세 -->
                     <div class="card">
-                        <div class="card-header bg-light">
+                        <div class="card-header" th:classappend="'bg-' + ${board.category == 'NOTICE' ? 'danger text-white' : (board.category == 'INFO' ? 'info text-white' : (board.category == 'QNA' ? 'warning text-dark' : (board.category == 'FAQ' ? 'success text-white' : 'light')))}">
                             <div class="d-flex justify-content-between align-items-center">
                                 <div>
-                                    <span class="badge bg-primary me-2" th:text="${board.category}">카테고리</span>
+                                    <span class="badge me-2" th:text="${board.category}"
+                                          th:classappend="'bg-' + ${board.category == 'NOTICE' ? 'light text-dark' : (board.category == 'INFO' ? 'light text-dark' : (board.category == 'QNA' ? 'light text-dark' : (board.category == 'FAQ' ? 'light text-dark' : 'primary')))}">카테고리</span>
                                     <span th:if="${board.isNotice}" class="badge bg-danger">공지</span>
                                 </div>
-                                <small class="text-muted">
+                                <small>
                                     <i class="fas fa-eye me-1"></i> <span th:text="${board.viewCount ?: 0}">0</span>회 |
                                     <i class="fas fa-calendar me-1"></i> <span th:text="${#temporals.format(board.createdAt, 'yyyy-MM-dd HH:mm')}">작성일</span>
                                 </small>
@@ -235,7 +236,7 @@
             }
         }
 
-                // 게시글 삭제
+        // 게시글 삭제
         function deletePost() {
             if (confirm('정말로 이 게시글을 삭제하시겠습니까?')) {
                 const form = document.createElement('form');

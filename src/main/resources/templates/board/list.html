@@ -1,169 +1,199 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org"
-      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
-      layout:decorate="~{layout/default}" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-      xsi:schemaLocation="http://www.ultraq.net.nz/thymeleaf/layout " lang="ko">
-<head>
-    <title>게시판 목록</title>
+<html xmlns:th="http://www.thymeleaf.org" lang="ko">
+<head th:replace="~{layout/header :: header}">
+    <title>게시판 목록 - CareLink</title>
 </head>
 <body class="d-flex flex-column min-vh-100 pt-5">
-<!-- 네비게이션 바 -->
-<nav th:replace="~{layout/header :: navbar}"></nav>
-
-<div layout:fragment="content">
-    <div class="container py-4">
-        <!-- 페이지 제목 -->
-        <div class="row mb-4">
-            <div class="col-12">
-                <h2><i class="fas fa-clipboard-list text-primary me-2"></i> 정보 게시판</h2>
-                <p class="text-muted">다양한 정보를 공유하고 소통하는 공간입니다.</p>
+    <!-- 네비게이션 바 -->
+    <nav th:replace="~{layout/header :: navbar}"></nav>
+    
+    <!-- 메시지 표시 -->
+    <div th:replace="~{layout/header :: messages}"></div>
+    
+    <!-- 메인 콘텐츠 -->
+    <main class="flex-grow-1">
+        <div class="container py-4">
+            <!-- 페이지 제목 -->
+            <div class="row mb-4">
+                <div class="col-12">
+                    <h2 th:switch="${category}">
+                        <span th:case="'NOTICE'">
+                            <i class="fas fa-bullhorn text-danger me-2"></i> 공지사항
+                        </span>
+                        <span th:case="'INFO'">
+                            <i class="fas fa-info-circle text-info me-2"></i> 정보마당
+                        </span>
+                        <span th:case="'QNA'">
+                            <i class="fas fa-question-circle text-warning me-2"></i> 질문답변
+                        </span>
+                        <span th:case="'FAQ'">
+                            <i class="fas fa-lightbulb text-success me-2"></i> 자주묻는질문
+                        </span>
+                        <span th:case="*">
+                            <i class="fas fa-clipboard-list text-primary me-2"></i> 정보 게시판
+                        </span>
+                    </h2>
+                    <p class="text-muted" th:switch="${category}">
+                        <span th:case="'NOTICE'">중요한 공지사항을 확인하세요.</span>
+                        <span th:case="'INFO'">유용한 정보를 공유하고 소통하는 공간입니다.</span>
+                        <span th:case="'QNA'">궁금한 점을 자유롭게 질문하고 답변을 받아보세요.</span>
+                        <span th:case="'FAQ'">자주 묻는 질문과 답변을 확인하세요.</span>
+                        <span th:case="*">다양한 정보를 공유하고 소통하는 공간입니다.</span>
+                    </p>
+                </div>
             </div>
-        </div>
-        
-        <!-- 검색 폼 -->
-        <div class="row mb-4">
-            <div class="col-md-8">
-                <form th:action="@{/board}" method="get" class="d-flex gap-2">
-                    <select name="category" class="form-select" style="width: auto;">
-                        <option value="">전체 카테고리</option>
-                        <option value="NOTICE" th:selected="${category == 'NOTICE'}">공지사항</option>
-                        <option value="INFO" th:selected="${category == 'INFO'}">정보</option>
-                        <option value="QNA" th:selected="${category == 'QNA'}">질문답변</option>
-                        <option value="FAQ" th:selected="${category == 'FAQ'}">자주묻는질문</option>
-                    </select>
-                    <input type="text" name="keyword" class="form-control" th:value="${keyword}"
-                           placeholder="검색어를 입력하세요">
-                    <button type="submit" class="btn btn-primary">
-                        <i class="fas fa-search me-1"></i>검색
-                    </button>
-                </form>
-            </div>
-            <div class="col-md-4 text-end">
-                <a th:href="@{/board/write}" class="btn btn-success">
-                    <i class="fas fa-plus me-1"></i>글쓰기
-                </a>
-            </div>
-        </div>
-
-        <!-- 인기 게시글 -->
-        <div class="card mb-4" th:if="${not #lists.isEmpty(popularBoards)}">
-            <div class="card-header bg-primary text-white">
-                <h5 class="card-title mb-0">
-                    <i class="fas fa-fire me-2"></i>인기 게시글
-                </h5>
-            </div>
-            <div class="card-body">
-                <div class="list-group list-group-flush">
-                    <a th:each="board : ${popularBoards}"
-                       th:href="@{/board/detail/{id}(id=${board.boardId})}"
-                       class="list-group-item list-group-item-action">
-                        <div class="d-flex w-100 justify-content-between">
-                            <h6 class="mb-1" th:text="${board.title}">게시글 제목</h6>
-                            <small th:text="${#temporals.format(board.createdAt, 'yyyy-MM-dd')}">작성일</small>
-                        </div>
-                        <small class="text-muted">
-                            <span th:text="${board.author}">작성자</span> |
-                            조회 <span th:text="${board.viewCount}">0</span> |
-                            추천 <span th:text="${board.likeCount}">0</span>
-                        </small>
+            
+            <!-- 검색 폼 -->
+            <div class="row mb-4">
+                <div class="col-md-8">
+                    <form th:action="@{/board}" method="get" class="d-flex gap-2">
+                        <select name="category" class="form-select" style="width: auto;">
+                            <option value="">전체 카테고리</option>
+                            <option value="NOTICE" th:selected="${category == 'NOTICE'}">공지사항</option>
+                            <option value="INFO" th:selected="${category == 'INFO'}">정보</option>
+                            <option value="QNA" th:selected="${category == 'QNA'}">질문답변</option>
+                            <option value="FAQ" th:selected="${category == 'FAQ'}">자주묻는질문</option>
+                        </select>
+                        <input type="text" name="keyword" class="form-control" th:value="${keyword}"
+                               placeholder="검색어를 입력하세요">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-search me-1"></i>검색
+                        </button>
+                    </form>
+                </div>
+                <div class="col-md-4 text-end">
+                    <a th:href="@{/board/write(category=${category})}" 
+                       th:class="'btn ' + ${category == 'NOTICE' ? 'btn-danger' : (category == 'INFO' ? 'btn-info' : (category == 'QNA' ? 'btn-warning' : (category == 'FAQ' ? 'btn-success' : 'btn-success')))}">
+                        <i class="fas fa-plus me-1"></i>글쓰기
                     </a>
                 </div>
             </div>
-        </div>
 
-        <!-- 게시글 목록 -->
-        <div class="card">
-            <div class="card-header bg-light">
-                <h5 class="card-title mb-0">
-                    <i class="fas fa-list me-2"></i>게시글 목록
-                </h5>
-            </div>
-            <div class="card-body p-0">
-                <div class="table-responsive">
-                    <table class="table table-hover mb-0">
-                        <thead class="table-primary">
-                        <tr>
-                            <th width="80">번호</th>
-                            <th>제목</th>
-                            <th width="120">작성자</th>
-                            <th width="100">작성일</th>
-                            <th width="80">조회</th>
-                        </tr>
-                        </thead>
-                        <tbody>
-                        <tr th:if="${#lists.isEmpty(boardList)}">
-                            <td colspan="5" class="text-center py-4 text-muted">
-                                <i class="fas fa-inbox fa-2x mb-2"></i><br>
-                                등록된 게시글이 없습니다.
-                            </td>
-                        </tr>
-                        <tr th:each="board : ${boardList}">
-                            <td class="text-center">
-                                <span th:if="${board.isNotice}" class="badge bg-danger">공지</span>
-                                <span th:unless="${board.isNotice}" th:text="${board.boardId}">1</span>
-                            </td>
-                            <td>
-                                <a th:href="@{/board/detail/{id}(id=${board.boardId})}"
-                                   th:text="${board.title}" class="text-decoration-none">게시글 제목</a>
-                                <span th:if="${board.commentCount > 0}"
-                                      class="badge bg-secondary ms-1" th:text="'[' + ${board.commentCount} + ']'">0</span>
-                                <span th:if="${board.isNew}" class="badge bg-danger ms-1">NEW</span>
-                            </td>
-                            <td th:text="${board.author}">작성자</td>
-                            <td th:text="${#temporals.format(board.createdAt, 'MM-dd')}">01-01</td>
-                            <td class="text-center" th:text="${board.viewCount}">0</td>
-                        </tr>
-                        </tbody>
-                    </table>
+            <!-- 인기 게시글 -->
+            <div class="card mb-4" th:if="${not #lists.isEmpty(popularBoards)}">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-fire me-2"></i>인기 게시글
+                    </h5>
                 </div>
+                <div class="card-body">
+                    <div class="list-group list-group-flush">
+                        <a th:each="board : ${popularBoards}"
+                           th:href="@{/board/detail/{id}(id=${board.boardId})}"
+                           class="list-group-item list-group-item-action">
+                            <div class="d-flex w-100 justify-content-between">
+                                <h6 class="mb-1" th:text="${board.title}">게시글 제목</h6>
+                                <small th:text="${#temporals.format(board.createdAt, 'yyyy-MM-dd')}">작성일</small>
+                            </div>
+                            <small class="text-muted">
+                                <span th:text="${board.author}">작성자</span> |
+                                조회 <span th:text="${board.viewCount}">0</span> |
+                                추천 <span th:text="${board.likeCount}">0</span>
+                            </small>
+                        </a>
+                    </div>
+                </div>
+            </div>
 
-                <!-- 페이징 -->
-                <nav th:if="${not #lists.isEmpty(boardList)}" aria-label="Page navigation" class="mt-3">
-                    <ul class="pagination justify-content-center">
-                        <!-- 처음 페이지 -->
-                        <li class="page-item" th:classappend="${pageInfo.firstPage} ? 'disabled'">
-                            <a class="page-link" th:href="@{/board(page=1, keyword=${keyword}, category=${category})}"
-                               aria-label="First">
-                                <span aria-hidden="true">&laquo;&laquo;</span>
-                            </a>
-                        </li>
-                        <!-- 이전 페이지 -->
-                        <li class="page-item" th:classappend="${not pageInfo.hasPrevious} ? 'disabled'">
-                            <a class="page-link"
-                               th:href="@{/board(page=${pageInfo.currentPage - 1}, keyword=${keyword}, category=${category})}"
-                               aria-label="Previous">
-                                <span aria-hidden="true">&laquo;</span>
-                            </a>
-                        </li>
-                        <!-- 페이지 번호 -->
-                        <li class="page-item"
-                            th:each="page : ${#numbers.sequence(pageInfo.startPage, pageInfo.endPage)}"
-                            th:classappend="${page == pageInfo.currentPage} ? 'active'">
-                            <a class="page-link"
-                               th:href="@{/board(page=${page}, keyword=${keyword}, category=${category})}"
-                               th:text="${page}">1</a>
-                        </li>
-                        <!-- 다음 페이지 -->
-                        <li class="page-item" th:classappend="${not pageInfo.hasNext} ? 'disabled'">
-                            <a class="page-link"
-                               th:href="@{/board(page=${pageInfo.currentPage + 1}, keyword=${keyword}, category=${category})}"
-                               aria-label="Next">
-                                <span aria-hidden="true">&raquo;</span>
-                            </a>
-                        </li>
-                        <!-- 마지막 페이지 -->
-                        <li class="page-item" th:classappend="${pageInfo.lastPage} ? 'disabled'">
-                            <a class="page-link"
-                               th:href="@{/board(page=${pageInfo.totalPages}, keyword=${keyword}, category=${category})}"
-                               aria-label="Last">
-                                <span aria-hidden="true">&raquo;&raquo;</span>
-                            </a>
-                        </li>
-                    </ul>
-                </nav>
+            <!-- 게시글 목록 -->
+            <div class="card">
+                <div class="card-header" th:classappend="${category == 'NOTICE' ? 'bg-danger text-white' : (category == 'INFO' ? 'bg-info text-white' : (category == 'QNA' ? 'bg-warning text-white' : (category == 'FAQ' ? 'bg-success text-white' : 'bg-light')))}">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-list me-2"></i>게시글 목록
+                    </h5>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead th:class="'table-' + ${category == 'NOTICE' ? 'danger' : (category == 'INFO' ? 'info' : (category == 'QNA' ? 'warning' : (category == 'FAQ' ? 'success' : 'primary')))}">
+                            <tr>
+                                <th width="80">번호</th>
+                                <th>제목</th>
+                                <th width="120">작성자</th>
+                                <th width="100">작성일</th>
+                                <th width="80">조회</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            <tr th:if="${#lists.isEmpty(boardList)}">
+                                <td colspan="5" class="text-center py-4 text-muted">
+                                    <i class="fas fa-inbox fa-2x mb-2"></i><br>
+                                    등록된 게시글이 없습니다.
+                                </td>
+                            </tr>
+                            <tr th:each="board : ${boardList}">
+                                <td class="text-center">
+                                    <span th:if="${board.isNotice}" class="badge bg-danger">공지</span>
+                                    <span th:unless="${board.isNotice}" th:text="${board.boardId}">1</span>
+                                </td>
+                                <td>
+                                    <a th:href="@{/board/detail/{id}(id=${board.boardId})}"
+                                       th:text="${board.title}" class="text-decoration-none">게시글 제목</a>
+                                    <span th:if="${board.commentCount > 0}"
+                                          class="badge bg-secondary ms-1" th:text="'[' + ${board.commentCount} + ']'">0</span>
+                                    <span th:if="${board.isNew}" class="badge bg-danger ms-1">NEW</span>
+                                </td>
+                                <td th:text="${board.author}">작성자</td>
+                                <td th:text="${#temporals.format(board.createdAt, 'MM-dd')}">01-01</td>
+                                <td class="text-center" th:text="${board.viewCount}">0</td>
+                            </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- 페이징 -->
+                    <nav th:if="${not #lists.isEmpty(boardList)}" aria-label="Page navigation" class="mt-3">
+                        <ul class="pagination justify-content-center">
+                            <!-- 처음 페이지 -->
+                            <li class="page-item" th:classappend="${pageInfo.firstPage} ? 'disabled'">
+                                <a class="page-link" th:href="@{/board(page=1, keyword=${keyword}, category=${category})}"
+                                   aria-label="First">
+                                    <span aria-hidden="true">&laquo;&laquo;</span>
+                                </a>
+                            </li>
+                            <!-- 이전 페이지 -->
+                            <li class="page-item" th:classappend="${not pageInfo.hasPrevious} ? 'disabled'">
+                                <a class="page-link"
+                                   th:href="@{/board(page=${pageInfo.currentPage - 1}, keyword=${keyword}, category=${category})}"
+                                   aria-label="Previous">
+                                    <span aria-hidden="true">&laquo;</span>
+                                </a>
+                            </li>
+                            <!-- 페이지 번호 -->
+                            <li class="page-item"
+                                th:each="page : ${#numbers.sequence(pageInfo.startPage, pageInfo.endPage)}"
+                                th:classappend="${page == pageInfo.currentPage} ? 'active'">
+                                <a class="page-link"
+                                   th:href="@{/board(page=${page}, keyword=${keyword}, category=${category})}"
+                                   th:text="${page}">1</a>
+                            </li>
+                            <!-- 다음 페이지 -->
+                            <li class="page-item" th:classappend="${not pageInfo.hasNext} ? 'disabled'">
+                                <a class="page-link"
+                                   th:href="@{/board(page=${pageInfo.currentPage + 1}, keyword=${keyword}, category=${category})}"
+                                   aria-label="Next">
+                                    <span aria-hidden="true">&raquo;</span>
+                                </a>
+                            </li>
+                            <!-- 마지막 페이지 -->
+                            <li class="page-item" th:classappend="${pageInfo.lastPage} ? 'disabled'">
+                                <a class="page-link"
+                                   th:href="@{/board(page=${pageInfo.totalPages}, keyword=${keyword}, category=${category})}"
+                                   aria-label="Last">
+                                    <span aria-hidden="true">&raquo;&raquo;</span>
+                                </a>
+                            </li>
+                        </ul>
+                    </nav>
+                </div>
             </div>
         </div>
-    </div>
-</div>
+    </main>
+
+    <!-- 푸터 -->
+    <footer th:replace="~{layout/footer :: footer}"></footer>
+    
+    <!-- JavaScript -->
+    <div th:replace="~{layout/footer :: scripts}"></div>
 </body>
 </html> 

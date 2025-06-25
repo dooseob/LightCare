@@ -28,7 +28,26 @@ public class BoardController {
     public String listPage(Model model,
                           @RequestParam(defaultValue = "1") int page,
                           @RequestParam(defaultValue = "") String keyword,
-                          @RequestParam(defaultValue = "") String category) {
+                          @RequestParam(defaultValue = "") String category,
+                          @RequestParam(defaultValue = "") String type) {
+        
+        // type 파라미터가 있으면 category로 변환
+        if (!type.isEmpty()) {
+            switch (type.toLowerCase()) {
+                case "notice":
+                    category = "NOTICE";
+                    break;
+                case "info":
+                    category = "INFO";
+                    break;
+                case "qna":
+                    category = "QNA";
+                    break;
+                case "faq":
+                    category = "FAQ";
+                    break;
+            }
+        }
         
         // 게시글 목록 조회 (페이징 포함)
         PageInfo<BoardDTO> pageInfo = boardService.getBoardList(page, keyword, category);

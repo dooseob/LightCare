@@ -225,3 +225,17 @@ INSERT INTO facility (facility_name, facility_type, address, phone, latitude, lo
 INSERT INTO job_posting (title, content, job_type, work_type, position, member_id, facility_id, status) VALUES
 ('요양보호사 모집', '경력 요양보호사를 모집합니다.', 'RECRUIT', 'FULL_TIME', '요양보호사', 2, 1, 'ACTIVE'),
 ('간병인 구직', '성실한 간병인입니다.', 'SEARCH', 'PART_TIME', '간병인', 3, NULL, 'ACTIVE'); 
+
+-- 게시판 테스트 데이터
+INSERT INTO board (board_type, title, content, member_id, view_count, like_count, comment_count, is_notice, is_active, status, category, created_at, updated_at) VALUES
+('NOTICE', '시스템 점검 안내', '시스템 점검으로 인한 서비스 일시 중단 안내드립니다.\n\n점검 일시: 2024년 1월 15일 오전 2시 ~ 오전 6시\n점검 내용: 서버 업그레이드 및 보안 패치\n\n이용에 불편을 드려 죄송합니다.', 1, 150, 5, 3, true, true, 'ACTIVE', 'NOTICE', NOW(), NOW()),
+('NOTICE', '새로운 기능 추가 안내', '요양원 검색 기능이 개선되었습니다.\n\n주요 개선사항:\n- 지도 기반 검색 기능 추가\n- 필터링 옵션 강화\n- 리뷰 시스템 개선\n\n많은 이용 부탁드립니다.', 1, 89, 12, 7, true, true, 'ACTIVE', 'NOTICE', DATE_SUB(NOW(), INTERVAL 1 DAY), DATE_SUB(NOW(), INTERVAL 1 DAY)),
+
+('INFO', '요양원 선택 시 고려사항', '좋은 요양원을 선택하기 위한 체크리스트를 공유합니다.\n\n1. 시설 환경 확인\n- 청결도 및 안전시설\n- 개인 공간의 프라이버시\n- 공용 공간의 편의성\n\n2. 의료 서비스\n- 응급상황 대응 체계\n- 정기 건강검진\n- 전문의 방문 여부\n\n3. 프로그램 운영\n- 레크리에이션 프로그램\n- 물리치료 프로그램\n- 사회활동 프로그램', 2, 234, 18, 12, false, true, 'ACTIVE', 'INFO', DATE_SUB(NOW(), INTERVAL 2 DAY), DATE_SUB(NOW(), INTERVAL 2 DAY)),
+('INFO', '간병인 자격증 취득 가이드', '요양보호사 자격증 취득 방법에 대해 안내드립니다.\n\n자격 요건:\n- 만 18세 이상\n- 학력 제한 없음\n\n교육과정:\n- 이론 80시간 + 실기 80시간\n- 현장실습 80시간\n\n시험 정보:\n- 연 4회 실시\n- 필기시험 + 실기시험\n- 합격 기준: 각 과목 60점 이상', 3, 187, 25, 8, false, true, 'ACTIVE', 'INFO', DATE_SUB(NOW(), INTERVAL 3 DAY), DATE_SUB(NOW(), INTERVAL 3 DAY)),
+
+('QNA', '요양원 비용 문의', '안녕하세요. 부모님 요양원 입소를 고려하고 있습니다.\n\n월 비용이 어느 정도 되는지 궁금합니다.\n또한 정부 지원금은 어떻게 받을 수 있나요?\n\n답변 부탁드립니다.', 2, 45, 3, 2, false, true, 'ACTIVE', 'QNA', DATE_SUB(NOW(), INTERVAL 1 HOUR), DATE_SUB(NOW(), INTERVAL 1 HOUR)),
+('QNA', '간병인 구인 관련 질문', '요양원에서 간병인을 구인하고 있습니다.\n\n어떤 자격요건이 필요한지, 급여 수준은 어느 정도인지 알고 싶습니다.\n\n경험 있으신 분들의 조언 부탁드립니다.', 4, 67, 7, 4, false, true, 'ACTIVE', 'QNA', DATE_SUB(NOW(), INTERVAL 2 HOUR), DATE_SUB(NOW(), INTERVAL 2 HOUR)),
+
+('FAQ', '회원가입은 어떻게 하나요?', 'Q: 회원가입 절차가 궁금합니다.\n\nA: 다음 단계를 따라주세요:\n1. 홈페이지 상단의 "회원가입" 버튼 클릭\n2. 필수 정보 입력 (아이디, 비밀번호, 이름, 이메일)\n3. 이메일 인증 완료\n4. 회원가입 완료\n\n추가 문의사항이 있으시면 고객센터로 연락주세요.', 1, 123, 8, 1, false, true, 'ACTIVE', 'FAQ', DATE_SUB(NOW(), INTERVAL 5 DAY), DATE_SUB(NOW(), INTERVAL 5 DAY)),
+('FAQ', '비밀번호를 잊어버렸어요', 'Q: 비밀번호를 잊어버린 경우 어떻게 하나요?\n\nA: 비밀번호 재설정 방법:\n1. 로그인 페이지에서 "비밀번호 찾기" 클릭\n2. 가입 시 등록한 이메일 주소 입력\n3. 이메일로 전송된 재설정 링크 클릭\n4. 새로운 비밀번호 설정\n\n이메일이 오지 않는다면 스팸함을 확인해주세요.', 1, 89, 4, 0, false, true, 'ACTIVE', 'FAQ', DATE_SUB(NOW(), INTERVAL 6 DAY), DATE_SUB(NOW(), INTERVAL 6 DAY)); 
