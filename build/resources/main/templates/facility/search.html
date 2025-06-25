@@ -210,7 +210,6 @@
             // 시설 목록 항목 클릭 이벤트
             document.querySelectorAll('.facility-item').forEach(item => {
                 item.addEventListener('click', function(e) {
-                    e.preventDefault(); // 링크 클릭 시 페이지 이동 방지
 
                     // data-* 속성에서 값 가져오기
                     const lat = parseFloat(this.dataset.lat);

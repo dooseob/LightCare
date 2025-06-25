@@ -26,7 +26,7 @@
                              alt="시설 로고">
                     </div>
                     <div class="col-md-9">
-                        <h2 th:text="${facility.facilityName}">시설명</h2>
+                        <h2 th:text="${facility.name}">시설명</h2>
                         <div class="mb-3">
                             <span class="badge bg-primary me-2" th:text="${facility.facilityType}">시설유형</span>
                             <span class="badge bg-success" th:text="${facility.gradeRating + '등급'}">등급</span>
@@ -214,7 +214,8 @@
         function initializeMap() {
             const latitude = parseFloat("[[${facility.latitude}]]");
             const longitude = parseFloat("[[${facility.longitude}]]");
-            const facilityName = '[[${facility.facilityName}]]';
+            // ★★★ 이 줄을 수정해주세요! facilityName -> name
+            const facilityName = '[[${facility.name}]]';
             const address = '[[${facility.address}]]';
 
             const container = document.getElementById('facilityMap');
@@ -259,7 +260,7 @@
             // 지도 중심 이동
             map.setCenter(new kakao.maps.LatLng(latitude, longitude));
             map.setLevel(3);
-            
+
             // 해당 섹션으로 스크롤
             document.getElementById('facilityMap').scrollIntoView({ behavior: 'smooth' });
         }
@@ -280,9 +281,10 @@
         // 카카오톡 공유하기
         function shareToKakao() {
             const facilityId = [[${facility.facilityId}]];
-            const facilityName = '[[${facility.facilityName}]]';
+            // ★★★ 이 줄을 수정해주세요! facilityName -> name
+            const facilityName = '[[${facility.name}]]';
             const address = '[[${facility.address}]]';
-            
+
             if (window.Kakao) {
                 Kakao.Link.sendDefault({
                     objectType: 'location',
@@ -313,11 +315,10 @@
         }
     </script>
 
-    <!-- 카카오톡 공유하기 SDK -->
     <script src="//developers.kakao.com/sdk/js/kakao.min.js"></script>
     <script>
         // 카카오톡 SDK 초기화
         Kakao.init('71726bd73abc79c69d665d26c0300058');
     </script>
 </body>
-</html> 
+</html>

@@ -4,7 +4,7 @@ import java.util.*;
 public class Crolling {
     public static void main(String[] args) {
         // 탐색할 최상위 폴더 경로
-        String rootDirectory = "D:\\cch\\project_2\\LightCare\\src\\main\\java"; // 경로 구분자 수정 (슬래시로 변경)
+        String rootDirectory = "D:\\cch\\project_2\\LightCare\\src\\main"; // 경로 구분자 수정 (슬래시로 변경)
 
         // 결과를 저장할 파일 경로
         String outputFilePath = "D:/LightCare.txt"; // 경로 구분자 수정 (슬래시로 변경)
