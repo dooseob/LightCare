@@ -8,7 +8,7 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <!-- 카카오맵 API -->
-    <script type="text/javascript" src="//dapi.kakao.com/v2/maps/sdk.js?appkey=71726bd73abc79c69d665d26c0300058&libraries=services"></script>
+    <script type="text/javascript" src="//dapi.kakao.com/v2/maps/sdk.js?appkey=71726bd73abc79c69d665d26c0300058&autoload=false&libraries=services"></script>
 </head>
 <body>
     <!-- 공통 헤더 포함 -->
@@ -204,16 +204,18 @@
         let infowindow;
 
         // 페이지 로드 시 지도 초기화
-        document.addEventListener('DOMContentLoaded', function() {
-            initializeMap();
+        document.addEventListener('DOMContentLoaded', function () {
+            kakao.maps.load(function () {
+                initializeMap();
+            });
         });
 
         // 지도 초기화
         function initializeMap() {
-            const latitude = [[${facility.latitude}]];
-            const longitude = [[${facility.longitude}]];
-            const facilityName = [[${facility.facilityName}]];
-            const address = [[${facility.address}]];
+            const latitude = parseFloat("[[${facility.latitude}]]");
+            const longitude = parseFloat("[[${facility.longitude}]]");
+            const facilityName = '[[${facility.facilityName}]]';
+            const address = '[[${facility.address}]]';
 
             const container = document.getElementById('facilityMap');
             const options = {
@@ -246,9 +248,14 @@
 
         // 지도에서 보기 버튼 클릭
         function showOnMap() {
-            const latitude = [[${facility.latitude}]];
-            const longitude = [[${facility.longitude}]];
-            
+            const latitude = parseFloat("[[${facility.latitude}]]");
+            const longitude = parseFloat("[[${facility.longitude}]]");
+
+            if (!map) {
+                alert("지도가 아직 로드되지 않았습니다.");
+                return;
+            }
+
             // 지도 중심 이동
             map.setCenter(new kakao.maps.LatLng(latitude, longitude));
             map.setLevel(3);
@@ -273,8 +280,8 @@
         // 카카오톡 공유하기
         function shareToKakao() {
             const facilityId = [[${facility.facilityId}]];
-            const facilityName = [[${facility.facilityName}]];
-            const address = [[${facility.address}]];
+            const facilityName = '[[${facility.facilityName}]]';
+            const address = '[[${facility.address}]]';
             
             if (window.Kakao) {
                 Kakao.Link.sendDefault({

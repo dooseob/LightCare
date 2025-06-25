@@ -212,10 +212,33 @@ INSERT INTO member (user_id, password, name, email, role, is_active) VALUES
 ('admin', 'admin123', '관리자', 'admin@carelink.com', 'ADMIN', TRUE);
 
 -- 샘플 시설 유형별 데이터
-INSERT INTO member (user_id, password, name, email, phone, role, address, is_active) VALUES
-('facility01', 'facility123', '수원요양원', 'suwon@example.com', '031-123-4567', 'FACILITY', '경기도 수원시', TRUE),
-('user01', 'user123', '김철수', 'user01@example.com', '010-1234-5678', 'USER', '서울시 강남구', TRUE),
-('user02', 'user123', '이영희', 'user02@example.com', '010-2345-6789', 'USER', '서울시 서초구', TRUE);
+INSERT INTO facility (
+    facility_name, facility_type, address, detail_address, phone,
+    latitude, longitude, description, facility_image, homepage,
+    capacity, current_occupancy, operating_hours, features,
+    average_rating, review_count, registered_member_id,
+    is_approved, approval_status, created_at, updated_at, is_deleted
+) VALUES
+-- 요양원 1
+('편안한 요양원', 'NURSING_HOME', '서울시 강남구 테헤란로 123', '삼성빌딩 5층', '02-1234-5678',
+ 37.501274, 127.039585, '어르신들을 위한 편안한 공간', '/images/facility1.jpg', 'http://www.peacecare.com',
+ 100, 76, '09:00~18:00', '정원, 물리치료실, 전문 간호사 상주',
+ 4.5, 12, 1,
+ TRUE, 'APPROVED', NOW(), NOW(), FALSE),
+
+-- 병원형 요양시설
+('힐링케어 병원', 'HOSPITAL', '부산시 해운대구 센텀로 88', '센텀타워 3층', '051-987-6543',
+ 35.170939, 129.130951, '의료 중심 요양병원', '/images/facility2.jpg', 'http://www.healingcare.co.kr',
+ 150, 142, '24시간 운영', 'MRI, 물리치료, 전문의 진료',
+ 4.8, 34, 2,
+ TRUE, 'APPROVED', NOW(), NOW(), FALSE),
+
+-- 데이케어센터
+('행복한 데이케어', 'DAY_CARE', '대전시 유성구 대학로 100', '유성빌딩 2층', '042-222-3344',
+ 36.362469, 127.356437, '낮 동안 어르신 돌봄 서비스 제공', '/images/facility3.jpg', 'http://www.daycarehappy.com',
+ 80, 40, '08:00~20:00', '인지 프로그램, 식사 제공, 차량 운행',
+ 4.2, 8, 1,
+ FALSE, 'PENDING', NOW(), NOW(), FALSE);
 
 -- 샘플 시설 데이터
 INSERT INTO facility (facility_name, facility_type, address, phone, latitude, longitude, description, registered_member_id, is_approved, approval_status) VALUES
