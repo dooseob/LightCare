@@ -97,7 +97,7 @@
                                    class="form-control"
                                    id="phone"
                                    th:field="*{phone}" placeholder="휴대폰 번호를 입력하세요 (예: 010-1234-5678)"
-                                   pattern="^01(?:0|1|[6-9])-(?:\\d{3}|\\d{4})-\\d{4}$">
+                                   pattern="^01(?:0|1|[6-9])-(?:\d{3}|\d{4})-\d{4}$">
                             <small class="form-text text-muted">예: 010-1234-5678</small>
                             <div class="invalid-feedback" th:if="${#fields.hasErrors('phone')}" th:text="${#fields.errors('phone')[0]}"></div>
                         </div>
