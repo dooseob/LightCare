@@ -3,38 +3,48 @@ server:
   port: 8080
   servlet:
     context-path: /
+    encoding:
+      charset: UTF-8
+      enabled: true
+      force: true
 
 # 데이터베이스 설정
 spring:
   datasource:
-    driver-class-name: com.mysql.cj.jdbc.Driver
-    url: jdbc:mysql://localhost:3306/carelink?useSSL=false&serverTimezone=Asia/Seoul&characterEncoding=UTF-8
+    url: jdbc:mysql://localhost:3306/carelink?useSSL=false&serverTimezone=Asia/Seoul&allowPublicKeyRetrieval=true&useUnicode=true&characterEncoding=UTF-8
     username: root
     password: mysql
+    driver-class-name: com.mysql.cj.jdbc.Driver
     
-  # Thymeleaf 설정
-  thymeleaf:
-    prefix: classpath:/templates/
-    suffix: .html
-    mode: HTML
-    encoding: UTF-8
-    cache: false  # 개발 단계에서는 캐시 비활성화
-    
-  # 파일 업로드 설정
-  servlet:
-    multipart:
-      max-file-size: 10MB
-      max-request-size: 10MB
+      # 기존 MySQL Workbench 데이터베이스 사용
 
 # MyBatis 설정
 mybatis:
-  config-location: classpath:mybatis-config.xml
-  mapper-locations: classpath:mapper/*.xml
   type-aliases-package: com.example.carelink.dto
+  mapper-locations: classpath:mapper/*.xml
+  configuration:
+    map-underscore-to-camel-case: true
+    jdbc-type-for-null: varchar
+    default-fetch-size: 100
+    default-statement-timeout: 30
 
 # 로깅 설정
 logging:
   level:
     com.example.carelink: DEBUG
-    org.springframework.web: DEBUG
-    org.mybatis: DEBUG 
+    org.springframework.jdbc: DEBUG
+    org.mybatis: DEBUG
+
+# Thymeleaf 설정
+thymeleaf:
+  prefix: classpath:/templates/
+  suffix: .html
+  mode: HTML
+  encoding: UTF-8
+  cache: false  # 개발 단계에서는 캐시 비활성화
+  
+# 파일 업로드 설정
+servlet:
+  multipart:
+    max-file-size: 10MB
+    max-request-size: 10MB 

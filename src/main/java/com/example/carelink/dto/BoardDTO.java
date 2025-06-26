@@ -91,4 +91,12 @@ public class BoardDTO extends BaseDTO {
     public String getAuthor() {
         return (this.memberName != null && !this.memberName.isEmpty()) ? this.memberName : this.author;
     }
+    
+    /**
+     * 새 글 여부 확인 (24시간 이내 작성)
+     */
+    public boolean getIsNew() {
+        if (this.getCreatedAt() == null) return false;
+        return this.getCreatedAt().isAfter(java.time.LocalDateTime.now().minusDays(1));
+    }
 } 

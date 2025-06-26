@@ -44,6 +44,11 @@ public interface BoardMapper {
     void increaseViewCount(@Param("boardId") Long boardId);
     
     /**
+     * 조회수 증가 (별칭)
+     */
+    void incrementViewCount(@Param("boardId") Long boardId);
+    
+    /**
      * 인기 게시글 목록 조회
      */
     List<BoardDTO> getPopularBoards();
@@ -57,4 +62,29 @@ public interface BoardMapper {
      * 게시글 총 개수 조회
      */
     int getBoardCount(BoardDTO searchDTO);
+    
+    /**
+     * 카테고리별 인기 게시글 목록 조회
+     */
+    List<BoardDTO> getPopularBoardsByCategory(@Param("category") String category);
+    
+    /**
+     * 이전 게시글 조회
+     */
+    BoardDTO getPreviousBoard(@Param("currentId") Long currentId, @Param("category") String category);
+    
+    /**
+     * 다음 게시글 조회
+     */
+    BoardDTO getNextBoard(@Param("currentId") Long currentId, @Param("category") String category);
+    
+    /**
+     * 게시글 추천수 증가
+     */
+    void incrementLikeCount(@Param("boardId") Long boardId);
+    
+    /**
+     * 게시글 추천수 감소
+     */
+    void decrementLikeCount(@Param("boardId") Long boardId);
 } 

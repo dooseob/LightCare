@@ -1,5 +1,6 @@
 package com.example.carelink.controller;
 
+import com.example.carelink.common.PageInfo;
 import com.example.carelink.dto.ReviewDTO;
 import com.example.carelink.service.ReviewService;
 import lombok.RequiredArgsConstructor;
@@ -28,8 +29,9 @@ public class ReviewController {
                           @RequestParam(defaultValue = "1") int page,
                           @RequestParam(defaultValue = "") String keyword) {
         
-        List<ReviewDTO> reviewList = reviewService.getReviewList(page, keyword);
-        model.addAttribute("reviewList", reviewList);
+        PageInfo<ReviewDTO> pageInfo = reviewService.getReviewList(page, keyword);
+        model.addAttribute("pageInfo", pageInfo);
+        model.addAttribute("reviewList", pageInfo.getList());
         model.addAttribute("keyword", keyword);
         model.addAttribute("currentPage", page);
         

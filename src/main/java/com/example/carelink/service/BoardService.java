@@ -169,7 +169,7 @@ public class BoardService {
         log.info("조회수 증가 시작 - boardId: {}", id);
         
         try {
-            boardMapper.increaseViewCount(id);
+            boardMapper.incrementViewCount(id);
             log.info("조회수 증가 완료 - boardId: {}", id);
         } catch (Exception e) {
             log.warn("조회수 증가 중 오류 발생 - boardId: {} (무시하고 진행)", id, e);
@@ -248,6 +248,94 @@ public class BoardService {
         }
         if (boardDTO.getTitle().length() > 200) {
             throw new IllegalArgumentException("게시글 제목은 200자를 초과할 수 없습니다.");
+        }
+    }
+    
+    /**
+     * 카테고리별 인기 게시글 목록 조회
+     */
+    public List<BoardDTO> getPopularBoardsByCategory(String category) {
+        log.info("카테고리별 인기 게시글 목록 조회 시작 - category: {}", category);
+        
+        try {
+            List<BoardDTO> popularBoards;
+            if (category == null || category.trim().isEmpty()) {
+                popularBoards = boardMapper.getPopularBoards();
+            } else {
+                popularBoards = boardMapper.getPopularBoardsByCategory(category);
+            }
+            log.info("카테고리별 인기 게시글 목록 조회 완료 - 조회된 건수: {}", popularBoards.size());
+            
+            return popularBoards;
+        } catch (Exception e) {
+            log.error("카테고리별 인기 게시글 목록 조회 중 오류 발생", e);
+            throw new RuntimeException("인기 게시글을 불러오는 중 오류가 발생했습니다.", e);
+        }
+    }
+    
+    /**
+     * 이전 게시글 조회
+     */
+    public BoardDTO getPreviousBoard(Long currentId, String category) {
+        log.info("이전 게시글 조회 시작 - currentId: {}, category: {}", currentId, category);
+        
+        try {
+            BoardDTO prevBoard = boardMapper.getPreviousBoard(currentId, category);
+            log.info("이전 게시글 조회 완료 - prevBoardId: {}", prevBoard != null ? prevBoard.getBoardId() : "없음");
+            
+            return prevBoard;
+        } catch (Exception e) {
+            log.error("이전 게시글 조회 중 오류 발생", e);
+            return null; // 이전 게시글이 없거나 오류가 발생한 경우 null 반환
+        }
+    }
+    
+    /**
+     * 다음 게시글 조회
+     */
+    public BoardDTO getNextBoard(Long currentId, String category) {
+        log.info("다음 게시글 조회 시작 - currentId: {}, category: {}", currentId, category);
+        
+        try {
+            BoardDTO nextBoard = boardMapper.getNextBoard(currentId, category);
+            log.info("다음 게시글 조회 완료 - nextBoardId: {}", nextBoard != null ? nextBoard.getBoardId() : "없음");
+            
+            return nextBoard;
+        } catch (Exception e) {
+            log.error("다음 게시글 조회 중 오류 발생", e);
+            return null; // 다음 게시글이 없거나 오류가 발생한 경우 null 반환
+        }
+    }
+    
+    /**
+     * 게시글 추천수 증가
+     */
+    @Transactional
+    public void incrementLikeCount(Long id) {
+        log.info("게시글 추천수 증가 시작 - boardId: {}", id);
+        
+        try {
+            boardMapper.incrementLikeCount(id);
+            log.info("게시글 추천수 증가 완료 - boardId: {}", id);
+        } catch (Exception e) {
+            log.error("게시글 추천수 증가 중 오류 발생 - boardId: {}", id, e);
+            throw new RuntimeException("추천 처리 중 오류가 발생했습니다.", e);
+        }
+    }
+
+    /**
+     * 게시글 추천수 감소
+     */
+    @Transactional
+    public void decrementLikeCount(Long id) {
+        log.info("게시글 추천수 감소 시작 - boardId: {}", id);
+        
+        try {
+            boardMapper.decrementLikeCount(id);
+            log.info("게시글 추천수 감소 완료 - boardId: {}", id);
+        } catch (Exception e) {
+            log.error("게시글 추천수 감소 중 오류 발생 - boardId: {}", id, e);
+            throw new RuntimeException("추천 취소 처리 중 오류가 발생했습니다.", e);
         }
     }
 } 

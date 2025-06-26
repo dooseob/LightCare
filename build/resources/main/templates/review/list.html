@@ -109,7 +109,7 @@
                             <!-- 이전 페이지 -->
                             <li class="page-item" th:classappend="${not pageInfo.hasPrevious} ? 'disabled'">
                                 <a class="page-link" 
-                                   th:href="@{/review(page=${pageInfo.currentPage - 1}, keyword=${keyword}, rating=${rating})}"
+                                   th:href="@{/review(page=${pageInfo.currentPage - 1}, keyword=${keyword})}"
                                    aria-label="Previous">
                                     <span aria-hidden="true">&laquo;</span>
                                 </a>
@@ -119,13 +119,13 @@
                                 th:each="page : ${#numbers.sequence(pageInfo.startPage, pageInfo.endPage)}"
                                 th:classappend="${page == pageInfo.currentPage} ? 'active'">
                                 <a class="page-link" 
-                                   th:href="@{/review(page=${page}, keyword=${keyword}, rating=${rating})}"
+                                   th:href="@{/review(page=${page}, keyword=${keyword})}"
                                    th:text="${page}">1</a>
                             </li>
                             <!-- 다음 페이지 -->
                             <li class="page-item" th:classappend="${not pageInfo.hasNext} ? 'disabled'">
                                 <a class="page-link" 
-                                   th:href="@{/review(page=${pageInfo.currentPage + 1}, keyword=${keyword}, rating=${rating})}"
+                                   th:href="@{/review(page=${pageInfo.currentPage + 1}, keyword=${keyword})}"
                                    aria-label="Next">
                                     <span aria-hidden="true">&raquo;</span>
                                 </a>
