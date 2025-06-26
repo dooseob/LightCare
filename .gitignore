@@ -1,0 +1,16 @@
+# Gradle 관련 파일 및 폴더
+.gradle/
+build/
+
+# IDE (통합 개발 환경) 관련 파일 및 폴더 (예: IntelliJ IDEA)
+.idea/
+*.iml
+*.ipr
+*.iws
+
+# 운영체제 관련 임시 파일
+.DS_Store # macOS
+Thumbs.db # Windows
+
+# 로그 파일
+*.log
