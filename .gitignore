@@ -1,14 +1,33 @@
 # 빌드 결과물
 /build/
-/.gradle/
+/target/
+*.jar
+*.war
+*.zip
+*.tar.gz
+*.class
+bin/ # Eclipse build output
+out/ # IntelliJ build output
+
+# Gradle
+.gradle/
+!gradle-wrapper.jar
+!gradle-wrapper.properties
 
 # IDE 및 환경 설정 파일
+# IntelliJ IDEA
 .idea/
 *.iml
 *.ipr
 *.iws
-out/
-bin/
+
+# Eclipse
+.classpath
+.project
+.settings/
+
+# VS Code
+.vscode/
 
 # 운영체제 파일
 .DS_Store
@@ -16,3 +35,8 @@ Thumbs.db
 
 # 로그 파일
 *.log
+logs/
+*.lock # 락 파일 포함 (예: Gradle lock 파일)
+
+# 기타
+*.out
