@@ -27,7 +27,7 @@
                             <div class="row">
                                 <div class="col-md-6 mb-3">
                                     <label class="form-label">회사명 *</label>
-                                    <input type="text" class="form-control" th:field="*{companyName}" required>
+                                    <input type="text" class="form-control" th:field="*{facilityName}" required>
                                 </div>
                                 <div class="col-md-6 mb-3">
                                     <label class="form-label">직종 *</label>
@@ -53,21 +53,33 @@
                 <div class="col-md-4">
                     <div class="card">
                         <div class="card-body">
+
                             <div class="mb-3">
                                 <label class="form-label">급여 *</label>
-                                <input type="number" class="form-control" th:field="*{salary}" required>
+                                <input type="number" class="form-control" th:field="*{salaryDescription}" required>
                             </div>
                             
                             <div class="mb-3">
                                 <label class="form-label">고용형태 *</label>
-                                <select class="form-select" th:field="*{employmentType}" required>
+                                <select class="form-select" th:field="*{workType}" required>
                                     <option value="">선택해주세요</option>
                                     <option value="full_time">정규직</option>
                                     <option value="part_time">계약직</option>
                                     <option value="temp">임시직</option>
                                 </select>
                             </div>
-                            
+
+                            <div class="form-group">
+                                <label for="status">게시글 상태</label>
+                                <select class="form-control" id="status" th:field="*{status}" required>
+                                    <option value="">상태 선택</option>
+                                    <option value="ACTIVE">활성</option>
+                                    <option value="CLOSED">마감</option>
+                                    <option value="DRAFT">임시저장</option>
+                                </select>
+                                <div class="invalid-feedback" th:errors="*{status}"></div>
+                            </div>
+
                             <div class="d-grid">
                                 <button type="submit" class="btn btn-primary">
                                     <i class="fas fa-save"></i> 등록하기
