@@ -1,0 +1,38 @@
+# Gradle files
+.gradle/
+build/
+.idea/
+.classpath
+.project
+.settings/
+*.iml
+*.ipr
+*.iws
+
+# IDE (IntelliJ, Eclipse, VS Code etc.)
+# IntelliJ IDEA
+.idea/
+*.iml
+*.ipr
+*.iws
+out/
+
+# Eclipse
+.classpath
+.project
+.settings/
+bin/
+
+# VS Code
+.vscode/
+
+# macOS
+.DS_Store
+
+# Operating System
+Thumbs.db
+
+# etc
+*.log
+*.lock
+*.jar # 이 줄이 있는지 꼭 다시 확인!
