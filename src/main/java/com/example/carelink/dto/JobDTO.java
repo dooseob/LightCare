@@ -88,4 +88,5 @@ public class JobDTO extends BaseDTO {
     private Integer priority;       // 우선순위 (숫자가 높을수록 우선)
 
     private boolean isHighlight;    // 강조 표시 여부
-} 
+
+}

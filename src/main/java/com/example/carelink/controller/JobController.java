@@ -110,9 +110,11 @@ public class JobController {
      */
     @GetMapping("/detail/{id}")
     public String detailPage(@PathVariable Long id, Model model) {
+
         JobDTO job = jobService.getJobById(id);
         model.addAttribute("job", job);
         return "job/detail";
+
     }
     
     /**

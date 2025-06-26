@@ -21,12 +21,20 @@ public class JobService {
     /**
      * 구인구직 목록 조회
      */
-    public List<JobDTO> getJobList(int page, String keyword, String jobType) {
+    public List<JobDTO> getJobList(int currentPage, String keyword, String jobType) {
         try {
             // TODO: 팀원 C가 페이징 및 검색 로직 구현
             JobDTO searchDTO = new JobDTO();
+
+            /*
             searchDTO.setPage(page);
             searchDTO.setSize(10);
+            */
+
+            int pageSize = 10;
+            searchDTO.setSize(pageSize); // int -> Integer (Autoboxing)
+            searchDTO.setPage((currentPage - 1) * pageSize); // int -> Integer (Autoboxing)
+
             return jobMapper.getJobList(searchDTO);
         } catch (Exception e) {
             // 임시로 빈 리스트 반환 (개발 초기 에러 방지)
@@ -39,16 +47,25 @@ public class JobService {
      */
     public JobDTO getJobById(Long id) {
         try {
+
             // TODO: 팀원 C가 상세 조회 로직 구현
-            return jobMapper.findJobById(id);
-        } catch (Exception e) {
+            JobDTO jobFromMapper = jobMapper.findJobById(id); // 여기에 변수로 받아서 출력
+            return jobFromMapper;
+
+        }
+        catch (Exception e) {
+
+            System.out.println("catch 블록 실행됨 - 에러: " + e.getMessage());
+
             // 임시로 기본 구인구직 정보 반환 (개발 초기 에러 방지)
             JobDTO job = new JobDTO();
             job.setJobId(id);
             job.setTitle("구인구직 정보를 불러오는 중...");
             job.setContent("팀원 C가 구현 예정");
             job.setFacilityName("Sample Company");
+            job.setSalaryDescription("300");
             return job;
+
         }
     }
     
