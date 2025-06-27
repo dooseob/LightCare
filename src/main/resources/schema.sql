@@ -247,4 +247,12 @@ INSERT INTO facility (facility_name, facility_type, address, phone, latitude, lo
 -- 샘플 구인구직 데이터
 INSERT INTO job_posting (title, content, job_type, work_type, position, member_id, facility_id, status) VALUES
 ('요양보호사 모집', '경력 요양보호사를 모집합니다.', 'RECRUIT', 'FULL_TIME', '요양보호사', 2, 1, 'ACTIVE'),
-('간병인 구직', '성실한 간병인입니다.', 'SEARCH', 'PART_TIME', '간병인', 3, NULL, 'ACTIVE'); 
+('간병인 구직', '성실한 간병인입니다.', 'SEARCH', 'PART_TIME', '간병인', 3, NULL, 'ACTIVE');
+
+
+ALTER TABLE facility ADD COLUMN region VARCHAR(255);
+ALTER TABLE facility ADD COLUMN image_path VARCHAR(255);
+ALTER TABLE facility ADD COLUMN facility_image VARCHAR(255) COMMENT '시설 이미지 경로';
+DESCRIBE facility;
+SHOW COLUMNS FROM facility;
+select * from  facility ;

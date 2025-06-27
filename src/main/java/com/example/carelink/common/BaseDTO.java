@@ -2,17 +2,21 @@ package com.example.carelink.common;
 
 import lombok.Data;
 import java.time.LocalDateTime;
-
+import com.fasterxml.jackson.annotation.JsonFormat;
 /**
  * 모든 DTO 클래스가 상속받을 기본 클래스
  * 공통 필드(생성일시, 수정일시, 삭제여부)를 포함
  */
+
 @Data
 public class BaseDTO {
 
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     private LocalDateTime createdAt;  // 생성일시
+
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     private LocalDateTime updatedAt;  // 수정일시
-    private boolean isDeleted;        // 삭제 여부 (논리 삭제용)
+    private boolean isDeleted;        // 삭제 여부
 
     // 페이징 관련 필드 타입을 Integer로 변경
     private Integer page;               // 현재 페이지 (기본값은 필요에 따라 생성자에서 설정)

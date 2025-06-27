@@ -6,12 +6,15 @@ server:
 
 # 데이터베이스 설정
 spring:
+  jackson:
+    serialization:
+      write-dates-as-timestamps: false
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
     url: jdbc:mysql://localhost:3306/carelink?useSSL=false&serverTimezone=Asia/Seoul&characterEncoding=UTF-8
     username: root
     password: mysql
-    
+
   # Thymeleaf 설정
   thymeleaf:
     prefix: classpath:/templates/
@@ -19,7 +22,7 @@ spring:
     mode: HTML
     encoding: UTF-8
     cache: false  # 개발 단계에서는 캐시 비활성화
-    
+
   # 파일 업로드 설정
   servlet:
     multipart:
@@ -28,13 +31,15 @@ spring:
 
 # MyBatis 설정
 mybatis:
-  config-location: classpath:mybatis-config.xml
+  # 아래 config-location 설정을 제거하여 충돌을 해결합니다.
+  # config-location: classpath:mybatis-config.xml
   mapper-locations: classpath:mapper/*.xml
   type-aliases-package: com.example.carelink.dto
-
+  configuration:
+    map-underscore-to-camel-case: true # 이 설정은 유지
 # 로깅 설정
 logging:
   level:
     com.example.carelink: DEBUG
     org.springframework.web: DEBUG
-    org.mybatis: DEBUG 
+    org.mybatis: DEBUG
