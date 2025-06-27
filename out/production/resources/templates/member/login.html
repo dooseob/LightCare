@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="ko">
+<head th:replace="~{layout/header :: header}">
+    <title>로그인 - CareLink</title>
+</head>
+<body class="d-flex flex-column min-vh-100">
+    <!-- 네비게이션 바 -->
+    <nav th:replace="~{layout/header :: navbar}"></nav>
+    
+    <!-- 메시지 표시 -->
+    <div th:replace="~{layout/header :: messages}"></div>
+    
+    <!-- 메인 콘텐츠 -->
+    <main class="flex-grow-1 py-5">
+        <div class="container">
+            <div class="row justify-content-center">
+                <div class="col-md-6 col-lg-4">
+                    <!-- 로그인 카드 -->
+                    <div class="card shadow">
+                        <div class="card-body p-4">
+                            <!-- 제목 -->
+                            <div class="text-center mb-4">
+                                <h3 class="card-title fw-bold text-primary">
+                                    <i class="fas fa-sign-in-alt me-2"></i>
+                                    로그인
+                                </h3>
+                                <p class="text-muted">CareLink에 오신 것을 환영합니다</p>
+                            </div>
+                            
+                            <!-- 로그인 폼 -->
+                            <form th:action="@{/member/login}" th:object="${loginDTO}" method="post">
+                                <!-- 사용자 ID -->
+                                <div class="mb-3">
+                                    <label for="userId" class="form-label">
+                                        <i class="fas fa-user me-1"></i>아이디
+                                    </label>
+                                    <input type="text" 
+                                           class="form-control" 
+                                           id="userId" 
+                                           th:field="*{userId}"
+                                           placeholder="아이디를 입력하세요"
+                                           required>
+                                    <div class="invalid-feedback" th:if="${#fields.hasErrors('userId')}" th:errors="*{userId}"></div>
+                                </div>
+                                
+                                <!-- 비밀번호 -->
+                                <div class="mb-3">
+                                    <label for="password" class="form-label">
+                                        <i class="fas fa-lock me-1"></i>비밀번호
+                                    </label>
+                                    <div class="input-group">
+                                        <input type="password" 
+                                               class="form-control" 
+                                               id="password" 
+                                               th:field="*{password}"
+                                               placeholder="비밀번호를 입력하세요"
+                                               required>
+                                        <button class="btn btn-outline-secondary" type="button" id="togglePassword">
+                                            <i class="fas fa-eye"></i>
+                                        </button>
+                                    </div>
+                                    <div class="invalid-feedback" th:if="${#fields.hasErrors('password')}" th:errors="*{password}"></div>
+                                </div>
+                                
+                                <!-- 로그인 상태 유지 -->
+                                <div class="mb-3 form-check">
+                                    <input type="checkbox" 
+                                           class="form-check-input" 
+                                           id="rememberMe" 
+                                           th:field="*{rememberMe}">
+                                    <label class="form-check-label" for="rememberMe">
+                                        로그인 상태 유지
+                                    </label>
+                                </div>
+                                
+                                <!-- 로그인 버튼 -->
+                                <div class="d-grid mb-3">
+                                    <button type="submit" class="btn btn-primary btn-lg">
+                                        <i class="fas fa-sign-in-alt me-2"></i>
+                                        로그인
+                                    </button>
+                                </div>
+                            </form>
+                            
+                            <!-- 링크들 -->
+                            <div class="row text-center">
+                                <div class="col">
+                                    <a href="/member/join" class="btn btn-outline-primary">
+                                        <i class="fas fa-user-plus me-1"></i>
+                                        회원가입
+                                    </a>
+                                </div>
+                            </div>
+                            
+                            <hr class="my-4">
+                            
+                            <!-- 테스트 계정 안내 -->
+                            <div class="alert alert-info" role="alert">
+                                <h6 class="alert-heading">
+                                    <i class="fas fa-info-circle me-2"></i>
+                                    테스트 계정
+                                </h6>
+                                <div class="row text-center">
+                                    <div class="col-6">
+                                        <small>
+                                            <strong>관리자</strong><br>
+                                            ID: admin<br>
+                                            PW: admin123
+                                        </small>
+                                    </div>
+                                    <div class="col-6">
+                                        <small>
+                                            <strong>일반 사용자</strong><br>
+                                            ID: user01<br>
+                                            PW: user123
+                                        </small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+    
+    <!-- 푸터 -->
+    <footer th:replace="~{layout/footer :: footer}"></footer>
+    
+    <!-- JavaScript -->
+    <div th:replace="~{layout/footer :: scripts}"></div>
+    
+    <script>
+        $(document).ready(function() {
+            // 비밀번호 표시/숨김 토글
+            $('#togglePassword').click(function() {
+                const passwordField = $('#password');
+                const icon = $(this).find('i');
+                
+                if (passwordField.attr('type') === 'password') {
+                    passwordField.attr('type', 'text');
+                    icon.removeClass('fa-eye').addClass('fa-eye-slash');
+                } else {
+                    passwordField.attr('type', 'password');
+                    icon.removeClass('fa-eye-slash').addClass('fa-eye');
+                }
+            });
+            
+            // 테스트 계정 클릭 시 자동 입력
+            $('.alert').on('click', 'small', function() {
+                const text = $(this).text();
+                if (text.includes('admin')) {
+                    $('#userId').val('admin');
+                    $('#password').val('admin123');
+                } else if (text.includes('일반 사용자')) {
+                    $('#userId').val('user01');
+                    $('#password').val('user123');
+                }
+            });
+        });
+    </script>
+</body>
+</html> 
