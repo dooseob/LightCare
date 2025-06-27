@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="ko">
+<head th:replace="~{layout/header :: header}">
+    <title>공지사항 - CareLink</title>
+</head>
+<body class="d-flex flex-column min-vh-100 pt-5">
+    <!-- 네비게이션 바 -->
+    <nav th:replace="~{layout/header :: navbar}"></nav>
+    
+    <!-- 메시지 표시 -->
+    <div th:replace="~{layout/header :: messages}"></div>
+
+    <!-- 메인 콘텐츠 -->
+    <main class="flex-grow-1">
+        <div class="container py-4">
+            <!-- 페이지 제목 -->
+            <div class="row mb-4">
+                <div class="col-12">
+                    <nav aria-label="breadcrumb">
+                        <ol class="breadcrumb">
+                            <li class="breadcrumb-item"><a href="/">홈</a></li>
+                            <li class="breadcrumb-item"><a href="/board">정보마당</a></li>
+                            <li class="breadcrumb-item active" aria-current="page">공지사항</li>
+                        </ol>
+                    </nav>
+                    <h2>
+                        <i class="fas fa-bullhorn text-danger me-2"></i> 
+                        공지사항
+                    </h2>
+                    <p class="text-muted mb-3">CareLink의 중요한 공지사항과 새로운 소식을 확인하세요.</p>
+                    
+                    <!-- 게시판 타입 메뉴 -->
+                    <div class="btn-group mb-3" role="group" aria-label="게시판 타입">
+                        <a th:href="@{/board(type='all')}" class="btn btn-sm btn-outline-primary">전체</a>
+                        <a th:href="@{/board(type='notice')}" class="btn btn-sm btn-danger">공지사항</a>
+                        <a th:href="@{/board(type='info')}" class="btn btn-sm btn-outline-primary">정보공유</a>
+                        <a th:href="@{/board(type='qna')}" class="btn btn-sm btn-outline-primary">Q&A</a>
+                        <a th:href="@{/board(type='faq')}" class="btn btn-sm btn-outline-primary">FAQ</a>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 검색 및 글쓰기 -->
+            <div class="row mb-4">
+                <div class="col-md-8">
+                    <form th:action="@{/board}" method="get" class="d-flex gap-2">
+                        <input type="hidden" name="type" value="notice">
+                        <input type="text" name="keyword" class="form-control" th:value="${keyword}"
+                               placeholder="공지사항 검색">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-search me-1"></i>검색
+                        </button>
+                    </form>
+                </div>
+                <div class="col-md-4 text-end">
+                    <a th:href="@{/board/write(type='notice')}" class="btn btn-danger">
+                        <i class="fas fa-plus me-1"></i>공지사항 작성
+                    </a>
+                </div>
+            </div>
+
+            <!-- 공지사항 통계 -->
+            <div class="row mb-4">
+                <div class="col-md-12">
+                    <div class="card bg-danger bg-opacity-10">
+                        <div class="card-body py-3">
+                            <div class="row text-center">
+                                <div class="col-md-4">
+                                    <i class="fas fa-bullhorn text-danger fa-2x mb-2"></i>
+                                    <div>
+                                        <strong class="d-block" th:text="${pageInfo.totalCount}">0</strong>
+                                        <small class="text-muted">총 공지사항</small>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <i class="fas fa-eye text-info fa-2x mb-2"></i>
+                                    <div>
+                                        <strong class="d-block">5,678</strong>
+                                        <small class="text-muted">총 조회수</small>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <i class="fas fa-calendar-day text-success fa-2x mb-2"></i>
+                                    <div>
+                                        <strong class="d-block">2</strong>
+                                        <small class="text-muted">이번주 등록</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 공지사항 목록 -->
+            <div class="row">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-header bg-danger text-white">
+                            <h5 class="card-title mb-0">
+                                <i class="fas fa-list me-2"></i>공지사항 목록
+                                <small class="ms-2">
+                                    (총 <span th:text="${pageInfo.totalCount}">0</span>개)
+                                </small>
+                            </h5>
+                        </div>
+                        <div class="card-body p-0">
+                            <div th:if="${#lists.isEmpty(boardList)}" class="text-center py-5">
+                                <i class="fas fa-bullhorn fa-3x text-muted mb-3"></i>
+                                <h5 class="text-muted">등록된 공지사항이 없습니다</h5>
+                                <p class="text-muted">첫 번째 공지사항을 작성해보세요!</p>
+                                <a th:href="@{/board/write(type='notice')}" class="btn btn-danger">
+                                    <i class="fas fa-plus me-1"></i>공지사항 작성하기
+                                </a>
+                            </div>
+                            
+                            <div th:unless="${#lists.isEmpty(boardList)}" class="list-group list-group-flush">
+                                <div th:each="board : ${boardList}" class="list-group-item list-group-item-action notice-item">
+                                    <div class="row align-items-center">
+                                        <div class="col-md-8">
+                                            <div class="d-flex align-items-center mb-2">
+                                                <span class="badge bg-danger me-2">공지</span>
+                                                <span th:if="${board.isPinned}" class="badge bg-warning me-2">고정</span>
+                                                <span th:if="${board.isNotice}" class="badge bg-info me-2">중요</span>
+                                                <h6 class="mb-0">
+                                                    <a th:href="@{/board/detail/{id}(id=${board.boardId}, type='notice')}" 
+                                                       class="text-decoration-none text-danger fw-bold" 
+                                                       th:text="${board.title}">공지사항 제목</a>
+                                                </h6>
+                                            </div>
+                                            <div class="notice-preview text-muted small">
+                                                <span th:text="${#strings.abbreviate(board.content, 100)}">공지사항 내용 미리보기...</span>
+                                            </div>
+                                            <div class="notice-meta mt-2">
+                                                <small class="text-muted">
+                                                    <i class="fas fa-user me-1"></i><span th:text="${board.memberName}">관리자</span>
+                                                    <span class="mx-2">|</span>
+                                                    <i class="fas fa-calendar me-1"></i><span th:text="${#temporals.format(board.createdAt, 'yyyy-MM-dd HH:mm')}">2024-01-01 09:00</span>
+                                                </small>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-4 text-end">
+                                            <div class="notice-stats">
+                                                <div class="row text-center">
+                                                    <div class="col-6">
+                                                        <i class="fas fa-eye text-info"></i>
+                                                        <small class="d-block text-muted" th:text="${board.viewCount}">0</small>
+                                                    </div>
+                                                    <div class="col-6">
+                                                        <i class="fas fa-thumbs-up text-success"></i>
+                                                        <small class="d-block text-muted" th:text="${board.likeCount}">0</small>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 페이징 -->
+            <nav th:if="${pageInfo.totalPages > 1}" aria-label="공지사항 페이지 네비게이션" class="mt-4">
+                <ul class="pagination justify-content-center">
+                    <li class="page-item" th:classappend="${pageInfo.firstPage} ? 'disabled'">
+                        <a class="page-link" th:href="@{/board(type='notice', page=1, keyword=${keyword})}">
+                            <span>&laquo;&laquo;</span>
+                        </a>
+                    </li>
+                    <li class="page-item" th:classappend="${not pageInfo.hasPrevious} ? 'disabled'">
+                        <a class="page-link" th:href="@{/board(type='notice', page=${pageInfo.currentPage - 1}, keyword=${keyword})}">
+                            <span>&laquo;</span>
+                        </a>
+                    </li>
+                    <li th:each="pageNum : ${#numbers.sequence(pageInfo.startPage, pageInfo.endPage)}"
+                        class="page-item" th:classappend="${pageNum == pageInfo.currentPage} ? 'active'">
+                        <a class="page-link" th:href="@{/board(type='notice', page=${pageNum}, keyword=${keyword})}" th:text="${pageNum}">1</a>
+                    </li>
+                    <li class="page-item" th:classappend="${not pageInfo.hasNext} ? 'disabled'">
+                        <a class="page-link" th:href="@{/board(type='notice', page=${pageInfo.currentPage + 1}, keyword=${keyword})}">
+                            <span>&raquo;</span>
+                        </a>
+                    </li>
+                    <li class="page-item" th:classappend="${pageInfo.lastPage} ? 'disabled'">
+                        <a class="page-link" th:href="@{/board(type='notice', page=${pageInfo.totalPages}, keyword=${keyword})}">
+                            <span>&raquo;&raquo;</span>
+                        </a>
+                    </li>
+                </ul>
+            </nav>
+        </div>
+    </main>
+
+    <!-- 푸터 -->
+    <footer th:replace="~{layout/footer :: footer}"></footer>
+    
+    <!-- JavaScript -->
+    <div th:replace="~{layout/footer :: scripts}"></div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const noticeItems = document.querySelectorAll('.notice-item');
+            
+            noticeItems.forEach(item => {
+                item.addEventListener('mouseenter', function() {
+                    this.style.backgroundColor = '#f8f9fa';
+                });
+                
+                item.addEventListener('mouseleave', function() {
+                    this.style.backgroundColor = '';
+                });
+            });
+        });
+    </script>
+</body>
+</html>

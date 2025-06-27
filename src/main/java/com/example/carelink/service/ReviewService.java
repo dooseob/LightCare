@@ -1,5 +1,6 @@
 package com.example.carelink.service;
 
+import com.example.carelink.common.PageInfo;
 import com.example.carelink.dao.ReviewMapper;
 import com.example.carelink.dto.ReviewDTO;
 import lombok.RequiredArgsConstructor;
@@ -20,26 +21,47 @@ public class ReviewService {
     
     private final ReviewMapper reviewMapper;
     
+    private static final int DEFAULT_PAGE_SIZE = 10;
+    
     /**
      * 리뷰 목록 조회 (페이징 및 검색 포함)
      */
-    public List<ReviewDTO> getReviewList(int page, String keyword) {
-        log.info("리뷰 목록 조회 시작 - page: {}, keyword: {}", page, keyword);
+    public PageInfo<ReviewDTO> getReviewList(int page, String keyword) {
+        return getReviewList(page, keyword, null);
+    }
+    
+    /**
+     * 리뷰 목록 조회 (페이징, 검색, 평점 필터 포함)
+     */
+    public PageInfo<ReviewDTO> getReviewList(int page, String keyword, Integer minRating) {
+        log.info("리뷰 목록 조회 시작 - page: {}, keyword: {}, minRating: {}", page, keyword, minRating);
         
         try {
             // 검색 조건 설정
             ReviewDTO searchDTO = new ReviewDTO();
-            searchDTO.setPage((page - 1) * 10); // 페이지 번호를 offset으로 변환
-            searchDTO.setSize(10); // 한 페이지당 10개
+            // BaseDTO의 setPage() 메서드가 자동으로 offset을 계산해줌
+            searchDTO.setPage(page);
+            searchDTO.setSize(DEFAULT_PAGE_SIZE);
             
             if (keyword != null && !keyword.trim().isEmpty()) {
                 searchDTO.setSearchKeyword(keyword.trim());
             }
             
-            List<ReviewDTO> reviewList = reviewMapper.findReviewsWithSearch(searchDTO);
-            log.info("리뷰 목록 조회 완료 - 조회된 건수: {}", reviewList.size());
+            if (minRating != null) {
+                searchDTO.setMinRating(minRating);
+            }
             
-            return reviewList;
+            // 전체 리뷰 수 조회
+            int totalCount = reviewMapper.countReviewsWithSearch(searchDTO);
+            
+            // 리뷰 목록 조회
+            List<ReviewDTO> reviewList = reviewMapper.findReviewsWithSearch(searchDTO);
+            
+            log.info("리뷰 목록 조회 완료 - 조회된 건수: {}, 전체: {}", reviewList.size(), totalCount);
+            
+            // 페이징 정보 생성
+            return new PageInfo<>(reviewList, page, DEFAULT_PAGE_SIZE, totalCount);
+            
         } catch (Exception e) {
             log.error("리뷰 목록 조회 중 오류 발생", e);
             throw new RuntimeException("리뷰 목록을 불러오는 중 오류가 발생했습니다.", e);
@@ -233,6 +255,19 @@ public class ReviewService {
         }
         if (reviewDTO.getRating() == null || reviewDTO.getRating() < 1 || reviewDTO.getRating() > 5) {
             throw new IllegalArgumentException("평점은 1~5 사이의 값이어야 합니다.");
+        }
+    }
+
+    /**
+     * 전체 리뷰 수 조회 (통계용)
+     */
+    @Transactional(readOnly = true)
+    public int getReviewCount() {
+        try {
+            return reviewMapper.getReviewCount();
+        } catch (Exception e) {
+            log.error("리뷰 수 조회 중 오류 발생", e);
+            return 0; // 오류 시 0 반환
         }
     }
 } 

@@ -14,7 +14,7 @@ import java.util.List;
 public interface JobMapper {
     
     /**
-     * 구인구직 목록 조회 (검색 포함)
+     * 구인구직 목록 조회 (검색 포함) - 메인 검색 메서드
      */
     List<JobDTO> findJobsWithSearch(JobDTO searchDTO);
     
@@ -27,7 +27,6 @@ public interface JobMapper {
      * 구인구직 상세 정보 조회
      */
     JobDTO findJobById(@Param("jobId") Long jobId);
-    
     
     /**
      * 구인구직 등록
@@ -50,12 +49,17 @@ public interface JobMapper {
     List<JobDTO> getPopularJobs();
     
     /**
-     * 구인구직 검색
+     * 구인구직 검색 (별칭)
      */
     List<JobDTO> searchJobs(JobDTO searchDTO);
     
     /**
-     * 구인구직 총 개수 조회
+     * 검색 조건에 따른 구인구직 총 개수 조회
      */
-    int getJobCount(JobDTO searchDTO);
+    int countJobsWithSearch(JobDTO searchDTO);
+
+    /**
+     * 전체 구인구직 수 조회 (통계용 - 검색 조건 없음)
+     */
+    int getJobCount();
 } 

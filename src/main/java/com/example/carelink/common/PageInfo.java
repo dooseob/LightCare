@@ -22,6 +22,8 @@ public class PageInfo<T> {
     private int endPage;            // 끝 페이지 번호
     private boolean hasPrevious;    // 이전 페이지 존재 여부
     private boolean hasNext;        // 다음 페이지 존재 여부
+    private boolean firstPage;      // 첫 페이지 여부
+    private boolean lastPage;       // 마지막 페이지 여부
     
     /**
      * 페이징 정보 생성
@@ -46,6 +48,8 @@ public class PageInfo<T> {
         // 이전/다음 페이지 존재 여부
         this.hasPrevious = currentPage > 1;
         this.hasNext = currentPage < totalPages;
+        this.firstPage = currentPage == 1;
+        this.lastPage = currentPage == totalPages;
     }
     
     /**

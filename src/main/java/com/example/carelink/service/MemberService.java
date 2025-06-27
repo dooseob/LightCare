@@ -145,4 +145,17 @@ public class MemberService {
             throw new RuntimeException("회원 탈퇴 처리 중 오류가 발생했습니다.", e);
         }
     }
+
+    /**
+     * 전체 회원 수 조회 (통계용)
+     */
+    @Transactional(readOnly = true)
+    public int getMemberCount() {
+        try {
+            return memberMapper.getMemberCount();
+        } catch (Exception e) {
+            log.error("회원 수 조회 중 오류 발생", e);
+            return 0; // 오류 시 0 반환
+        }
+    }
 } 
