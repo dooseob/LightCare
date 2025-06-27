@@ -70,11 +70,8 @@
                 ORDER BY r.created_at DESC
             </otherwise>
         </choose>
-        <if test="size != null and size > 0">
-            LIMIT #{size}
-        </if>
-        <if test="offset != null and offset >= 0">
-            OFFSET #{offset}
+        <if test="size != null and size > 0 and offset != null and offset >= 0">
+            LIMIT #{size} OFFSET #{offset}
         </if>
     </select>
 
@@ -216,6 +213,13 @@
         SELECT COUNT(*)
         FROM review
         WHERE facility_id = #{facilityId} AND is_deleted = false AND is_visible = true
+    </select>
+
+    <!-- 전체 리뷰 수 조회 (통계용) -->
+    <select id="getReviewCount" resultType="int">
+        SELECT COUNT(*) 
+        FROM review 
+        WHERE is_deleted = false AND is_visible = true
     </select>
 
 </mapper> 

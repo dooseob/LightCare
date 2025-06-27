@@ -40,6 +40,6 @@ public class BaseDTO {
      */
     public void setPage(int page) {
         this.page = page;
-        this.offset = getOffset();  // offset 자동 계산
+        this.offset = (page - 1) * this.pageSize;  // offset 자동 계산
     }
 } 

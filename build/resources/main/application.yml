@@ -15,8 +15,20 @@ spring:
     username: root
     password: mysql
     driver-class-name: com.mysql.cj.jdbc.Driver
-    
-      # 기존 MySQL Workbench 데이터베이스 사용
+    hikari:
+      connection-timeout: 30000
+      idle-timeout: 600000
+      max-lifetime: 1800000
+      maximum-pool-size: 10
+      minimum-idle: 5
+      pool-name: CareLink-HikariCP
+      auto-commit: false
+      transaction-isolation: TRANSACTION_READ_COMMITTED
+  #sql:
+   # init:
+    #  mode: always
+     # schema-locations: classpath:schema.sql
+      #data-locations: classpath:sample_data.sql
 
 # MyBatis 설정
 mybatis:
@@ -32,8 +44,11 @@ mybatis:
 logging:
   level:
     com.example.carelink: DEBUG
+    com.example.carelink.dao: DEBUG
     org.springframework.jdbc: DEBUG
     org.mybatis: DEBUG
+    org.apache.ibatis: DEBUG
+    org.springframework.transaction: DEBUG
 
 # Thymeleaf 설정
 thymeleaf:

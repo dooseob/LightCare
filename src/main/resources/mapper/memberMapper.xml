@@ -159,4 +159,11 @@
         WHERE member_id = #{memberId}
     </update>
 
+    <!-- 전체 회원 수 조회 (통계용) -->
+    <select id="getMemberCount" resultType="int">
+        SELECT COUNT(*) 
+        FROM member 
+        WHERE is_deleted = false AND is_active = true
+    </select>
+
 </mapper> 

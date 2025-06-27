@@ -24,6 +24,11 @@ public interface BoardMapper {
     BoardDTO getBoardById(@Param("boardId") Long boardId);
     
     /**
+     * 게시글 상세 정보 조회 (삭제된 것 포함)
+     */
+    BoardDTO getBoardByIdIncludeDeleted(@Param("boardId") Long boardId);
+    
+    /**
      * 게시글 등록
      */
     int insertBoard(BoardDTO boardDTO);
@@ -68,15 +73,7 @@ public interface BoardMapper {
      */
     List<BoardDTO> getPopularBoardsByCategory(@Param("category") String category);
     
-    /**
-     * 이전 게시글 조회
-     */
-    BoardDTO getPreviousBoard(@Param("currentId") Long currentId, @Param("category") String category);
-    
-    /**
-     * 다음 게시글 조회
-     */
-    BoardDTO getNextBoard(@Param("currentId") Long currentId, @Param("category") String category);
+
     
     /**
      * 게시글 추천수 증가
@@ -87,4 +84,24 @@ public interface BoardMapper {
      * 게시글 추천수 감소
      */
     void decrementLikeCount(@Param("boardId") Long boardId);
+
+    /**
+     * 이전 게시글 조회
+     */
+    BoardDTO getPreviousBoard(@Param("boardId") Long boardId);
+
+    /**
+     * 다음 게시글 조회
+     */
+    BoardDTO getNextBoard(@Param("boardId") Long boardId);
+    
+    /**
+     * 모든 게시글 상태 조회 (개발용 - 삭제된 것 포함)
+     */
+    List<BoardDTO> getAllBoardsWithStatus();
+    
+    /**
+     * 기존 데이터의 is_active 필드 업데이트 (임시 - 개발용)
+     */
+    int updateExistingDataActiveStatus();
 } 

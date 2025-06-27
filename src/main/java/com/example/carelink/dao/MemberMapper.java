@@ -72,4 +72,9 @@ public interface MemberMapper {
      * 회원 상태 변경 (활성화/비활성화)
      */
     void updateMemberStatus(@Param("memberId") Long memberId, @Param("isActive") boolean isActive);
+
+    /**
+     * 전체 회원 수 조회 (통계용)
+     */
+    int getMemberCount();
 } 

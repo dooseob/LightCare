@@ -111,4 +111,11 @@
         WHERE region = #{region} AND is_deleted = 0
     </select>
 
+    <!-- 전체 시설 수 조회 (통계용) -->
+    <select id="getFacilityCount" resultType="int">
+        SELECT COUNT(*) 
+        FROM facility 
+        WHERE is_deleted = 0
+    </select>
+
 </mapper> 

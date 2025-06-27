@@ -6,6 +6,7 @@ import lombok.EqualsAndHashCode;
 
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;
+import java.time.LocalDateTime;
 
 /**
  * 정보 게시판 DTO
@@ -42,39 +43,48 @@ public class BoardDTO extends BaseDTO {
     private Long attachmentSize;    // 첨부파일 크기
     
     // 상태 관리
-    private boolean isNotice;       // 공지사항 여부
-    private boolean isSecret;       // 비밀글 여부
-    private boolean isActive;       // 활성 상태
-    private String status;          // 상태 (ACTIVE, HIDDEN, DELETED)
+    private Boolean isNotice;        // 공지사항 여부
+    private Boolean isSecret;        // 비밀글 여부
+    private Boolean isActive;        // 활성 상태 (true: 활성, false: 비활성)
+    private Boolean isDeleted;       // 삭제 여부 (true: 삭제됨, false: 활성)
+    private String status;           // 상태 (ACTIVE, HIDDEN, DELETED)
     
     // 카테고리
     private String category;        // 카테고리
     private String subCategory;     // 서브 카테고리
     
     // 우선순위 (상단 고정용)
-    private Integer priority;       // 우선순위
-    private boolean isPinned;       // 상단 고정 여부
+    private Integer priority;        // 우선순위
+    private Boolean isPinned;        // 상단 고정 여부
     
     // 답글/댓글 관련
-    private Long parentBoardId;     // 부모 게시글 ID (답글인 경우)
-    private Integer replyDepth;     // 답글 깊이
-    private Integer replyOrder;     // 답글 순서
+    private Long parentBoardId;      // 부모 게시글 ID (답글인 경우)
+    private Integer replyDepth;      // 답글 깊이
+    private Integer replyOrder;      // 답글 순서
     
     // 검색용 필드
-    private String searchKeyword;   // 검색 키워드
-    private String searchType;      // 검색 유형 (TITLE, CONTENT, AUTHOR, ALL)
-    private String searchCategory;  // 검색 카테고리
+    private String searchKeyword;    // 검색 키워드
+    private String searchType;       // 검색 유형 (TITLE, CONTENT, AUTHOR, ALL)
+    private String searchCategory;   // 검색 카테고리
     
     // 정렬용
-    private String sortBy;          // 정렬 기준 (LATEST, VIEW_COUNT, LIKE_COUNT)
-    private String sortOrder;       // 정렬 순서 (ASC, DESC)
+    private String sortBy;           // 정렬 기준 (LATEST, VIEW_COUNT, LIKE_COUNT)
+    private String sortOrder;        // 정렬 순서 (ASC, DESC)
     
     // 태그
-    private String tags;            // 태그 (콤마로 구분)
+    private String tags;             // 태그 (콤마로 구분)
     
     // SEO 관련
-    private String metaDescription; // 메타 설명
-    private String metaKeywords;    // 메타 키워드
+    private String metaDescription;  // 메타 설명
+    private String metaKeywords;     // 메타 키워드
+    
+    // 페이징을 위한 필드
+    private int page = 1;
+    private int size = 10;
+    private int offset = 0;
+    
+    private LocalDateTime createdAt;  // 생성일시
+    private LocalDateTime updatedAt;  // 수정일시
     
     /**
      * 작성자 표시명 설정
@@ -98,5 +108,90 @@ public class BoardDTO extends BaseDTO {
     public boolean getIsNew() {
         if (this.getCreatedAt() == null) return false;
         return this.getCreatedAt().isAfter(java.time.LocalDateTime.now().minusDays(1));
+    }
+    
+    /**
+     * 인기 글 여부 확인 (조회수 100 이상 또는 추천수 10 이상)
+     */
+    public boolean getIsHot() {
+        return (this.viewCount != null && this.viewCount >= 100) || 
+               (this.likeCount != null && this.likeCount >= 10);
+    }
+    
+    /**
+     * 댓글이 있는지 확인
+     */
+    public boolean getHasComments() {
+        return this.commentCount != null && this.commentCount > 0;
+    }
+    
+    /**
+     * 공지사항 여부 getter (Thymeleaf 호환)
+     */
+    public Boolean getIsNotice() {
+        return this.isNotice;
+    }
+    
+    /**
+     * 공지사항 여부 setter (Thymeleaf 호환)
+     */
+    public void setIsNotice(Boolean isNotice) {
+        this.isNotice = isNotice;
+    }
+    
+    /**
+     * 비밀글 여부 getter (Thymeleaf 호환)
+     */
+    public Boolean getIsSecret() {
+        return this.isSecret;
+    }
+    
+    /**
+     * 비밀글 여부 setter (Thymeleaf 호환)
+     */
+    public void setIsSecret(Boolean isSecret) {
+        this.isSecret = isSecret;
+    }
+    
+    /**
+     * 삭제 여부 getter (Thymeleaf 호환)
+     */
+    public Boolean getIsDeleted() {
+        return this.isDeleted;
+    }
+    
+    /**
+     * 삭제 여부 setter (Thymeleaf 호환)
+     */
+    public void setIsDeleted(Boolean isDeleted) {
+        this.isDeleted = isDeleted;
+    }
+    
+    /**
+     * 상단 고정 여부 getter (Thymeleaf 호환)
+     */
+    public Boolean getIsPinned() {
+        return this.isPinned;
+    }
+    
+    /**
+     * 상단 고정 여부 setter (Thymeleaf 호환)
+     */
+    public void setIsPinned(Boolean isPinned) {
+        this.isPinned = isPinned;
+    }
+    
+    /**
+     * 활성 상태 getter (Thymeleaf 호환)
+     */
+    public Boolean getIsActive() {
+        return this.isActive;
+    }
+    
+    /**
+     * 활성 상태 setter (Thymeleaf 호환)
+     */
+    public void setIsActive(Boolean isActive) {
+        this.isActive = isActive;
     }
 } 

@@ -4,7 +4,7 @@
 -- ================================================
 
 -- 데이터베이스 생성 (필요 시)
--- CREATE DATABASE carelink DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+CREATE DATABASE carelink DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 USE carelink;
 
 -- ================================================
@@ -207,58 +207,66 @@ CREATE INDEX idx_board_category ON board(category);
 -- 기본 데이터 삽입 (테스트용)
 -- ================================================
 
--- 관리자 계정 생성
-INSERT INTO member (user_id, password, name, email, role, is_active) VALUES
-('admin', 'admin123', '관리자', 'admin@carelink.com', 'ADMIN', TRUE);
+-- 관리자 계정 및 기본 회원 계정 생성
+INSERT INTO member (user_id, password, name, email, phone, role, address, is_active, login_fail_count, created_at, updated_at, is_deleted) VALUES
+('admin', 'admin123', '관리자', 'admin@carelink.com', '02-1234-5678', 'ADMIN', '서울시 종로구 세종대로 1', TRUE, 0, NOW(), NOW(), FALSE),
+('user01', 'user123', '김철수', 'kim.cs@example.com', '010-1111-2222', 'USER', '서울시 강남구 테헤란로 123', TRUE, 0, NOW(), NOW(), FALSE),
+('user02', 'user123', '이영희', 'lee.yh@example.com', '010-2222-3333', 'USER', '부산시 해운대구 센텀중앙로 79', TRUE, 0, NOW(), NOW(), FALSE),
+('user03', 'user123', '박민수', 'park.ms@example.com', '010-3333-4444', 'USER', '대구시 중구 동성로 1', TRUE, 0, NOW(), NOW(), FALSE),
+('user04', 'user123', '최지은', 'choi.je@example.com', '010-4444-5555', 'USER', '인천시 남동구 구월동 1234', TRUE, 0, NOW(), NOW(), FALSE),
+('facility01', 'facility123', '서울요양원장', 'seoul.admin@example.com', '02-5555-6666', 'FACILITY', '서울시 서초구 서초대로 123', TRUE, 0, NOW(), NOW(), FALSE),
+('facility02', 'facility123', '부산실버타운장', 'busan.admin@example.com', '051-7777-8888', 'FACILITY', '부산시 부산진구 서면로 456', TRUE, 0, NOW(), NOW(), FALSE);
 
--- 샘플 시설 유형별 데이터
-INSERT INTO facility (
-    facility_name, facility_type, address, detail_address, phone,
-    latitude, longitude, description, facility_image, homepage,
-    capacity, current_occupancy, operating_hours, features,
-    average_rating, review_count, registered_member_id,
-    is_approved, approval_status, created_at, updated_at, is_deleted
-) VALUES
--- 요양원 1
-('편안한 요양원', 'NURSING_HOME', '서울시 강남구 테헤란로 123', '삼성빌딩 5층', '02-1234-5678',
- 37.501274, 127.039585, '어르신들을 위한 편안한 공간', '/images/facility1.jpg', 'http://www.peacecare.com',
- 100, 76, '09:00~18:00', '정원, 물리치료실, 전문 간호사 상주',
- 4.5, 12, 1,
- TRUE, 'APPROVED', NOW(), NOW(), FALSE),
+-- 시설 데이터
+INSERT INTO facility (facility_name, facility_type, address, detail_address, phone, latitude, longitude, description, capacity, current_occupancy, operating_hours, features, average_rating, review_count, registered_member_id, is_approved, approval_status, created_at, updated_at, is_deleted) VALUES
+('서울 행복요양원', 'NURSING_HOME', '서울시 강남구 테헤란로 123', '2층 201호', '02-1111-2222', 37.500913, 127.037149, '24시간 전문 간병 서비스를 제공하는 프리미엄 요양원입니다.', 50, 35, '24시간 운영', '24시간 간병서비스, 물리치료실, 인지치료 프로그램', 4.5, 8, 6, TRUE, 'APPROVED', NOW(), NOW(), FALSE),
+('부산 바다뷰 실버타운', 'NURSING_HOME', '부산시 해운대구 센텀중앙로 79', '1층', '051-3333-4444', 35.169188, 129.132800, '바다가 보이는 아름다운 환경의 실버타운입니다.', 80, 60, '08:00-22:00', '바다뷰, 실버카페, 도서관, 수영장', 4.2, 12, 7, TRUE, 'APPROVED', NOW(), NOW(), FALSE),
+('대전 건강 데이케어센터', 'DAY_CARE', '대전시 유성구 과학로 123', 'B1층', '042-5555-6666', 36.350411, 127.384548, '주간보호 전문 센터로 다양한 프로그램을 운영합니다.', 30, 20, '09:00-18:00', '송영버스, 급식서비스, 건강관리 프로그램', 4.0, 6, 6, TRUE, 'APPROVED', NOW(), NOW(), FALSE),
+('인천 평안 요양병원', 'HOSPITAL', '인천시 남동구 구월동 1234', '3-5층', '032-7777-8888', 37.456256, 126.731536, '의료진이 상주하는 전문 요양병원입니다.', 100, 75, '24시간 운영', '의료진 상주, 응급실, 재활치료실, 검사실', 4.3, 15, 6, TRUE, 'APPROVED', NOW(), NOW(), FALSE),
+('경기 사랑 재가센터', 'DAY_CARE', '경기도 수원시 팔달구 중부대로 123', '1층', '031-9999-0000', 37.283897, 127.009121, '재가 요양 서비스 전문 센터입니다.', 25, 18, '08:00-20:00', '재가방문, 목욕서비스, 간병서비스', 3.8, 4, 6, TRUE, 'APPROVED', NOW(), NOW(), FALSE);
 
--- 병원형 요양시설
-('힐링케어 병원', 'HOSPITAL', '부산시 해운대구 센텀로 88', '센텀타워 3층', '051-987-6543',
- 35.170939, 129.130951, '의료 중심 요양병원', '/images/facility2.jpg', 'http://www.healingcare.co.kr',
- 150, 142, '24시간 운영', 'MRI, 물리치료, 전문의 진료',
- 4.8, 34, 2,
- TRUE, 'APPROVED', NOW(), NOW(), FALSE),
+-- 구인구직 데이터
+INSERT INTO job_posting (title, content, job_type, work_type, position, recruit_count, salary_type, salary_min, salary_max, salary_description, work_location, work_hours, experience, education, qualifications, benefits, start_date, end_date, contact_name, contact_phone, contact_email, status, member_id, facility_id, priority, is_highlight, created_at, updated_at, is_deleted) VALUES
+('[서울 행복요양원] 요양보호사 정규직 모집', '경력 3년 이상 요양보호사를 모집합니다. 성실하고 책임감 있는 분을 찾습니다.', 'RECRUIT', 'FULL_TIME', '요양보호사', 3, 'MONTHLY', 2800000, 3200000, '경력에 따라 차등 지급', '서울시 강남구', '3교대 (08:00-16:00, 16:00-24:00, 24:00-08:00)', '3년 이상', '고등학교 졸업 이상', '요양보호사 자격증 필수', '4대보험, 퇴직금, 명절상여금, 교육비 지원', '2024-01-15', '2024-02-15', '김과장', '02-1111-2222', 'recruit@seoul-happy.com', 'ACTIVE', 6, 1, 5, FALSE, NOW(), NOW(), FALSE),
+('[부산 바다뷰 실버타운] 간호사 모집', '실버타운에서 근무할 간호사를 모집합니다. 노인 간호 경험자 우대', 'RECRUIT', 'FULL_TIME', '간호사', 2, 'MONTHLY', 3500000, 4000000, '야간근무수당 별도', '부산시 해운대구', '2교대 (09:00-21:00, 21:00-09:00)', '1년 이상', '간호대학 졸업', '간호사 면허증 필수', '4대보험, 퇴직금, 야간수당, 주말수당', '2024-01-20', '2024-02-20', '이팀장', '051-3333-4444', 'hr@busan-silver.com', 'ACTIVE', 7, 2, 3, TRUE, NOW(), NOW(), FALSE),
+('[경력직 요양보호사] 좋은 근무환경 찾습니다', '10년 경력의 요양보호사입니다. 야간근무 가능하며 성실히 근무하겠습니다.', 'SEARCH', 'FULL_TIME', '요양보호사', 1, 'MONTHLY', 2500000, 3000000, '야간수당 포함 희망', '서울/경기 지역', '3교대 가능', '10년', '고등학교 졸업', '요양보호사 1급 자격증', '4대보험, 퇴직금', '2024-01-10', '2024-03-10', '홍길동', '010-1234-5678', 'hong@example.com', 'ACTIVE', 2, NULL, 0, FALSE, NOW(), NOW(), FALSE),
+('대전 데이케어센터 사회복지사 모집', '데이케어센터에서 근무할 사회복지사를 모집합니다.', 'RECRUIT', 'FULL_TIME', '사회복지사', 1, 'MONTHLY', 2600000, 2800000, '기본급 + 수당', '대전시 유성구', '09:00-18:00 (월-토)', '신입 가능', '사회복지학과 졸업', '사회복지사 2급 이상', '4대보험, 퇴직금, 교육비 지원', '2024-01-25', '2024-02-25', '박실장', '042-5555-6666', 'welfare@daejeon.com', 'ACTIVE', 6, 3, 2, FALSE, NOW(), NOW(), FALSE),
+('물리치료사 파트타임 구직합니다', '물리치료 경력 5년으로 파트타임으로 근무하고 싶습니다.', 'SEARCH', 'PART_TIME', '물리치료사', 1, 'HOURLY', 25000, 30000, '시간당 희망', '수도권 지역', '주 3일 이내', '5년', '물리치료학과 졸업', '물리치료사 면허증', '4대보험', '2024-01-12', '2024-02-12', '김물리', '010-9999-8888', 'pt.kim@example.com', 'ACTIVE', 3, NULL, 0, FALSE, NOW(), NOW(), FALSE); 
 
--- 데이케어센터
-('행복한 데이케어', 'DAY_CARE', '대전시 유성구 대학로 100', '유성빌딩 2층', '042-222-3344',
- 36.362469, 127.356437, '낮 동안 어르신 돌봄 서비스 제공', '/images/facility3.jpg', 'http://www.daycarehappy.com',
- 80, 40, '08:00~20:00', '인지 프로그램, 식사 제공, 차량 운행',
- 4.2, 8, 1,
- FALSE, 'PENDING', NOW(), NOW(), FALSE);
+-- 리뷰 데이터 
+INSERT INTO review (facility_id, member_id, title, content, rating, service_rating, facility_rating, staff_rating, price_rating, like_count, dislike_count, view_count, is_visible, status, parent_review_id, reply_count, reply_depth, created_at, updated_at, is_deleted) VALUES
+(1, 2, '서울 행복요양원 이용 후기', '어머니를 모시고 있는데 시설도 깨끗하고 직원분들이 정말 친절합니다. 특히 간병서비스가 24시간 제공되어 안심이 됩니다. 추천합니다!', 5, 5, 4, 5, 4, 8, 0, 45, TRUE, 'ACTIVE', NULL, 0, 0, NOW(), NOW(), FALSE),
+(1, 3, '만족스러운 요양원', '아버지가 편안하게 지내고 계세요. 물리치료 프로그램도 잘 되어 있고 식사도 맛있다고 하십니다.', 4, 4, 4, 4, 4, 5, 0, 32, TRUE, 'ACTIVE', NULL, 0, 0, NOW(), NOW(), FALSE),
+(1, 4, '좋은 선택이었습니다', '처음엔 망설였는데 가족 모두 만족하고 있습니다. 인지치료 프로그램이 특히 좋네요.', 4, 4, 4, 5, 3, 3, 0, 28, TRUE, 'ACTIVE', NULL, 0, 0, NOW(), NOW(), FALSE),
+(2, 2, '부산 바다뷰 실버타운 추천', '바다가 보이는 뷰가 정말 좋아요. 할머니가 매일 바다를 보며 산책하신다고 하니 마음이 놓입니다.', 5, 4, 5, 4, 4, 12, 1, 67, TRUE, 'ACTIVE', NULL, 0, 0, NOW(), NOW(), FALSE),
+(2, 3, '시설이 현대적이에요', '최신 시설로 잘 갖춰져 있고 수영장도 있어서 좋습니다. 다만 비용이 좀 있는 편이에요.', 4, 4, 5, 4, 3, 6, 0, 39, TRUE, 'ACTIVE', NULL, 0, 0, NOW(), NOW(), FALSE),
+(2, 4, '실버카페가 인상적', '실버카페에서 다른 어르신들과 대화하며 시간을 보내신다고 하네요. 사회활동에 도움이 됩니다.', 4, 4, 4, 4, 4, 4, 0, 25, TRUE, 'ACTIVE', NULL, 0, 0, NOW(), NOW(), FALSE),
+(3, 2, '대전 데이케어센터 이용기', '주간보호로 이용하고 있는데 프로그램이 다양해서 좋습니다. 송영버스도 편리하고요.', 4, 4, 4, 4, 4, 7, 0, 41, TRUE, 'ACTIVE', NULL, 0, 0, NOW(), NOW(), FALSE),
+(3, 5, '건강관리 프로그램 만족', '건강관리 프로그램이 체계적으로 잘 되어 있어요. 혈압, 혈당 관리도 꼼꼼히 해주십니다.', 4, 5, 3, 4, 4, 5, 0, 33, TRUE, 'ACTIVE', NULL, 0, 0, NOW(), NOW(), FALSE),
+(4, 3, '인천 평안 요양병원 후기', '의료진이 상주해서 안심이 됩니다. 응급상황에도 빠르게 대응해주셔서 감사했습니다.', 5, 5, 4, 5, 4, 9, 0, 52, TRUE, 'ACTIVE', NULL, 0, 0, NOW(), NOW(), FALSE),
+(4, 4, '전문적인 의료서비스', '재활치료실 시설이 좋고 물리치료 선생님들이 전문적으로 치료해주십니다.', 4, 4, 4, 4, 4, 6, 0, 37, TRUE, 'ACTIVE', NULL, 0, 0, NOW(), NOW(), FALSE),
+(5, 2, '경기 사랑 재가센터 이용 후기', '재가 서비스로 이용하고 있는데 방문 시간도 정확하고 서비스 품질이 좋습니다.', 4, 4, 4, 4, 4, 4, 0, 29, TRUE, 'ACTIVE', NULL, 0, 0, NOW(), NOW(), FALSE),
+(1, 5, '감사합니다', '직원 분들의 세심한 배려에 감사드립니다. 어머니가 많이 좋아지셨어요.', 5, 5, 4, 5, 4, 2, 0, 18, TRUE, 'ACTIVE', NULL, 0, 0, NOW(), NOW(), FALSE);
 
--- 샘플 시설 데이터
-INSERT INTO facility (facility_name, facility_type, address, phone, latitude, longitude, description, registered_member_id, is_approved, approval_status) VALUES
-('수원요양원', 'NURSING_HOME', '경기도 수원시 영통구', '031-123-4567', 37.2636, 127.0286, '쾌적하고 안전한 요양 환경을 제공합니다.', 2, TRUE, 'APPROVED');
+-- 게시판 데이터
+INSERT INTO board (board_type, title, content, member_id, view_count, like_count, comment_count, is_notice, is_secret, is_active, status, category, sub_category, priority, is_pinned, parent_board_id, reply_depth, reply_order, tags, meta_description, meta_keywords, created_at, updated_at, is_deleted) VALUES
+('NOTICE', '라이트케어 서비스 오픈 안내', '안녕하세요. 라이트케어 요양원 구인구직 플랫폼이 정식 오픈되었습니다. 많은 이용 부탁드립니다.', 1, 125, 15, 3, TRUE, FALSE, TRUE, 'ACTIVE', 'NOTICE', '서비스', 10, TRUE, NULL, 0, 0, '오픈,안내,서비스', '라이트케어 서비스 오픈 안내', '라이트케어,오픈,서비스,요양원', NOW(), NOW(), FALSE),
+('INFO', '요양원 선택 시 고려사항', '좋은 요양원을 선택하기 위해 고려해야 할 중요한 사항들을 정리해드립니다. 1. 시설 환경 2. 직원의 전문성 3. 의료 서비스 4. 프로그램 다양성 5. 비용 투명성', 1, 89, 12, 5, FALSE, FALSE, TRUE, 'ACTIVE', 'INFO', '가이드', 5, FALSE, NULL, 0, 0, '요양원,선택,가이드', '요양원 선택 가이드', '요양원,선택,가이드,시설', NOW(), NOW(), FALSE),
+('QNA', '요양보험 적용 관련 문의', '국민건강보험공단에서 시행하는 요양보험이 어떤 시설에 적용되는지 궁금합니다.', 2, 67, 3, 2, FALSE, FALSE, TRUE, 'ACTIVE', 'QNA', '보험', 0, FALSE, NULL, 0, 0, '요양보험,문의', '요양보험 적용 관련 문의', '요양보험,건강보험,적용', NOW(), NOW(), FALSE),
+('FAQ', '자주 묻는 질문 모음', 'Q1. 입소 절차는 어떻게 되나요? A1. 상담 → 견학 → 서류 제출 → 입소 계약 순으로 진행됩니다. Q2. 면회 시간은 언제인가요? A2. 평일 오후 2시~6시, 주말 오전 10시~오후 6시입니다.', 1, 156, 8, 1, FALSE, FALSE, TRUE, 'ACTIVE', 'FAQ', '일반', 3, FALSE, NULL, 0, 0, 'FAQ,자주묻는질문', '자주 묻는 질문 모음', 'FAQ,질문,답변,입소', NOW(), NOW(), FALSE),
+('INFO', '노인장기요양보험 제도 안내', '노인장기요양보험 제도에 대해 자세히 설명드립니다. 신청 방법, 등급 판정, 급여 내용 등을 포함합니다.', 1, 98, 7, 4, FALSE, FALSE, TRUE, 'ACTIVE', 'INFO', '제도', 2, FALSE, NULL, 0, 0, '장기요양보험,제도,안내', '노인장기요양보험 제도 안내', '장기요양보험,노인,제도,신청', NOW(), NOW(), FALSE),
+('QNA', '월 이용료는 얼마인가요?', '부모님 모실 요양원을 찾고 있는데 일반적인 월 이용료가 궁금합니다.', 3, 134, 2, 6, FALSE, FALSE, TRUE, 'ACTIVE', 'QNA', '비용', 0, FALSE, NULL, 0, 0, '이용료,비용,문의', '월 이용료 문의', '이용료,비용,요양원,월비용', NOW(), NOW(), FALSE),
+('INFO', '어르신 건강관리 팁', '어르신들의 건강한 생활을 위한 일상 관리 팁을 공유합니다. 식사, 운동, 수면, 정신건강 관리 방법을 포함합니다.', 1, 76, 11, 3, FALSE, FALSE, TRUE, 'ACTIVE', 'INFO', '건강', 1, FALSE, NULL, 0, 0, '건강관리,어르신,팁', '어르신 건강관리 팁', '건강관리,어르신,노인,건강,팁', NOW(), NOW(), FALSE),
+('QNA', '면회 시간과 규정이 궁금해요', '코로나19 이후 면회 시간이나 규정이 어떻게 바뀌었는지 알고 싶습니다.', 4, 45, 1, 1, FALSE, FALSE, TRUE, 'ACTIVE', 'QNA', '면회', 0, FALSE, NULL, 0, 0, '면회,시간,규정', '면회 시간 규정 문의', '면회,시간,규정,코로나', NOW(), NOW(), FALSE),
+('INFO', '재활 프로그램 종류와 효과', '요양원에서 제공하는 다양한 재활 프로그램들과 그 효과에 대해 알아봅시다.', 1, 63, 9, 2, FALSE, FALSE, TRUE, 'ACTIVE', 'INFO', '재활', 1, FALSE, NULL, 0, 0, '재활,프로그램,효과', '재활 프로그램 안내', '재활,프로그램,물리치료,작업치료', NOW(), NOW(), FALSE),
+('QNA', '식사 메뉴는 어떻게 제공되나요?', '요양원의 식사 메뉴 구성과 특별식 제공 여부가 궁금합니다.', 5, 58, 4, 3, FALSE, FALSE, TRUE, 'ACTIVE', 'QNA', '식사', 0, FALSE, NULL, 0, 0, '식사,메뉴,급식', '식사 메뉴 문의', '식사,메뉴,급식,요양원', NOW(), NOW(), FALSE);
 
--- 샘플 구인구직 데이터
-INSERT INTO job_posting (title, content, job_type, work_type, position, member_id, facility_id, status) VALUES
-('요양보호사 모집', '경력 요양보호사를 모집합니다.', 'RECRUIT', 'FULL_TIME', '요양보호사', 2, 1, 'ACTIVE'),
-('간병인 구직', '성실한 간병인입니다.', 'SEARCH', 'PART_TIME', '간병인', 3, NULL, 'ACTIVE'); 
+-- 데이터 삽입 완료 메시지
+SELECT '라이트케어 데이터베이스 초기화가 완료되었습니다!' as message;
+SELECT CONCAT('회원: ', COUNT(*), '명') as member_count FROM member WHERE is_deleted = FALSE;
+SELECT CONCAT('시설: ', COUNT(*), '개') as facility_count FROM facility WHERE is_deleted = FALSE;
+SELECT CONCAT('구인구직: ', COUNT(*), '건') as job_count FROM job_posting WHERE is_deleted = FALSE;  
+SELECT CONCAT('리뷰: ', COUNT(*), '건') as review_count FROM review WHERE is_deleted = FALSE;
+SELECT CONCAT('게시글: ', COUNT(*), '건') as board_count FROM board WHERE is_deleted = FALSE; 
+select * from board;
 
--- 게시판 테스트 데이터
-INSERT INTO board (board_type, title, content, member_id, view_count, like_count, comment_count, is_notice, is_active, status, category, created_at, updated_at) VALUES
-('NOTICE', '시스템 점검 안내', '시스템 점검으로 인한 서비스 일시 중단 안내드립니다.\n\n점검 일시: 2024년 1월 15일 오전 2시 ~ 오전 6시\n점검 내용: 서버 업그레이드 및 보안 패치\n\n이용에 불편을 드려 죄송합니다.', 1, 150, 5, 3, true, true, 'ACTIVE', 'NOTICE', NOW(), NOW()),
-('NOTICE', '새로운 기능 추가 안내', '요양원 검색 기능이 개선되었습니다.\n\n주요 개선사항:\n- 지도 기반 검색 기능 추가\n- 필터링 옵션 강화\n- 리뷰 시스템 개선\n\n많은 이용 부탁드립니다.', 1, 89, 12, 7, true, true, 'ACTIVE', 'NOTICE', DATE_SUB(NOW(), INTERVAL 1 DAY), DATE_SUB(NOW(), INTERVAL 1 DAY)),
-
-('INFO', '요양원 선택 시 고려사항', '좋은 요양원을 선택하기 위한 체크리스트를 공유합니다.\n\n1. 시설 환경 확인\n- 청결도 및 안전시설\n- 개인 공간의 프라이버시\n- 공용 공간의 편의성\n\n2. 의료 서비스\n- 응급상황 대응 체계\n- 정기 건강검진\n- 전문의 방문 여부\n\n3. 프로그램 운영\n- 레크리에이션 프로그램\n- 물리치료 프로그램\n- 사회활동 프로그램', 2, 234, 18, 12, false, true, 'ACTIVE', 'INFO', DATE_SUB(NOW(), INTERVAL 2 DAY), DATE_SUB(NOW(), INTERVAL 2 DAY)),
-('INFO', '간병인 자격증 취득 가이드', '요양보호사 자격증 취득 방법에 대해 안내드립니다.\n\n자격 요건:\n- 만 18세 이상\n- 학력 제한 없음\n\n교육과정:\n- 이론 80시간 + 실기 80시간\n- 현장실습 80시간\n\n시험 정보:\n- 연 4회 실시\n- 필기시험 + 실기시험\n- 합격 기준: 각 과목 60점 이상', 3, 187, 25, 8, false, true, 'ACTIVE', 'INFO', DATE_SUB(NOW(), INTERVAL 3 DAY), DATE_SUB(NOW(), INTERVAL 3 DAY)),
-
-('QNA', '요양원 비용 문의', '안녕하세요. 부모님 요양원 입소를 고려하고 있습니다.\n\n월 비용이 어느 정도 되는지 궁금합니다.\n또한 정부 지원금은 어떻게 받을 수 있나요?\n\n답변 부탁드립니다.', 2, 45, 3, 2, false, true, 'ACTIVE', 'QNA', DATE_SUB(NOW(), INTERVAL 1 HOUR), DATE_SUB(NOW(), INTERVAL 1 HOUR)),
-('QNA', '간병인 구인 관련 질문', '요양원에서 간병인을 구인하고 있습니다.\n\n어떤 자격요건이 필요한지, 급여 수준은 어느 정도인지 알고 싶습니다.\n\n경험 있으신 분들의 조언 부탁드립니다.', 4, 67, 7, 4, false, true, 'ACTIVE', 'QNA', DATE_SUB(NOW(), INTERVAL 2 HOUR), DATE_SUB(NOW(), INTERVAL 2 HOUR)),
-
-('FAQ', '회원가입은 어떻게 하나요?', 'Q: 회원가입 절차가 궁금합니다.\n\nA: 다음 단계를 따라주세요:\n1. 홈페이지 상단의 "회원가입" 버튼 클릭\n2. 필수 정보 입력 (아이디, 비밀번호, 이름, 이메일)\n3. 이메일 인증 완료\n4. 회원가입 완료\n\n추가 문의사항이 있으시면 고객센터로 연락주세요.', 1, 123, 8, 1, false, true, 'ACTIVE', 'FAQ', DATE_SUB(NOW(), INTERVAL 5 DAY), DATE_SUB(NOW(), INTERVAL 5 DAY)),
-('FAQ', '비밀번호를 잊어버렸어요', 'Q: 비밀번호를 잊어버린 경우 어떻게 하나요?\n\nA: 비밀번호 재설정 방법:\n1. 로그인 페이지에서 "비밀번호 찾기" 클릭\n2. 가입 시 등록한 이메일 주소 입력\n3. 이메일로 전송된 재설정 링크 클릭\n4. 새로운 비밀번호 설정\n\n이메일이 오지 않는다면 스팸함을 확인해주세요.', 1, 89, 4, 0, false, true, 'ACTIVE', 'FAQ', DATE_SUB(NOW(), INTERVAL 6 DAY), DATE_SUB(NOW(), INTERVAL 6 DAY)); 

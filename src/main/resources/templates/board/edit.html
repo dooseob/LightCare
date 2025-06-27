@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="ko">
+<head th:replace="~{layout/header :: header}">
+    <title th:text="${pageTitle + ' - CareLink'}">게시글 수정 - CareLink</title>
+</head>
+<body class="d-flex flex-column min-vh-100 pt-5">
+    <!-- 네비게이션 바 -->
+    <nav th:replace="~{layout/header :: navbar}"></nav>
+    
+    <!-- 메시지 표시 -->
+    <div th:replace="~{layout/header :: messages}"></div>
+
+    <!-- 메인 콘텐츠 -->
+    <main class="flex-grow-1">
+        <div class="container mt-4">
+            <!-- 페이지 제목 -->
+            <div class="row mb-4">
+                <div class="col-12">
+                    <nav aria-label="breadcrumb">
+                        <ol class="breadcrumb">
+                            <li class="breadcrumb-item"><a href="/">홈</a></li>
+                            <li class="breadcrumb-item"><a href="/board">정보마당</a></li>
+                            <li class="breadcrumb-item">
+                                <a th:href="@{/board/detail/{id}(id=${boardDTO.boardId}, type=${type})}" th:text="${boardDTO.title}">게시글 제목</a>
+                            </li>
+                            <li class="breadcrumb-item active" aria-current="page">수정</li>
+                        </ol>
+                    </nav>
+                    <h2>
+                        <i class="fas fa-edit text-primary me-2"></i> 
+                        게시글 수정
+                    </h2>
+                    <p class="text-muted">게시글 정보를 수정할 수 있습니다.</p>
+                </div>
+            </div>
+            
+            <div class="row justify-content-center">
+                <div class="col-md-10">
+                    <form th:action="@{/board/edit/{id}(id=${boardDTO.boardId})}" method="post" th:object="${boardDTO}">
+                        <!-- 게시판 타입 유지를 위한 hidden 필드 -->
+                        <input type="hidden" name="type" th:value="${type}">
+                        
+                        <!-- 수정 시 필수 필드들을 유지하기 위한 hidden 필드 -->
+                        <input type="hidden" th:field="*{memberId}">
+                        <input type="hidden" th:field="*{boardType}">
+                        <input type="hidden" th:field="*{viewCount}">
+                        <input type="hidden" th:field="*{likeCount}">
+                        <input type="hidden" th:field="*{commentCount}">
+                        <input type="hidden" th:field="*{createdAt}">
+                        <input type="hidden" th:field="*{replyDepth}">
+                        <input type="hidden" th:field="*{replyOrder}">
+                        <input type="hidden" th:field="*{parentBoardId}">
+                        <input type="hidden" th:field="*{status}">
+                        <input type="hidden" th:field="*{isActive}">
+                        <input type="hidden" th:field="*{isDeleted}">
+                        
+                        <div class="card">
+                            <div class="card-header bg-warning text-dark">
+                                <h5 class="mb-0">
+                                    <i class="fas fa-edit me-2"></i>
+                                    게시글 수정
+                                </h5>
+                            </div>
+                            <div class="card-body">
+                                <!-- 작성자 정보 표시 -->
+                                <div class="row mb-3">
+                                    <div class="col-md-6">
+                                        <label class="form-label">작성자</label>
+                                        <input type="text" class="form-control" th:value="${boardDTO.memberName}" readonly>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label">작성일</label>
+                                        <input type="text" class="form-control" th:value="${#temporals.format(boardDTO.createdAt, 'yyyy-MM-dd HH:mm')}" readonly>
+                                    </div>
+                                </div>
+
+                                <!-- 카테고리 선택 -->
+                                <div class="row mb-3">
+                                    <div class="col-md-6">
+                                        <label class="form-label">카테고리 <span class="text-danger">*</span></label>
+                                        <select class="form-select" th:field="*{category}" required>
+                                            <option value="">카테고리를 선택해주세요</option>
+                                            <option value="NOTICE">공지사항</option>
+                                            <option value="INFO">정보공유</option>
+                                            <option value="QNA">Q&A</option>
+                                            <option value="FAQ">자주묻는질문</option>
+                                            <option value="TIP">팁&노하우</option>
+                                            <option value="NEWS">뉴스</option>
+                                            <option value="FREE">자유게시판</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label">게시글 설정</label>
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="checkbox" th:field="*{isNotice}" id="isNotice">
+                                            <label class="form-check-label" for="isNotice">
+                                                공지사항으로 등록
+                                            </label>
+                                        </div>
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="checkbox" th:field="*{isPinned}" id="isPinned">
+                                            <label class="form-check-label" for="isPinned">
+                                                상단 고정
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- 제목 -->
+                                <div class="mb-3">
+                                    <label class="form-label">제목 <span class="text-danger">*</span></label>
+                                    <input type="text" class="form-control" th:field="*{title}" 
+                                           placeholder="제목을 입력해주세요" required maxlength="100">
+                                    <div class="form-text">
+                                        최대 100자까지 입력 가능합니다.
+                                        <small class="float-end">
+                                            <span id="titleLength">0</span>/100자
+                                        </small>
+                                    </div>
+                                </div>
+
+                                <!-- 내용 -->
+                                <div class="mb-4">
+                                    <label class="form-label">내용 <span class="text-danger">*</span></label>
+                                    <textarea class="form-control" rows="15" th:field="*{content}" 
+                                              placeholder="내용을 입력해주세요" required minlength="20"></textarea>
+                                    <div class="form-text">
+                                        최소 20자 이상 작성해주세요.
+                                        <small class="float-end">
+                                            <span id="contentLength">0</span>자
+                                        </small>
+                                    </div>
+                                </div>
+
+                                <!-- 태그 -->
+                                <div class="mb-4">
+                                    <label class="form-label">태그</label>
+                                    <input type="text" class="form-control" th:field="*{tags}" 
+                                           placeholder="태그를 입력해주세요 (예: 요양원, 간병, 보험)">
+                                    <div class="form-text">쉼표(,)로 구분하여 입력해주세요. 최대 5개까지 추가 가능합니다.</div>
+                                </div>
+
+                                <!-- 현재 게시글 정보 -->
+                                <div class="mb-4 p-3 bg-light rounded">
+                                    <h6 class="text-muted mb-2"><i class="fas fa-info-circle me-1"></i> 현재 게시글 정보</h6>
+                                    <div class="row">
+                                        <div class="col-md-4">
+                                            <small class="text-muted">조회수</small>
+                                            <div th:text="${boardDTO.viewCount}">0</div>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <small class="text-muted">추천수</small>
+                                            <div th:text="${boardDTO.likeCount}">0</div>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <small class="text-muted">댓글수</small>
+                                            <div th:text="${boardDTO.commentCount}">0</div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- 버튼 -->
+                                <div class="d-flex justify-content-between">
+                                    <div>
+                                        <a th:href="@{/board/detail/{id}(id=${boardDTO.boardId}, type=${type})}" class="btn btn-secondary">
+                                            <i class="fas fa-arrow-left me-1"></i> 취소
+                                        </a>
+                                    </div>
+                                    <div>
+                                        <button type="button" class="btn btn-outline-secondary me-2" onclick="previewBoard()">
+                                            <i class="fas fa-eye me-1"></i> 미리보기
+                                        </button>
+                                        <button type="submit" class="btn btn-warning">
+                                            <i class="fas fa-save me-1"></i> 수정 완료
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+
+                    <!-- 수정 가이드 -->
+                    <div class="card mt-4">
+                        <div class="card-header bg-info text-white">
+                            <h6 class="mb-0"><i class="fas fa-info-circle me-2"></i> 게시글 수정 안내</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <h6 class="text-primary"><i class="fas fa-check-circle me-1"></i> 수정 가능 항목</h6>
+                                    <ul class="list-unstyled">
+                                        <li><i class="fas fa-check text-primary me-2"></i> 제목 및 내용</li>
+                                        <li><i class="fas fa-check text-primary me-2"></i> 카테고리</li>
+                                        <li><i class="fas fa-check text-primary me-2"></i> 태그</li>
+                                        <li><i class="fas fa-check text-primary me-2"></i> 공지사항 설정</li>
+                                    </ul>
+                                </div>
+                                <div class="col-md-6">
+                                    <h6 class="text-muted"><i class="fas fa-lock me-1"></i> 변경 불가 항목</h6>
+                                    <ul class="list-unstyled">
+                                        <li><i class="fas fa-times text-muted me-2"></i> 작성자 정보</li>
+                                        <li><i class="fas fa-times text-muted me-2"></i> 작성일시</li>
+                                        <li><i class="fas fa-times text-muted me-2"></i> 조회수, 추천수</li>
+                                        <li><i class="fas fa-times text-muted me-2"></i> 댓글 정보</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- 푸터 -->
+    <footer th:replace="~{layout/footer :: footer}"></footer>
+    
+    <!-- JavaScript -->
+    <div th:replace="~{layout/footer :: scripts}"></div>
+
+    <script>
+        // 문자 수 카운팅
+        document.addEventListener('DOMContentLoaded', function() {
+            const titleInput = document.querySelector('input[name="title"]');
+            const contentTextarea = document.querySelector('textarea[name="content"]');
+            const titleLength = document.getElementById('titleLength');
+            const contentLength = document.getElementById('contentLength');
+            
+            // 초기 문자 수 설정
+            titleLength.textContent = titleInput.value.length;
+            contentLength.textContent = contentTextarea.value.length;
+            
+            // 제목 글자 수 카운팅
+            titleInput.addEventListener('input', function() {
+                titleLength.textContent = this.value.length;
+                if (this.value.length > 100) {
+                    titleLength.style.color = 'red';
+                } else {
+                    titleLength.style.color = '';
+                }
+            });
+            
+            // 내용 글자 수 카운팅
+            contentTextarea.addEventListener('input', function() {
+                contentLength.textContent = this.value.length;
+                if (this.value.length < 20) {
+                    contentLength.style.color = 'red';
+                } else {
+                    contentLength.style.color = 'green';
+                }
+            });
+            
+            // 폼 유효성 검사
+            const form = document.querySelector('form');
+            form.addEventListener('submit', function(e) {
+                const title = titleInput.value.trim();
+                const content = contentTextarea.value.trim();
+                const category = document.querySelector('select[name="category"]').value;
+                
+                if (!category) {
+                    e.preventDefault();
+                    alert('카테고리를 선택해주세요.');
+                    return false;
+                }
+                
+                if (title.length === 0) {
+                    e.preventDefault();
+                    alert('제목을 입력해주세요.');
+                    titleInput.focus();
+                    return false;
+                }
+                
+                if (title.length > 100) {
+                    e.preventDefault();
+                    alert('제목은 100자 이하로 입력해주세요.');
+                    titleInput.focus();
+                    return false;
+                }
+                
+                if (content.length < 20) {
+                    e.preventDefault();
+                    alert('내용을 최소 20자 이상 입력해주세요.');
+                    contentTextarea.focus();
+                    return false;
+                }
+                
+                // 수정 확인
+                if (!confirm('게시글을 수정하시겠습니까?')) {
+                    e.preventDefault();
+                    return false;
+                }
+            });
+        });
+        
+        // 미리보기 기능
+        function previewBoard() {
+            const title = document.querySelector('input[name="title"]').value;
+            const content = document.querySelector('textarea[name="content"]').value;
+            
+            if (title.trim() === '' || content.trim() === '') {
+                alert('제목과 내용을 입력한 후 미리보기를 사용해주세요.');
+                return;
+            }
+            
+            // 새 창에서 미리보기 표시
+            const previewWindow = window.open('', 'preview', 'width=800,height=600,scrollbars=yes');
+            previewWindow.document.write(`
+                <html>
+                <head>
+                    <title>미리보기</title>
+                    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+                    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+                </head>
+                <body class="p-4">
+                    <div class="container">
+                        <div class="alert alert-warning">
+                            <i class="fas fa-eye me-2"></i>
+                            이것은 미리보기입니다. 실제 게시글과 다를 수 있습니다.
+                        </div>
+                        <h2>${title}</h2>
+                        <hr>
+                        <div style="white-space: pre-wrap; line-height: 1.8;">${content}</div>
+                    </div>
+                </body>
+                </html>
+            `);
+        }
+        
+        // 키보드 단축키
+        document.addEventListener('keydown', function(e) {
+            // Ctrl + S: 저장
+            if (e.ctrlKey && e.key === 's') {
+                e.preventDefault();
+                document.querySelector('form').submit();
+            }
+            
+            // ESC: 취소
+            if (e.key === 'Escape') {
+                if (confirm('수정을 취소하고 게시글로 돌아가시겠습니까?')) {
+                    window.location.href = document.querySelector('a[href*="/board/detail"]').href;
+                }
+            }
+        });
+    </script>
+</body>
+</html>

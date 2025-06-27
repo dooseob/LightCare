@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="ko">
+<head th:replace="~{layout/header :: header}">
+    <title th:text="${review.title + ' - CareLink'}">리뷰 상세 - CareLink</title>
+</head>
+<body class="d-flex flex-column min-vh-100 pt-5">
+    <!-- 네비게이션 바 -->
+    <nav th:replace="~{layout/header :: navbar}"></nav>
+    
+    <!-- 메시지 표시 -->
+    <div th:replace="~{layout/header :: messages}"></div>
+
+    <!-- 메인 콘텐츠 -->
+    <main class="flex-grow-1">
+        <div class="container py-4">
+            <!-- 브레드크럼 -->
+            <nav aria-label="breadcrumb" class="mb-4">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="/">홈</a></li>
+                    <li class="breadcrumb-item"><a href="/review">리뷰</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">리뷰 상세</li>
+                </ol>
+            </nav>
+
+            <div class="row">
+                <!-- 리뷰 상세 내용 -->
+                <div class="col-lg-8">
+                    <div class="card">
+                        <!-- 리뷰 헤더 -->
+                        <div class="card-header bg-light">
+                            <div class="row align-items-center">
+                                <div class="col-md-8">
+                                    <h4 class="mb-2" th:text="${review.title}">리뷰 제목</h4>
+                                    <div class="d-flex align-items-center mb-2">
+                                        <!-- 평점 표시 -->
+                                        <div class="rating-stars me-3">
+                                            <span th:each="i : ${#numbers.sequence(1, 5)}" 
+                                                  th:class="${i <= review.rating} ? 'fas fa-star text-warning' : 'far fa-star text-muted'"></span>
+                                            <span class="ms-2 fw-bold" th:text="${review.rating} + '.0'">5.0</span>
+                                        </div>
+                                        <!-- 시설명 -->
+                                        <span class="badge bg-primary" th:text="${review.facilityName}">시설명</span>
+                                    </div>
+                                    <div class="text-muted small">
+                                        <i class="fas fa-user me-1"></i>
+                                        <span th:text="${review.memberName}">작성자</span>
+                                        <span class="mx-2">|</span>
+                                        <i class="fas fa-calendar me-1"></i>
+                                        <span th:text="${#temporals.format(review.createdAt, 'yyyy-MM-dd HH:mm')}">작성일</span>
+                                        <span class="mx-2">|</span>
+                                        <i class="fas fa-eye me-1"></i>
+                                        조회 <span th:text="${review.viewCount}">0</span>
+                                    </div>
+                                </div>
+                                <div class="col-md-4 text-end">
+                                    <div class="btn-group" role="group">
+                                        <button type="button" class="btn btn-outline-success btn-sm" onclick="likeReview()">
+                                            <i class="fas fa-thumbs-up me-1"></i>
+                                            추천 <span id="likeCount" th:text="${review.likeCount}">0</span>
+                                        </button>
+                                        <button type="button" class="btn btn-outline-secondary btn-sm" onclick="shareReview()">
+                                            <i class="fas fa-share me-1"></i>
+                                            공유
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 리뷰 내용 -->
+                        <div class="card-body">
+                            <!-- 세부 평점 -->
+                            <div class="row mb-4" th:if="${review.serviceRating != null}">
+                                <div class="col-12">
+                                    <h6 class="mb-3">세부 평점</h6>
+                                    <div class="row">
+                                        <div class="col-md-3 col-6 mb-2">
+                                            <small class="text-muted">서비스</small>
+                                            <div class="rating-detail">
+                                                <span th:each="i : ${#numbers.sequence(1, 5)}" 
+                                                      th:class="${i <= (review.serviceRating ?: 0)} ? 'fas fa-star text-warning' : 'far fa-star text-muted'"></span>
+                                                <span class="ms-1" th:text="${review.serviceRating ?: 0}">0</span>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-3 col-6 mb-2">
+                                            <small class="text-muted">시설</small>
+                                            <div class="rating-detail">
+                                                <span th:each="i : ${#numbers.sequence(1, 5)}" 
+                                                      th:class="${i <= (review.facilityRating ?: 0)} ? 'fas fa-star text-warning' : 'far fa-star text-muted'"></span>
+                                                <span class="ms-1" th:text="${review.facilityRating ?: 0}">0</span>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-3 col-6 mb-2">
+                                            <small class="text-muted">직원</small>
+                                            <div class="rating-detail">
+                                                <span th:each="i : ${#numbers.sequence(1, 5)}" 
+                                                      th:class="${i <= (review.staffRating ?: 0)} ? 'fas fa-star text-warning' : 'far fa-star text-muted'"></span>
+                                                <span class="ms-1" th:text="${review.staffRating ?: 0}">0</span>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-3 col-6 mb-2">
+                                            <small class="text-muted">가격</small>
+                                            <div class="rating-detail">
+                                                <span th:each="i : ${#numbers.sequence(1, 5)}" 
+                                                      th:class="${i <= (review.priceRating ?: 0)} ? 'fas fa-star text-warning' : 'far fa-star text-muted'"></span>
+                                                <span class="ms-1" th:text="${review.priceRating ?: 0}">0</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- 리뷰 내용 -->
+                            <div class="content-area" style="min-height: 200px; line-height: 1.8;">
+                                <div th:utext="${#strings.replace(review.content, T(java.lang.System).lineSeparator(), '&lt;br&gt;')}">
+                                    리뷰 내용이 여기에 표시됩니다.
+                                </div>
+                            </div>
+
+                            <!-- 리뷰 이미지 (있는 경우) -->
+                            <div th:if="${not #strings.isEmpty(review.reviewImage1)}" class="mt-4">
+                                <h6>첨부 이미지</h6>
+                                <div class="row">
+                                    <div th:if="${not #strings.isEmpty(review.reviewImage1)}" class="col-md-4 mb-2">
+                                        <img th:src="${review.reviewImage1}" class="img-fluid rounded" alt="리뷰 이미지 1">
+                                    </div>
+                                    <div th:if="${not #strings.isEmpty(review.reviewImage2)}" class="col-md-4 mb-2">
+                                        <img th:src="${review.reviewImage2}" class="img-fluid rounded" alt="리뷰 이미지 2">
+                                    </div>
+                                    <div th:if="${not #strings.isEmpty(review.reviewImage3)}" class="col-md-4 mb-2">
+                                        <img th:src="${review.reviewImage3}" class="img-fluid rounded" alt="리뷰 이미지 3">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 리뷰 푸터 -->
+                        <div class="card-footer bg-light">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <small class="text-muted">
+                                        <i class="fas fa-clock me-1"></i>
+                                        최종 수정: <span th:text="${#temporals.format(review.updatedAt, 'yyyy-MM-dd HH:mm')}">수정일</span>
+                                    </small>
+                                </div>
+                                <div class="col-md-6 text-end">
+                                    <!-- 작성자만 수정/삭제 가능 (실제로는 로그인 사용자 확인 필요) -->
+                                    <div class="btn-group" role="group">
+                                        <button type="button" class="btn btn-outline-danger btn-sm" 
+                                                onclick="deleteReview()">
+                                            <i class="fas fa-trash me-1"></i>삭제
+                                        </button>
+                                        <button type="button" class="btn btn-outline-warning btn-sm" 
+                                                onclick="reportReview()">
+                                            <i class="fas fa-exclamation-triangle me-1"></i>신고
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 하단 버튼 -->
+                    <div class="text-center mt-4">
+                        <div class="btn-group" role="group">
+                            <a href="/review" class="btn btn-secondary">
+                                <i class="fas fa-list me-1"></i>목록으로
+                            </a>
+                            <a href="/review/write" class="btn btn-primary">
+                                <i class="fas fa-plus me-1"></i>리뷰 쓰기
+                            </a>
+                            <button type="button" class="btn btn-info" onclick="window.scrollTo(0, 0)">
+                                <i class="fas fa-arrow-up me-1"></i>맨 위로
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 사이드바 -->
+                <div class="col-lg-4">
+                    <!-- 시설 정보 카드 -->
+                    <div class="card mb-4">
+                        <div class="card-header bg-primary text-white">
+                            <h6 class="mb-0">
+                                <i class="fas fa-building me-2"></i>시설 정보
+                            </h6>
+                        </div>
+                        <div class="card-body">
+                            <h6 th:text="${review.facilityName}">시설명</h6>
+                            <p class="text-muted mb-2" th:text="${review.facilityAddress}">시설 주소</p>
+                            <div class="d-flex align-items-center mb-2">
+                                <span class="me-2">평균 평점:</span>
+                                <div class="rating-stars me-2">
+                                    <span th:each="i : ${#numbers.sequence(1, 5)}" 
+                                          th:class="${i <= (review.facilityAverageRating ?: 0)} ? 'fas fa-star text-warning' : 'far fa-star text-muted'"></span>
+                                </div>
+                                <span th:text="${review.facilityAverageRating ?: 0} + ' (' + (review.facilityReviewCount ?: 0) + '개)'">0 (0개)</span>
+                            </div>
+                            <a th:href="@{/facility/detail/{id}(id=${review.facilityId})}" class="btn btn-outline-primary btn-sm">
+                                <i class="fas fa-info-circle me-1"></i>시설 상세보기
+                            </a>
+                        </div>
+                    </div>
+
+                    <!-- 관련 리뷰 -->
+                    <div class="card">
+                        <div class="card-header bg-light">
+                            <h6 class="mb-0">
+                                <i class="fas fa-star me-2"></i>이 시설의 다른 리뷰
+                            </h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="text-center text-muted py-3">
+                                <i class="fas fa-star-half-alt fa-2x mb-2"></i><br>
+                                관련 리뷰 기능은<br>추후 구현 예정입니다.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- 푸터 -->
+    <footer th:replace="~{layout/footer :: footer}"></footer>
+    
+    <!-- JavaScript -->
+    <div th:replace="~{layout/footer :: scripts}"></div>
+
+    <script>
+        // 리뷰 추천 기능
+        function likeReview() {
+            const reviewId = /*[[${review.reviewId}]]*/ 0;
+            
+            fetch(`/review/like/${reviewId}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    document.getElementById('likeCount').textContent = data.likeCount;
+                    alert('추천하였습니다.');
+                } else {
+                    alert('추천 처리 중 오류가 발생했습니다.');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('추천 처리 중 오류가 발생했습니다.');
+            });
+        }
+
+        // 리뷰 공유 기능
+        function shareReview() {
+            const url = window.location.href;
+            const title = /*[[${review.title}]]*/ '리뷰';
+            
+            if (navigator.share) {
+                navigator.share({
+                    title: title,
+                    url: url
+                });
+            } else {
+                // 클립보드에 복사
+                navigator.clipboard.writeText(url).then(() => {
+                    alert('링크가 클립보드에 복사되었습니다.');
+                });
+            }
+        }
+
+        // 리뷰 삭제 기능
+        function deleteReview() {
+            if (confirm('정말로 이 리뷰를 삭제하시겠습니까?')) {
+                const reviewId = /*[[${review.reviewId}]]*/ 0;
+                
+                const form = document.createElement('form');
+                form.method = 'POST';
+                form.action = `/review/delete/${reviewId}`;
+                document.body.appendChild(form);
+                form.submit();
+            }
+        }
+
+        // 리뷰 신고 기능
+        function reportReview() {
+            if (confirm('이 리뷰를 신고하시겠습니까?')) {
+                alert('신고가 접수되었습니다. 검토 후 조치하겠습니다.');
+                // TODO: 실제 신고 기능 구현
+            }
+        }
+    </script>
+</body>
+</html>

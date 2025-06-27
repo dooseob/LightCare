@@ -53,14 +53,14 @@
                                     <div class="col-md-6">
                                         <label class="form-label">카테고리 <span class="text-danger">*</span></label>
                                         <select class="form-select" th:field="*{category}" required>
-                                            <option value="">카테고리를 선택해주세요</option>
-                                            <option value="NOTICE" th:selected="${type == 'notice'}">공지사항</option>
-                                            <option value="INFO" th:selected="${type == 'info'}">정보공유</option>
-                                            <option value="QNA" th:selected="${type == 'qna'}">Q&A</option>
-                                            <option value="FAQ" th:selected="${type == 'faq'}">자주묻는질문</option>
-                                            <option value="TIP">팁&노하우</option>
-                                            <option value="NEWS">뉴스</option>
-                                            <option value="FREE">자유게시판</option>
+                                            <option value="" th:if="${type == 'all'}">카테고리를 선택해주세요</option>
+                                            <option value="NOTICE" th:selected="${type == 'notice'}" th:if="${type == 'all' or type == 'notice'}">공지사항</option>
+                                            <option value="INFO" th:selected="${type == 'info'}" th:if="${type == 'all' or type == 'info'}">정보공유</option>
+                                            <option value="QNA" th:selected="${type == 'qna'}" th:if="${type == 'all' or type == 'qna'}">Q&A</option>
+                                            <option value="FAQ" th:selected="${type == 'faq'}" th:if="${type == 'all' or type == 'faq'}">자주묻는질문</option>
+                                            <option value="TIP" th:if="${type == 'all'}">팁&노하우</option>
+                                            <option value="NEWS" th:if="${type == 'all'}">뉴스</option>
+                                            <option value="FREE" th:if="${type == 'all'}">자유게시판</option>
                                         </select>
                                         <div class="form-text">
                                             현재 게시판: <strong th:text="${boardTitle}">게시판</strong>

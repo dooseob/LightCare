@@ -98,7 +98,7 @@
                             <div class="alert alert-info" role="alert">
                                 <h6 class="alert-heading">
                                     <i class="fas fa-info-circle me-2"></i>
-                                    테스트 계정
+                                    테스트 계정 안내
                                 </h6>
                                 <div class="row text-center">
                                     <div class="col-6">
@@ -115,6 +115,29 @@
                                             PW: user123
                                         </small>
                                     </div>
+                                </div>
+                                <div class="row text-center mt-2">
+                                    <div class="col-6">
+                                        <small>
+                                            <strong>사용자2</strong><br>
+                                            ID: user02<br>
+                                            PW: user123
+                                        </small>
+                                    </div>
+                                    <div class="col-6">
+                                        <small>
+                                            <strong>사용자3</strong><br>
+                                            ID: user03<br>
+                                            PW: user123
+                                        </small>
+                                    </div>
+                                </div>
+                                <hr class="my-2">
+                                <div class="text-center">
+                                    <small class="text-muted">
+                                        <i class="fas fa-info-circle me-1"></i>
+                                        테스트 계정을 클릭하면 자동으로 입력됩니다
+                                    </small>
                                 </div>
                             </div>
                         </div>
@@ -152,8 +175,14 @@
                 if (text.includes('admin')) {
                     $('#userId').val('admin');
                     $('#password').val('admin123');
-                } else if (text.includes('일반 사용자')) {
+                } else if (text.includes('user01')) {
                     $('#userId').val('user01');
+                    $('#password').val('user123');
+                } else if (text.includes('user02')) {
+                    $('#userId').val('user02');
+                    $('#password').val('user123');
+                } else if (text.includes('user03')) {
+                    $('#userId').val('user03');
                     $('#password').val('user123');
                 }
             });

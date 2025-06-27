@@ -27,16 +27,28 @@ public class ReviewService {
      * 리뷰 목록 조회 (페이징 및 검색 포함)
      */
     public PageInfo<ReviewDTO> getReviewList(int page, String keyword) {
-        log.info("리뷰 목록 조회 시작 - page: {}, keyword: {}", page, keyword);
+        return getReviewList(page, keyword, null);
+    }
+    
+    /**
+     * 리뷰 목록 조회 (페이징, 검색, 평점 필터 포함)
+     */
+    public PageInfo<ReviewDTO> getReviewList(int page, String keyword, Integer minRating) {
+        log.info("리뷰 목록 조회 시작 - page: {}, keyword: {}, minRating: {}", page, keyword, minRating);
         
         try {
             // 검색 조건 설정
             ReviewDTO searchDTO = new ReviewDTO();
+            // BaseDTO의 setPage() 메서드가 자동으로 offset을 계산해줌
             searchDTO.setPage(page);
             searchDTO.setSize(DEFAULT_PAGE_SIZE);
             
             if (keyword != null && !keyword.trim().isEmpty()) {
                 searchDTO.setSearchKeyword(keyword.trim());
+            }
+            
+            if (minRating != null) {
+                searchDTO.setMinRating(minRating);
             }
             
             // 전체 리뷰 수 조회
@@ -243,6 +255,19 @@ public class ReviewService {
         }
         if (reviewDTO.getRating() == null || reviewDTO.getRating() < 1 || reviewDTO.getRating() > 5) {
             throw new IllegalArgumentException("평점은 1~5 사이의 값이어야 합니다.");
+        }
+    }
+
+    /**
+     * 전체 리뷰 수 조회 (통계용)
+     */
+    @Transactional(readOnly = true)
+    public int getReviewCount() {
+        try {
+            return reviewMapper.getReviewCount();
+        } catch (Exception e) {
+            log.error("리뷰 수 조회 중 오류 발생", e);
+            return 0; // 오류 시 0 반환
         }
     }
 } 

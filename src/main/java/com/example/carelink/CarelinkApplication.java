@@ -17,4 +17,4 @@ public class CarelinkApplication {
         System.out.println("    포트: http://localhost:8080         ");
         System.out.println("========================================");
     }
-} 
+}

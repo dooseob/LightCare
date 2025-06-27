@@ -94,7 +94,12 @@ public interface ReviewMapper {
     List<ReviewDTO> getRecentReviews();
     
     /**
-     * 리뷰 총 개수 조회
+     * 리뷰 총 개수 조회 (검색 포함)
      */
     int getReviewCount(ReviewDTO searchDTO);
+
+    /**
+     * 전체 리뷰 수 조회 (통계용)
+     */
+    int getReviewCount();
 } 

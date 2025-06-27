@@ -263,4 +263,11 @@
         LIMIT 10
     </select>
 
+    <!-- 전체 구인구직 수 조회 (통계용) -->
+    <select id="getJobCount" resultType="int">
+        SELECT COUNT(*) 
+        FROM job_posting 
+        WHERE is_deleted = false AND status = 'ACTIVE'
+    </select>
+
 </mapper> 

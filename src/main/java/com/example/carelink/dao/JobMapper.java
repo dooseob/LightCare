@@ -55,7 +55,12 @@ public interface JobMapper {
     List<JobDTO> searchJobs(JobDTO searchDTO);
     
     /**
-     * 구인구직 총 개수 조회
+     * 구인구직 총 개수 조회 (검색 포함)
      */
     int getJobCount(JobDTO searchDTO);
+
+    /**
+     * 전체 구인구직 수 조회 (통계용)
+     */
+    int getJobCount();
 } 

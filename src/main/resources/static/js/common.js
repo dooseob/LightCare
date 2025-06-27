@@ -19,6 +19,9 @@ $(document).ready(function() {
     
     // 로딩 상태 관리
     initLoadingState();
+    
+    // 게시글 삭제 후 목록 새로고침 체크
+    refreshBoardList();
 });
 
 /**
@@ -381,6 +384,33 @@ function formatNumber(num) {
 function getUrlParameter(name) {
     var url = new URL(window.location.href);
     return url.searchParams.get(name);
+}
+
+/**
+ * 페이지 새로고침 강제 (캐시 무효화)
+ */
+function forceRefresh() {
+    // 브라우저 캐시를 무시하고 강제 새로고침
+    window.location.reload(true);
+}
+
+/**
+ * 게시글 삭제 후 목록 새로고침
+ */
+function refreshBoardList() {
+    // refresh 파라미터가 있으면 캐시 무효화 후 URL에서 제거
+    var refreshParam = getUrlParameter('refresh');
+    if (refreshParam) {
+        // URL에서 refresh 파라미터 제거
+        var url = new URL(window.location.href);
+        url.searchParams.delete('refresh');
+        window.history.replaceState({}, document.title, url.pathname + url.search);
+        
+        // 페이지 강제 새로고침
+        setTimeout(function() {
+            forceRefresh();
+        }, 100);
+    }
 }
 
 /**

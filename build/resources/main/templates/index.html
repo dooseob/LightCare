@@ -51,28 +51,40 @@
                     실시간 현황
                 </h2>
                 <div class="row">
-                    <div class="col-md-3 mb-4">
+                    <div class="col-lg-2 col-md-4 col-sm-6 mb-4">
                         <div class="stats-card">
                             <h3 th:text="${facilityCount}">150</h3>
                             <p><i class="fas fa-building me-2"></i>등록 시설</p>
                         </div>
                     </div>
-                    <div class="col-md-3 mb-4">
+                    <div class="col-lg-2 col-md-4 col-sm-6 mb-4">
                         <div class="stats-card">
                             <h3 th:text="${jobCount}">89</h3>
                             <p><i class="fas fa-briefcase me-2"></i>채용 공고</p>
                         </div>
                     </div>
-                    <div class="col-md-3 mb-4">
+                    <div class="col-lg-2 col-md-4 col-sm-6 mb-4">
                         <div class="stats-card">
                             <h3 th:text="${reviewCount}">234</h3>
                             <p><i class="fas fa-star me-2"></i>시설 리뷰</p>
                         </div>
                     </div>
-                    <div class="col-md-3 mb-4">
+                    <div class="col-lg-2 col-md-4 col-sm-6 mb-4">
                         <div class="stats-card">
                             <h3 th:text="${memberCount}">512</h3>
                             <p><i class="fas fa-users me-2"></i>가입 회원</p>
+                        </div>
+                    </div>
+                    <div class="col-lg-2 col-md-4 col-sm-6 mb-4">
+                        <div class="stats-card">
+                            <h3 th:text="${boardCount}">324</h3>
+                            <p><i class="fas fa-clipboard-list me-2"></i>정보 게시글</p>
+                        </div>
+                    </div>
+                    <div class="col-lg-2 col-md-4 col-sm-6 mb-4">
+                        <div class="stats-card">
+                            <h3>5</h3>
+                            <p><i class="fas fa-handshake me-2"></i>운영 년수</p>
                         </div>
                     </div>
                 </div>
@@ -158,6 +170,47 @@
                                 </p>
                                 <a href="/review" class="btn btn-warning">
                                     <i class="fas fa-comments me-1"></i>리뷰보기
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 추가 기능 섹션 -->
+                <div class="row mt-4">
+                    <!-- 정보마당 -->
+                    <div class="col-lg-6 col-md-12 mb-4">
+                        <div class="card h-100 text-center">
+                            <div class="card-body">
+                                <div class="mb-3">
+                                    <i class="fas fa-clipboard-list fa-3x text-secondary"></i>
+                                </div>
+                                <h5 class="card-title">정보마당</h5>
+                                <p class="card-text">
+                                    요양 관련 유용한 정보와 팁, Q&A 등을 
+                                    확인하고 공유해보세요.
+                                </p>
+                                <a href="/board" class="btn btn-secondary">
+                                    <i class="fas fa-book-open me-1"></i>정보보기
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 공지사항 -->
+                    <div class="col-lg-6 col-md-12 mb-4">
+                        <div class="card h-100 text-center">
+                            <div class="card-body">
+                                <div class="mb-3">
+                                    <i class="fas fa-bullhorn fa-3x text-danger"></i>
+                                </div>
+                                <h5 class="card-title">공지사항</h5>
+                                <p class="card-text">
+                                    CareLink의 새로운 소식과 
+                                    중요한 공지사항을 확인하세요.
+                                </p>
+                                <a href="/board?type=notice" class="btn btn-danger">
+                                    <i class="fas fa-bell me-1"></i>공지보기
                                 </a>
                             </div>
                         </div>

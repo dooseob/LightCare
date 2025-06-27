@@ -72,7 +72,7 @@
                 <!-- 게시글 내용 -->
                 <div class="card-body">
                     <div class="content-area" style="min-height: 300px; line-height: 1.8;">
-                        <div th:utext="${#strings.replace(board.content, T(java.lang.System).lineSeparator(), '&lt;br&gt;')}">
+                        <div th:utext="${#strings.replace(#strings.replace(board.content, '\n', '&lt;br&gt;'), '\r\n', '&lt;br&gt;')}">
                             게시글 내용이 여기에 표시됩니다.
                         </div>
                     </div>
@@ -94,8 +94,9 @@
                             </small>
                         </div>
                         <div class="col-md-6 text-end">
-                            <!-- 작성자만 수정/삭제 가능 (실제로는 로그인 사용자 확인 필요) -->
-                            <div class="btn-group" role="group">
+                            <!-- 로그인한 사용자이면서 작성자인 경우에만 수정/삭제 버튼 표시 -->
+                            <div th:if="${session.memberId != null and session.memberId == board.memberId}" 
+                                 class="btn-group" role="group">
                                 <a th:href="@{/board/edit/{id}(id=${board.boardId}, type=${type})}" 
                                    class="btn btn-outline-primary btn-sm">
                                     <i class="fas fa-edit me-1"></i>수정
@@ -104,6 +105,13 @@
                                         onclick="deleteBoard()">
                                     <i class="fas fa-trash me-1"></i>삭제
                                 </button>
+                            </div>
+                            <!-- 비로그인 사용자 또는 작성자가 아닌 경우 -->
+                            <div th:unless="${session.memberId != null and session.memberId == board.memberId}">
+                                <small class="text-muted">
+                                    <span th:if="${session.memberId == null}">로그인 후 수정/삭제가 가능합니다.</span>
+                                    <span th:if="${session.memberId != null and session.memberId != board.memberId}">작성자만 수정/삭제가 가능합니다.</span>
+                                </small>
                             </div>
                         </div>
                     </div>
@@ -161,8 +169,17 @@
                         <a th:href="@{/board(type=${type}, page=${page})}" class="btn btn-secondary">
                             <i class="fas fa-list me-1"></i>목록으로
                         </a>
-                        <a th:href="@{/board/write(type=${type})}" class="btn btn-primary">
+                        <!-- 로그인한 사용자만 글쓰기 버튼 표시 -->
+                        <a th:if="${session.memberId != null}" 
+                           th:href="@{/board/write(type=${type})}" 
+                           class="btn btn-primary">
                             <i class="fas fa-plus me-1"></i>글쓰기
+                        </a>
+                        <!-- 비로그인 사용자에게는 로그인 안내 -->
+                        <a th:unless="${session.memberId != null}" 
+                           href="/member/login" 
+                           class="btn btn-outline-secondary">
+                            <i class="fas fa-sign-in-alt me-1"></i>로그인 후 글쓰기
                         </a>
                         <button type="button" class="btn btn-info" onclick="window.scrollTo(0, 0)">
                             <i class="fas fa-arrow-up me-1"></i>맨 위로

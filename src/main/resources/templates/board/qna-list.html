@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="ko">
+<head th:replace="~{layout/header :: header}">
+    <title>Q&A - CareLink</title>
+</head>
+<body class="d-flex flex-column min-vh-100 pt-5">
+    <!-- 네비게이션 바 -->
+    <nav th:replace="~{layout/header :: navbar}"></nav>
+    
+    <!-- 메시지 표시 -->
+    <div th:replace="~{layout/header :: messages}"></div>
+
+    <!-- 메인 콘텐츠 -->
+    <main class="flex-grow-1">
+        <div class="container py-4">
+            <!-- 페이지 제목 -->
+            <div class="row mb-4">
+                <div class="col-12">
+                    <nav aria-label="breadcrumb">
+                        <ol class="breadcrumb">
+                            <li class="breadcrumb-item"><a href="/">홈</a></li>
+                            <li class="breadcrumb-item"><a href="/board">정보마당</a></li>
+                            <li class="breadcrumb-item active" aria-current="page">Q&A</li>
+                        </ol>
+                    </nav>
+                    <h2>
+                        <i class="fas fa-question-circle text-success me-2"></i> 
+                        Q&A (질문과 답변)
+                    </h2>
+                    <p class="text-muted mb-3">궁금한 점을 질문하고 답변을 받아보세요. 다른 사용자의 질문과 답변도 함께 확인할 수 있습니다.</p>
+                    
+                    <!-- 게시판 타입 메뉴 -->
+                    <div class="btn-group mb-3" role="group" aria-label="게시판 타입">
+                        <a th:href="@{/board(type='all')}" class="btn btn-sm btn-outline-primary">전체</a>
+                        <a th:href="@{/board(type='notice')}" class="btn btn-sm btn-outline-primary">공지사항</a>
+                        <a th:href="@{/board(type='info')}" class="btn btn-sm btn-outline-primary">정보공유</a>
+                        <a th:href="@{/board(type='qna')}" class="btn btn-sm btn-success">Q&A</a>
+                        <a th:href="@{/board(type='faq')}" class="btn btn-sm btn-outline-primary">FAQ</a>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 검색 및 글쓰기 -->
+            <div class="row mb-4">
+                <div class="col-md-8">
+                    <form th:action="@{/board}" method="get" class="d-flex gap-2">
+                        <input type="hidden" name="type" value="qna">
+                        <select name="status" class="form-select" style="width: auto;">
+                            <option value="">전체 상태</option>
+                            <option value="waiting">답변 대기</option>
+                            <option value="answered">답변 완료</option>
+                            <option value="solved">해결됨</option>
+                        </select>
+                        <input type="text" name="keyword" class="form-control" th:value="${keyword}"
+                               placeholder="질문 내용을 검색하세요">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-search me-1"></i>검색
+                        </button>
+                    </form>
+                </div>
+                <div class="col-md-4 text-end">
+                    <a th:href="@{/board/write(type='qna')}" class="btn btn-success">
+                        <i class="fas fa-plus me-1"></i>질문하기
+                    </a>
+                </div>
+            </div>
+
+            <!-- Q&A 통계 -->
+            <div class="row mb-4">
+                <div class="col-md-12">
+                    <div class="card bg-success bg-opacity-10">
+                        <div class="card-body py-3">
+                            <div class="row text-center">
+                                <div class="col-md-3">
+                                    <i class="fas fa-question-circle text-success fa-2x mb-2"></i>
+                                    <div>
+                                        <strong class="d-block" th:text="${pageInfo.totalCount}">0</strong>
+                                        <small class="text-muted">총 질문</small>
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <i class="fas fa-clock text-warning fa-2x mb-2"></i>
+                                    <div>
+                                        <strong class="d-block">12</strong>
+                                        <small class="text-muted">답변 대기</small>
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <i class="fas fa-check-circle text-primary fa-2x mb-2"></i>
+                                    <div>
+                                        <strong class="d-block">45</strong>
+                                        <small class="text-muted">답변 완료</small>
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <i class="fas fa-trophy text-danger fa-2x mb-2"></i>
+                                    <div>
+                                        <strong class="d-block">98%</strong>
+                                        <small class="text-muted">해결률</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Q&A 카테고리 필터 -->
+            <div class="row mb-4">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-body">
+                            <h6 class="card-title">질문 카테고리</h6>
+                            <div class="btn-group flex-wrap" role="group">
+                                <button type="button" class="btn btn-outline-secondary btn-sm active" onclick="filterQNA('all')">
+                                    전체 (<span th:text="${pageInfo.totalCount}">0</span>)
+                                </button>
+                                <button type="button" class="btn btn-outline-secondary btn-sm" onclick="filterQNA('facility')">
+                                    시설 관련 (15)
+                                </button>
+                                <button type="button" class="btn btn-outline-secondary btn-sm" onclick="filterQNA('cost')">
+                                    비용 문의 (23)
+                                </button>
+                                <button type="button" class="btn btn-outline-secondary btn-sm" onclick="filterQNA('insurance')">
+                                    보험 관련 (18)
+                                </button>
+                                <button type="button" class="btn btn-outline-secondary btn-sm" onclick="filterQNA('service')">
+                                    서비스 (12)
+                                </button>
+                                <button type="button" class="btn btn-outline-secondary btn-sm" onclick="filterQNA('etc')">
+                                    기타 (8)
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Q&A 목록 -->
+            <div class="row">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-header bg-success text-white">
+                            <h5 class="card-title mb-0">
+                                <i class="fas fa-list me-2"></i>Q&A 목록
+                                <small class="ms-2">
+                                    (총 <span th:text="${pageInfo.totalCount}">0</span>개)
+                                </small>
+                            </h5>
+                        </div>
+                        <div class="card-body p-0">
+                            <div th:if="${#lists.isEmpty(boardList)}" class="text-center py-5">
+                                <i class="fas fa-question-circle fa-3x text-muted mb-3"></i>
+                                <h5 class="text-muted">등록된 질문이 없습니다</h5>
+                                <p class="text-muted">첫 번째 질문을 작성해보세요!</p>
+                                <a th:href="@{/board/write(type='qna')}" class="btn btn-success">
+                                    <i class="fas fa-plus me-1"></i>질문하기
+                                </a>
+                            </div>
+                            
+                            <div th:unless="${#lists.isEmpty(boardList)}" class="list-group list-group-flush">
+                                <div th:each="board : ${boardList}" class="list-group-item list-group-item-action qna-item"
+                                     th:data-category="${board.subCategory ?: 'etc'}">
+                                    <div class="row align-items-center">
+                                        <div class="col-md-8">
+                                            <div class="d-flex align-items-center mb-2">
+                                                <span class="badge bg-success me-2">Q</span>
+                                                <!-- 답변 상태 배지 -->
+                                                <span th:if="${board.commentCount == 0}" class="badge bg-warning me-2">답변대기</span>
+                                                <span th:if="${board.commentCount > 0}" class="badge bg-primary me-2">답변완료</span>
+                                                <span th:if="${board.status == 'SOLVED'}" class="badge bg-info me-2">해결됨</span>
+                                                <h6 class="mb-0">
+                                                    <a th:href="@{/board/detail/{id}(id=${board.boardId}, type='qna')}" 
+                                                       class="text-decoration-none" 
+                                                       th:text="${board.title}">질문 제목</a>
+                                                </h6>
+                                            </div>
+                                            <div class="qna-preview text-muted small">
+                                                <span th:text="${#strings.abbreviate(board.content, 120)}">질문 내용 미리보기...</span>
+                                            </div>
+                                            <div class="qna-meta mt-2">
+                                                <small class="text-muted">
+                                                    <i class="fas fa-user me-1"></i><span th:text="${board.memberName}">질문자</span>
+                                                    <span class="mx-2">|</span>
+                                                    <i class="fas fa-calendar me-1"></i><span th:text="${#temporals.format(board.createdAt, 'yyyy-MM-dd HH:mm')}">2024-01-01 09:00</span>
+                                                    <span th:if="${board.tags}" class="mx-2">|</span>
+                                                    <span th:if="${board.tags}" th:each="tag : ${#strings.arraySplit(board.tags, ',')}" 
+                                                          class="badge bg-light text-dark me-1" th:text="${tag}">태그</span>
+                                                </small>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-4 text-end">
+                                            <div class="qna-stats">
+                                                <div class="row text-center">
+                                                    <div class="col-4">
+                                                        <i class="fas fa-eye text-info"></i>
+                                                        <small class="d-block text-muted" th:text="${board.viewCount}">0</small>
+                                                    </div>
+                                                    <div class="col-4">
+                                                        <i class="fas fa-comments text-success"></i>
+                                                        <small class="d-block text-muted" th:text="${board.commentCount}">0</small>
+                                                    </div>
+                                                    <div class="col-4">
+                                                        <i class="fas fa-thumbs-up text-primary"></i>
+                                                        <small class="d-block text-muted" th:text="${board.likeCount}">0</small>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="mt-2">
+                                                <span th:if="${board.isNew != null and board.isNew}" class="badge bg-danger">NEW</span>
+                                                <span th:if="${board.priority > 0}" class="badge bg-warning">긴급</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 페이징 -->
+            <nav th:if="${pageInfo.totalPages > 1}" aria-label="Q&A 페이지 네비게이션" class="mt-4">
+                <ul class="pagination justify-content-center">
+                    <li class="page-item" th:classappend="${pageInfo.firstPage} ? 'disabled'">
+                        <a class="page-link" th:href="@{/board(type='qna', page=1, keyword=${keyword})}">
+                            <span>&laquo;&laquo;</span>
+                        </a>
+                    </li>
+                    <li class="page-item" th:classappend="${not pageInfo.hasPrevious} ? 'disabled'">
+                        <a class="page-link" th:href="@{/board(type='qna', page=${pageInfo.currentPage - 1}, keyword=${keyword})}">
+                            <span>&laquo;</span>
+                        </a>
+                    </li>
+                    <li th:each="pageNum : ${#numbers.sequence(pageInfo.startPage, pageInfo.endPage)}"
+                        class="page-item" th:classappend="${pageNum == pageInfo.currentPage} ? 'active'">
+                        <a class="page-link" th:href="@{/board(type='qna', page=${pageNum}, keyword=${keyword})}" th:text="${pageNum}">1</a>
+                    </li>
+                    <li class="page-item" th:classappend="${not pageInfo.hasNext} ? 'disabled'">
+                        <a class="page-link" th:href="@{/board(type='qna', page=${pageInfo.currentPage + 1}, keyword=${keyword})}">
+                            <span>&raquo;</span>
+                        </a>
+                    </li>
+                    <li class="page-item" th:classappend="${pageInfo.lastPage} ? 'disabled'">
+                        <a class="page-link" th:href="@{/board(type='qna', page=${pageInfo.totalPages}, keyword=${keyword})}">
+                            <span>&raquo;&raquo;</span>
+                        </a>
+                    </li>
+                </ul>
+            </nav>
+
+            <!-- 도움말 섹션 -->
+            <div class="row mt-5">
+                <div class="col-12">
+                    <div class="card bg-light">
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <h6 class="text-success">
+                                        <i class="fas fa-lightbulb me-1"></i>질문하기 전에 확인하세요
+                                    </h6>
+                                    <p class="mb-2">FAQ에서 자주 묻는 질문과 답변을 먼저 확인해보세요.</p>
+                                    <a href="/board?type=faq" class="btn btn-warning btn-sm">
+                                        <i class="fas fa-question-circle me-1"></i>FAQ 보기
+                                    </a>
+                                </div>
+                                <div class="col-md-6">
+                                    <h6 class="text-info">
+                                        <i class="fas fa-phone me-1"></i>긴급 문의
+                                    </h6>
+                                    <p class="mb-2">긴급한 문의사항은 전화로 상담받으실 수 있습니다.</p>
+                                    <p class="mb-0">
+                                        <strong class="text-primary">1588-0000</strong>
+                                        <small class="text-muted">(평일 09:00~18:00)</small>
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- 푸터 -->
+    <footer th:replace="~{layout/footer :: footer}"></footer>
+    
+    <!-- JavaScript -->
+    <div th:replace="~{layout/footer :: scripts}"></div>
+
+    <script>
+        // Q&A 카테고리 필터링
+        function filterQNA(category) {
+            const items = document.querySelectorAll('.qna-item');
+            const buttons = document.querySelectorAll('.btn-group button');
+            
+            // 버튼 활성화 상태 변경
+            buttons.forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+            
+            // Q&A 아이템 필터링
+            items.forEach(item => {
+                if (category === 'all' || item.dataset.category === category) {
+                    item.style.display = 'block';
+                } else {
+                    item.style.display = 'none';
+                }
+            });
+        }
+        
+        document.addEventListener('DOMContentLoaded', function() {
+            const qnaItems = document.querySelectorAll('.qna-item');
+            
+            qnaItems.forEach(item => {
+                item.addEventListener('mouseenter', function() {
+                    this.style.backgroundColor = '#f8f9fa';
+                });
+                
+                item.addEventListener('mouseleave', function() {
+                    this.style.backgroundColor = '';
+                });
+            });
+        });
+    </script>
+</body>
+</html>

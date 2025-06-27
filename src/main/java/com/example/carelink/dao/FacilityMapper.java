@@ -47,4 +47,9 @@ public interface FacilityMapper {
      * 지역별 시설 개수 조회
      */
     int countFacilitiesByRegion(@Param("region") String region);
+
+    /**
+     * 전체 시설 수 조회 (통계용)
+     */
+    int getFacilityCount();
 } 

@@ -59,6 +59,7 @@ public class MemberController {
             if (loginMember != null) {
                 // 세션에 로그인 정보 저장
                 session.setAttribute(Constants.SESSION_MEMBER, loginMember);
+                session.setAttribute("memberId", loginMember.getMemberId());
                 log.info("로그인 성공: {}", loginMember.getUserId());
                 
                 redirectAttributes.addFlashAttribute("message", "로그인되었습니다.");

@@ -41,11 +41,11 @@
                                 </div>
                                 <div class="mb-3">
                                     <label class="form-label">평점</label>
-                                    <select name="rating" class="form-select">
+                                    <select name="minRating" class="form-select">
                                         <option value="">전체</option>
-                                        <option value="5" th:selected="${rating == '5'}">5점</option>
-                                        <option value="4" th:selected="${rating == '4'}">4점 이상</option>
-                                        <option value="3" th:selected="${rating == '3'}">3점 이상</option>
+                                        <option value="5" th:selected="${param.minRating == '5'}">5점</option>
+                                        <option value="4" th:selected="${param.minRating == '4'}">4점 이상</option>
+                                        <option value="3" th:selected="${param.minRating == '3'}">3점 이상</option>
                                     </select>
                                 </div>
                                 <button type="submit" class="btn btn-primary w-100">
@@ -104,28 +104,28 @@
                     </div>
 
                     <!-- 페이징 -->
-                    <nav th:if="${not #lists.isEmpty(reviewList)}" aria-label="리뷰 페이징">
+                    <nav th:if="${pageInfo != null and pageInfo.totalPages > 1}" aria-label="리뷰 페이징">
                         <ul class="pagination justify-content-center">
                             <!-- 이전 페이지 -->
-                            <li class="page-item" th:classappend="${not pageInfo.hasPrevious} ? 'disabled'">
+                            <li class="page-item" th:classappend="${pageInfo == null or not pageInfo.hasPrevious} ? 'disabled'">
                                 <a class="page-link" 
-                                   th:href="@{/review(page=${pageInfo.currentPage - 1}, keyword=${keyword})}"
+                                   th:href="@{/review(page=${pageInfo != null ? pageInfo.currentPage - 1 : 1}, keyword=${keyword ?: ''}, minRating=${minRating})}"
                                    aria-label="Previous">
                                     <span aria-hidden="true">&laquo;</span>
                                 </a>
                             </li>
                             <!-- 페이지 번호 -->
                             <li class="page-item" 
-                                th:each="page : ${#numbers.sequence(pageInfo.startPage, pageInfo.endPage)}"
-                                th:classappend="${page == pageInfo.currentPage} ? 'active'">
+                                th:each="page : ${pageInfo != null ? #numbers.sequence(pageInfo.startPage, pageInfo.endPage) : #numbers.sequence(1, 1)}"
+                                th:classappend="${pageInfo != null and page == pageInfo.currentPage} ? 'active'">
                                 <a class="page-link" 
-                                   th:href="@{/review(page=${page}, keyword=${keyword})}"
+                                   th:href="@{/review(page=${page}, keyword=${keyword ?: ''}, minRating=${minRating})}"
                                    th:text="${page}">1</a>
                             </li>
                             <!-- 다음 페이지 -->
-                            <li class="page-item" th:classappend="${not pageInfo.hasNext} ? 'disabled'">
+                            <li class="page-item" th:classappend="${pageInfo == null or not pageInfo.hasNext} ? 'disabled'">
                                 <a class="page-link" 
-                                   th:href="@{/review(page=${pageInfo.currentPage + 1}, keyword=${keyword})}"
+                                   th:href="@{/review(page=${pageInfo != null ? pageInfo.currentPage + 1 : 1}, keyword=${keyword ?: ''}, minRating=${minRating})}"
                                    aria-label="Next">
                                     <span aria-hidden="true">&raquo;</span>
                                 </a>
