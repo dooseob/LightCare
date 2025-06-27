@@ -102,14 +102,154 @@
                             <div class="invalid-feedback" th:if="${#fields.hasErrors('phone')}" th:text="${#fields.errors('phone')[0]}"></div>
                         </div>
 
-                        <div class="mb-4"> <label for="address" class="form-label">
-                            <i class="fas fa-map-marker-alt me-1"></i>주소
-                        </label>
+                        <div class="mb-3">
+                            <label for="address" class="form-label">
+                                <i class="fas fa-map-marker-alt me-1"></i>주소
+                            </label>
                             <input type="text"
                                    class="form-control"
                                    id="address"
                                    th:field="*{address}" placeholder="주소를 입력하세요 (선택 사항)">
                             <div class="invalid-feedback" th:if="${#fields.hasErrors('address')}" th:text="${#fields.errors('address')[0]}"></div>
+                        </div>
+
+                        <div class="mb-4">
+                            <label for="role" class="form-label">
+                                <i class="fas fa-user-shield me-1"></i>회원 유형 <span class="text-danger">*</span>
+                            </label>
+                            <select class="form-select"
+                                    id="role"
+                                    th:field="*{role}"
+                                    required>
+                                <option value="">회원 유형을 선택하세요</option>
+                                <option value="USER">일반 사용자</option>
+                                <option value="FACILITY">시설 관리자</option>
+                            </select>
+                            <div class="form-text text-muted">
+                                <small>
+                                    <i class="fas fa-info-circle me-1"></i>
+                                    <strong>일반 사용자:</strong> 시설 검색, 리뷰 작성, 구인구직 이용<br>
+                                    <strong>시설 관리자:</strong> 시설 정보 관리, 구인공고 등록
+                                </small>
+                            </div>
+                            <div class="invalid-feedback" th:if="${#fields.hasErrors('role')}" th:text="${#fields.errors('role')[0]}"></div>
+                        </div>
+
+                        <!-- 시설 관리자 전용 추가 정보 섹션 -->
+                        <div id="facilityFields" style="display: none;">
+                            <div class="alert alert-info">
+                                <i class="fas fa-building me-2"></i>
+                                <strong>시설 관리자 추가 정보</strong>
+                                <p class="mb-0 mt-2">시설 관리자로 가입하시면 시설 정보도 함께 등록됩니다.</p>
+                            </div>
+
+                            <div class="row">
+                                <div class="col-md-8 mb-3">
+                                    <label for="facilityName" class="form-label">
+                                        <i class="fas fa-hospital me-1"></i>시설명 <span class="text-danger">*</span>
+                                    </label>
+                                    <input type="text"
+                                           class="form-control"
+                                           id="facilityName"
+                                           name="facilityName"
+                                           placeholder="시설명을 입력하세요">
+                                    <div class="invalid-feedback"></div>
+                                </div>
+                                <div class="col-md-4 mb-3">
+                                    <label for="facilityType" class="form-label">
+                                        <i class="fas fa-building me-1"></i>시설 유형 <span class="text-danger">*</span>
+                                    </label>
+                                    <select class="form-select" id="facilityType" name="facilityType">
+                                        <option value="">선택하세요</option>
+                                        <option value="NURSING_HOME">요양원</option>
+                                        <option value="HOSPITAL">요양병원</option>
+                                        <option value="DAY_CARE">주간보호센터</option>
+                                        <option value="HOME_CARE">재가센터</option>
+                                    </select>
+                                    <div class="invalid-feedback"></div>
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="businessNumber" class="form-label">
+                                    <i class="fas fa-id-card me-1"></i>사업자등록번호 <span class="text-danger">*</span>
+                                </label>
+                                <input type="text"
+                                       class="form-control"
+                                       id="businessNumber"
+                                       name="businessNumber"
+                                       placeholder="000-00-00000"
+                                       pattern="^\d{3}-\d{2}-\d{5}$">
+                                <small class="form-text text-muted">형식: 000-00-00000</small>
+                                <div class="invalid-feedback"></div>
+                            </div>
+
+                            <div class="row">
+                                <div class="col-md-8 mb-3">
+                                    <label for="facilityAddress" class="form-label">
+                                        <i class="fas fa-map-marker-alt me-1"></i>시설 주소 <span class="text-danger">*</span>
+                                    </label>
+                                    <input type="text"
+                                           class="form-control"
+                                           id="facilityAddress"
+                                           name="facilityAddress"
+                                           placeholder="시설 주소를 입력하세요">
+                                    <div class="invalid-feedback"></div>
+                                </div>
+                                <div class="col-md-4 mb-3">
+                                    <label for="facilityPhone" class="form-label">
+                                        <i class="fas fa-phone me-1"></i>시설 전화번호 <span class="text-danger">*</span>
+                                    </label>
+                                    <input type="tel"
+                                           class="form-control"
+                                           id="facilityPhone"
+                                           name="facilityPhone"
+                                           placeholder="02-0000-0000"
+                                           pattern="^0\d{1,2}-\d{3,4}-\d{4}$">
+                                    <div class="invalid-feedback"></div>
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="facilityDescription" class="form-label">
+                                    <i class="fas fa-file-alt me-1"></i>시설 소개
+                                </label>
+                                <textarea class="form-control"
+                                          id="facilityDescription"
+                                          name="facilityDescription"
+                                          rows="3"
+                                          placeholder="시설의 특징이나 장점을 간단히 소개해주세요 (선택사항)"></textarea>
+                                <div class="invalid-feedback"></div>
+                            </div>
+
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label for="capacity" class="form-label">
+                                        <i class="fas fa-users me-1"></i>수용 인원
+                                    </label>
+                                    <input type="number"
+                                           class="form-control"
+                                           id="capacity"
+                                           name="capacity"
+                                           min="1"
+                                           max="1000"
+                                           placeholder="예: 50">
+                                    <small class="form-text text-muted">시설의 총 수용 가능 인원</small>
+                                    <div class="invalid-feedback"></div>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label for="operatingHours" class="form-label">
+                                        <i class="fas fa-clock me-1"></i>운영 시간
+                                    </label>
+                                    <input type="text"
+                                           class="form-control"
+                                           id="operatingHours"
+                                           name="operatingHours"
+                                           placeholder="예: 09:00-18:00">
+                                    <small class="form-text text-muted">운영 시간 또는 24시간</small>
+                                    <div class="invalid-feedback"></div>
+                                </div>
+                            </div>
                         </div>
 
                         <div class="d-grid mb-3">
@@ -252,13 +392,80 @@
             }
         });
 
+        // 역할 선택에 따른 동적 필드 표시/숨김
+        $('#role').change(function() {
+            const selectedRole = $(this).val();
+            const facilityFields = $('#facilityFields');
+            
+            if (selectedRole === 'FACILITY') {
+                facilityFields.show();
+                // 시설 관리자 필수 필드들에 required 속성 추가
+                $('#facilityName, #facilityType, #businessNumber, #facilityAddress, #facilityPhone').attr('required', true);
+            } else {
+                facilityFields.hide();
+                // 시설 관리자 필수 필드들에서 required 속성 제거 및 값 초기화
+                $('#facilityName, #facilityType, #businessNumber, #facilityAddress, #facilityPhone').attr('required', false).val('');
+                $('#facilityDescription, #capacity, #operatingHours').val('');
+                // 유효성 검사 클래스 제거
+                $('#facilityFields input, #facilityFields select, #facilityFields textarea').removeClass('is-valid is-invalid');
+            }
+            updateSubmitButtonState();
+        });
+
+        // 사업자등록번호 형식 자동 변환
+        $('#businessNumber').on('input', function() {
+            let value = $(this).val().replace(/\D/g, ''); // 숫자만 추출
+            if (value.length >= 3) {
+                value = value.substring(0, 3) + '-' + value.substring(3);
+            }
+            if (value.length >= 6) {
+                value = value.substring(0, 6) + '-' + value.substring(6, 11);
+            }
+            $(this).val(value);
+        });
+
+        // 시설 전화번호 유효성 검사
+        $('#facilityPhone').on('blur', function() {
+            const phonePattern = /^0\d{1,2}-\d{3,4}-\d{4}$/;
+            const phone = $(this).val();
+            if (phone && !phonePattern.test(phone)) {
+                $(this).addClass('is-invalid');
+                $(this).siblings('.invalid-feedback').text('올바른 전화번호 형식이 아닙니다 (예: 02-1234-5678)');
+            } else if (phone) {
+                $(this).removeClass('is-invalid').addClass('is-valid');
+                $(this).siblings('.invalid-feedback').text('');
+            }
+            updateSubmitButtonState();
+        });
+
         // 폼 제출 버튼 활성화/비활성화 함수
         function updateSubmitButtonState() {
             const isPasswordMatch = (passwordInput.val() === passwordConfirmInput.val() && passwordInput.val() !== '');
-            const isNameValid = ($('#name').val() !== ''); // 이름 필드도 필수 조건에 추가
+            const isNameValid = ($('#name').val() !== '');
+            const isRoleSelected = ($('#role').val() !== '');
+            
+            let isFacilityFieldsValid = true;
+            
+            // 시설 관리자인 경우 추가 필드 검증
+            if ($('#role').val() === 'FACILITY') {
+                const facilityName = $('#facilityName').val();
+                const facilityType = $('#facilityType').val();
+                const businessNumber = $('#businessNumber').val();
+                const facilityAddress = $('#facilityAddress').val();
+                const facilityPhone = $('#facilityPhone').val();
+                
+                // 사업자등록번호 형식 검증
+                const businessNumberPattern = /^\d{3}-\d{2}-\d{5}$/;
+                const phonePattern = /^0\d{1,2}-\d{3,4}-\d{4}$/;
+                
+                isFacilityFieldsValid = facilityName && facilityType && businessNumber && 
+                                      facilityAddress && facilityPhone &&
+                                      businessNumberPattern.test(businessNumber) &&
+                                      phonePattern.test(facilityPhone);
+            }
 
             // 모든 필수 필드가 채워지고, 아이디 사용 가능하며, 비밀번호가 일치하는지 확인
-            if (isUserIdAvailable && isPasswordMatch && isNameValid) {
+            if (isUserIdAvailable && isPasswordMatch && isNameValid && isRoleSelected && isFacilityFieldsValid) {
                 joinSubmitButton.prop('disabled', false);
             } else {
                 joinSubmitButton.prop('disabled', true);
@@ -266,7 +473,7 @@
         }
 
         // 초기 로드 시 및 모든 입력 필드 변경 시 버튼 상태 업데이트
-        $('input').on('keyup blur', updateSubmitButtonState);
+        $('input, select, textarea').on('keyup blur change', updateSubmitButtonState);
         updateSubmitButtonState(); // 페이지 로드 시 초기 상태 설정
 
         // 폼 제출 전 최종 유효성 검사 (서버 측 유효성 검사가 있으므로, 클라이언트 측에서 추가로 검사할 내용이 있다면 여기에 추가)
@@ -292,6 +499,70 @@
                 $('#name').addClass('is-invalid');
                 event.preventDefault();
                 return false;
+            }
+
+            // 역할이 선택되지 않은 경우 제출 방지
+            if ($('#role').val() === '') {
+                $('#role').addClass('is-invalid');
+                event.preventDefault();
+                return false;
+            }
+
+            // 시설 관리자인 경우 추가 필드 유효성 검사
+            if ($('#role').val() === 'FACILITY') {
+                let facilityValidationFailed = false;
+                
+                // 시설명 검사
+                if ($('#facilityName').val().trim() === '') {
+                    $('#facilityName').addClass('is-invalid');
+                    $('#facilityName').siblings('.invalid-feedback').text('시설명은 필수입니다.');
+                    facilityValidationFailed = true;
+                }
+                
+                // 시설 유형 검사
+                if ($('#facilityType').val() === '') {
+                    $('#facilityType').addClass('is-invalid');
+                    $('#facilityType').siblings('.invalid-feedback').text('시설 유형을 선택해주세요.');
+                    facilityValidationFailed = true;
+                }
+                
+                // 사업자등록번호 검사
+                const businessNumber = $('#businessNumber').val();
+                const businessNumberPattern = /^\d{3}-\d{2}-\d{5}$/;
+                if (!businessNumber || !businessNumberPattern.test(businessNumber)) {
+                    $('#businessNumber').addClass('is-invalid');
+                    $('#businessNumber').siblings('.invalid-feedback').text('올바른 사업자등록번호를 입력해주세요 (000-00-00000)');
+                    facilityValidationFailed = true;
+                }
+                
+                // 시설 주소 검사
+                if ($('#facilityAddress').val().trim() === '') {
+                    $('#facilityAddress').addClass('is-invalid');
+                    $('#facilityAddress').siblings('.invalid-feedback').text('시설 주소는 필수입니다.');
+                    facilityValidationFailed = true;
+                }
+                
+                // 시설 전화번호 검사
+                const facilityPhone = $('#facilityPhone').val();
+                const phonePattern = /^0\d{1,2}-\d{3,4}-\d{4}$/;
+                if (!facilityPhone || !phonePattern.test(facilityPhone)) {
+                    $('#facilityPhone').addClass('is-invalid');
+                    $('#facilityPhone').siblings('.invalid-feedback').text('올바른 전화번호를 입력해주세요 (예: 02-1234-5678)');
+                    facilityValidationFailed = true;
+                }
+                
+                if (facilityValidationFailed) {
+                    event.preventDefault();
+                    // 첫 번째 오류 필드로 스크롤
+                    const firstError = $('#facilityFields .is-invalid').first();
+                    if (firstError.length) {
+                        firstError.focus();
+                        $('html, body').animate({
+                            scrollTop: firstError.offset().top - 100
+                        }, 500);
+                    }
+                    return false;
+                }
             }
 
             // 모든 유효성 검사 통과 시 폼 제출 허용

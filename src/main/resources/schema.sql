@@ -3,14 +3,10 @@
 -- 4인 팀 프로젝트 전용
 -- ================================================
 
--- 데이터베이스 생성 (필요 시)
-CREATE DATABASE carelink DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-USE carelink;
-
 -- ================================================
 -- 1. 회원 테이블 (팀원 A 담당)
 -- ================================================
-CREATE TABLE member (
+CREATE TABLE IF NOT EXISTS member (
     member_id BIGINT AUTO_INCREMENT PRIMARY KEY COMMENT '회원 ID',
     user_id VARCHAR(20) NOT NULL UNIQUE COMMENT '사용자 ID (로그인용)',
     password VARCHAR(255) NOT NULL COMMENT '비밀번호',
@@ -31,7 +27,7 @@ CREATE TABLE member (
 -- ================================================
 -- 2. 시설 테이블 (팀원 B 담당)
 -- ================================================
-CREATE TABLE facility (
+CREATE TABLE IF NOT EXISTS facility (
     facility_id BIGINT AUTO_INCREMENT PRIMARY KEY COMMENT '시설 ID',
     facility_name VARCHAR(100) NOT NULL COMMENT '시설명',
     facility_type VARCHAR(20) NOT NULL COMMENT '시설 유형 (NURSING_HOME, HOSPITAL, DAY_CARE)',
@@ -61,147 +57,109 @@ CREATE TABLE facility (
 -- ================================================
 -- 3. 구인구직 게시글 테이블 (팀원 C 담당)
 -- ================================================
-CREATE TABLE job_posting (
-    job_id BIGINT AUTO_INCREMENT PRIMARY KEY COMMENT '구인구직 ID',
-    title VARCHAR(200) NOT NULL COMMENT '제목',
-    content TEXT NOT NULL COMMENT '내용',
-    job_type VARCHAR(20) NOT NULL COMMENT '구인구직 유형 (RECRUIT: 구인, SEARCH: 구직)',
-    work_type VARCHAR(20) NOT NULL COMMENT '근무 형태 (FULL_TIME, PART_TIME, TEMPORARY)',
-    position VARCHAR(50) COMMENT '모집 직종',
-    recruit_count INT COMMENT '모집 인원',
-    salary_type VARCHAR(20) COMMENT '급여 유형 (HOURLY, MONTHLY, ANNUAL)',
-    salary_min DECIMAL(10, 0) COMMENT '최소 급여',
-    salary_max DECIMAL(10, 0) COMMENT '최대 급여',
-    salary_description TEXT COMMENT '급여 설명',
-    work_location VARCHAR(100) COMMENT '근무 지역',
-    work_hours VARCHAR(100) COMMENT '근무 시간',
-    experience VARCHAR(50) COMMENT '경력 조건',
-    education VARCHAR(50) COMMENT '학력 조건',
-    qualifications TEXT COMMENT '자격 요건',
-    benefits TEXT COMMENT '복리후생',
-    start_date DATE COMMENT '모집 시작일',
-    end_date DATE COMMENT '모집 마감일',
-    contact_name VARCHAR(50) COMMENT '담당자 이름',
-    contact_phone VARCHAR(20) COMMENT '담당자 연락처',
-    contact_email VARCHAR(100) COMMENT '담당자 이메일',
-    status VARCHAR(20) NOT NULL DEFAULT 'ACTIVE' COMMENT '게시글 상태 (ACTIVE, CLOSED, DRAFT)',
-    view_count INT NOT NULL DEFAULT 0 COMMENT '조회수',
-    apply_count INT NOT NULL DEFAULT 0 COMMENT '지원자 수',
-    member_id BIGINT NOT NULL COMMENT '작성자 ID',
-    facility_id BIGINT COMMENT '관련 시설 ID',
-    attachment_path VARCHAR(255) COMMENT '첨부파일 경로',
-    attachment_name VARCHAR(255) COMMENT '첨부파일 원본명',
-    priority INT NOT NULL DEFAULT 0 COMMENT '우선순위',
-    is_highlight BOOLEAN NOT NULL DEFAULT FALSE COMMENT '강조 표시 여부',
-    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '생성일시',
-    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '수정일시',
-    is_deleted BOOLEAN NOT NULL DEFAULT FALSE COMMENT '삭제 여부',
+CREATE TABLE IF NOT EXISTS job_posting (
+    job_id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    title VARCHAR(200) NOT NULL,
+    content TEXT NOT NULL,
+    job_type VARCHAR(20) NOT NULL,
+    work_type VARCHAR(20) NOT NULL,
+    position VARCHAR(50),
+    recruit_count INT,
+    salary_type VARCHAR(20),
+    salary_min DECIMAL(10, 0),
+    salary_max DECIMAL(10, 0),
+    salary_description TEXT,
+    work_location VARCHAR(100),
+    work_hours VARCHAR(100),
+    experience VARCHAR(50),
+    education VARCHAR(50),
+    qualifications TEXT,
+    benefits TEXT,
+    start_date DATE,
+    end_date DATE,
+    contact_name VARCHAR(50),
+    contact_phone VARCHAR(20),
+    contact_email VARCHAR(100),
+    company_name VARCHAR(100),
+    member_id BIGINT NOT NULL,
+    facility_id BIGINT,
+    status VARCHAR(20) NOT NULL DEFAULT 'ACTIVE',
+    view_count INT DEFAULT 0,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    is_deleted BOOLEAN NOT NULL DEFAULT FALSE,
     FOREIGN KEY (member_id) REFERENCES member(member_id),
     FOREIGN KEY (facility_id) REFERENCES facility(facility_id)
-) COMMENT='구인구직 게시글';
+);
 
 -- ================================================
--- 4. 시설 리뷰 테이블 (팀원 D 담당)
+-- 4. 리뷰 테이블 (팀원 D 담당)
 -- ================================================
-CREATE TABLE review (
-    review_id BIGINT AUTO_INCREMENT PRIMARY KEY COMMENT '리뷰 ID',
-    facility_id BIGINT NOT NULL COMMENT '시설 ID',
-    member_id BIGINT NOT NULL COMMENT '작성자 ID',
-    title VARCHAR(200) NOT NULL COMMENT '리뷰 제목',
-    content TEXT NOT NULL COMMENT '리뷰 내용',
-    rating INT NOT NULL COMMENT '평점 (1-5점)',
-    service_rating INT COMMENT '서비스 평점',
-    facility_rating INT COMMENT '시설 평점',
-    staff_rating INT COMMENT '직원 평점',
-    price_rating INT COMMENT '가격 평점',
-    review_image1 VARCHAR(255) COMMENT '리뷰 이미지 1',
-    review_image2 VARCHAR(255) COMMENT '리뷰 이미지 2',
-    review_image3 VARCHAR(255) COMMENT '리뷰 이미지 3',
-    like_count INT NOT NULL DEFAULT 0 COMMENT '추천 수',
-    dislike_count INT NOT NULL DEFAULT 0 COMMENT '비추천 수',
-    view_count INT NOT NULL DEFAULT 0 COMMENT '조회수',
-    is_visible BOOLEAN NOT NULL DEFAULT TRUE COMMENT '표시 여부',
-    status VARCHAR(20) NOT NULL DEFAULT 'ACTIVE' COMMENT '상태 (ACTIVE, HIDDEN, REPORTED)',
-    parent_review_id BIGINT COMMENT '부모 리뷰 ID (답글인 경우)',
-    reply_count INT NOT NULL DEFAULT 0 COMMENT '답글 수',
-    reply_depth INT NOT NULL DEFAULT 0 COMMENT '답글 깊이',
-    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '생성일시',
-    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '수정일시',
-    is_deleted BOOLEAN NOT NULL DEFAULT FALSE COMMENT '삭제 여부',
+CREATE TABLE IF NOT EXISTS review (
+    review_id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    facility_id BIGINT NOT NULL,
+    member_id BIGINT NOT NULL,
+    title VARCHAR(200) NOT NULL,
+    content TEXT NOT NULL,
+    rating INT NOT NULL,
+    service_rating INT,
+    facility_rating INT,
+    staff_rating INT,
+    price_rating INT,
+    review_image1 VARCHAR(255),
+    review_image2 VARCHAR(255),
+    review_image3 VARCHAR(255),
+    like_count INT DEFAULT 0,
+    dislike_count INT DEFAULT 0,
+    is_recommended BOOLEAN DEFAULT FALSE,
+    visit_date DATE,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    is_deleted BOOLEAN NOT NULL DEFAULT FALSE,
     FOREIGN KEY (facility_id) REFERENCES facility(facility_id),
-    FOREIGN KEY (member_id) REFERENCES member(member_id),
-    FOREIGN KEY (parent_review_id) REFERENCES review(review_id)
-) COMMENT='시설 리뷰';
+    FOREIGN KEY (member_id) REFERENCES member(member_id)
+);
 
 -- ================================================
--- 5. 정보 게시판 테이블 (팀원 D 담당)
+-- 5. 게시판 테이블 (팀원 D 담당)
 -- ================================================
-CREATE TABLE board (
-    board_id BIGINT AUTO_INCREMENT PRIMARY KEY COMMENT '게시글 ID',
-    board_type VARCHAR(20) NOT NULL COMMENT '게시판 유형 (NOTICE, INFO, QNA, FAQ)',
-    title VARCHAR(200) NOT NULL COMMENT '제목',
-    content TEXT NOT NULL COMMENT '내용',
-    member_id BIGINT NOT NULL COMMENT '작성자 ID',
-    view_count INT NOT NULL DEFAULT 0 COMMENT '조회수',
-    like_count INT NOT NULL DEFAULT 0 COMMENT '추천수',
-    comment_count INT NOT NULL DEFAULT 0 COMMENT '댓글수',
-    attachment_path VARCHAR(255) COMMENT '첨부파일 경로',
-    attachment_name VARCHAR(255) COMMENT '첨부파일 원본명',
-    attachment_size BIGINT COMMENT '첨부파일 크기',
-    is_notice BOOLEAN NOT NULL DEFAULT FALSE COMMENT '공지사항 여부',
-    is_secret BOOLEAN NOT NULL DEFAULT FALSE COMMENT '비밀글 여부',
-    is_active BOOLEAN NOT NULL DEFAULT TRUE COMMENT '활성 상태',
-    status VARCHAR(20) NOT NULL DEFAULT 'ACTIVE' COMMENT '상태 (ACTIVE, HIDDEN, DELETED)',
-    category VARCHAR(50) COMMENT '카테고리',
-    sub_category VARCHAR(50) COMMENT '서브 카테고리',
-    priority INT NOT NULL DEFAULT 0 COMMENT '우선순위',
-    is_pinned BOOLEAN NOT NULL DEFAULT FALSE COMMENT '상단 고정 여부',
-    parent_board_id BIGINT COMMENT '부모 게시글 ID (답글인 경우)',
-    reply_depth INT NOT NULL DEFAULT 0 COMMENT '답글 깊이',
-    reply_order INT NOT NULL DEFAULT 0 COMMENT '답글 순서',
-    tags VARCHAR(500) COMMENT '태그 (콤마로 구분)',
-    meta_description TEXT COMMENT '메타 설명',
-    meta_keywords VARCHAR(500) COMMENT '메타 키워드',
-    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '생성일시',
-    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '수정일시',
-    is_deleted BOOLEAN NOT NULL DEFAULT FALSE COMMENT '삭제 여부',
-    FOREIGN KEY (member_id) REFERENCES member(member_id),
-    FOREIGN KEY (parent_board_id) REFERENCES board(board_id)
-) COMMENT='정보 게시판';
+CREATE TABLE IF NOT EXISTS board (
+    board_id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    member_id BIGINT NOT NULL,
+    category VARCHAR(50) NOT NULL,
+    title VARCHAR(200) NOT NULL,
+    content TEXT NOT NULL,
+    view_count INT DEFAULT 0,
+    like_count INT DEFAULT 0,
+    comment_count INT DEFAULT 0,
+    is_notice BOOLEAN DEFAULT FALSE,
+    is_secret BOOLEAN DEFAULT FALSE,
+    attached_file VARCHAR(255),
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    is_deleted BOOLEAN NOT NULL DEFAULT FALSE,
+    FOREIGN KEY (member_id) REFERENCES member(member_id)
+);
 
 -- ================================================
 -- 인덱스 생성
 -- ================================================
+CREATE INDEX IF NOT EXISTS idx_member_user_id ON member(user_id);
+CREATE INDEX IF NOT EXISTS idx_member_email ON member(email);
+CREATE INDEX IF NOT EXISTS idx_member_role ON member(role);
 
--- 회원 테이블 인덱스
-CREATE INDEX idx_member_user_id ON member(user_id);
-CREATE INDEX idx_member_email ON member(email);
-CREATE INDEX idx_member_role ON member(role);
-CREATE INDEX idx_member_created_at ON member(created_at);
+CREATE INDEX IF NOT EXISTS idx_facility_type ON facility(facility_type);
+CREATE INDEX IF NOT EXISTS idx_facility_registered_member ON facility(registered_member_id);
 
--- 시설 테이블 인덱스
-CREATE INDEX idx_facility_type ON facility(facility_type);
-CREATE INDEX idx_facility_location ON facility(latitude, longitude);
-CREATE INDEX idx_facility_member_id ON facility(registered_member_id);
-CREATE INDEX idx_facility_created_at ON facility(created_at);
+CREATE INDEX IF NOT EXISTS idx_job_type ON job_posting(job_type);
+CREATE INDEX IF NOT EXISTS idx_job_member_id ON job_posting(member_id);
+CREATE INDEX IF NOT EXISTS idx_job_facility_id ON job_posting(facility_id);
 
--- 구인구직 테이블 인덱스
-CREATE INDEX idx_job_type ON job_posting(job_type);
-CREATE INDEX idx_job_work_type ON job_posting(work_type);
-CREATE INDEX idx_job_member_id ON job_posting(member_id);
-CREATE INDEX idx_job_facility_id ON job_posting(facility_id);
-CREATE INDEX idx_job_created_at ON job_posting(created_at);
+CREATE INDEX IF NOT EXISTS idx_review_facility_id ON review(facility_id);
+CREATE INDEX IF NOT EXISTS idx_review_member_id ON review(member_id);
 
--- 리뷰 테이블 인덱스
-CREATE INDEX idx_review_facility_id ON review(facility_id);
-CREATE INDEX idx_review_member_id ON review(member_id);
-CREATE INDEX idx_review_created_at ON review(created_at);
-
--- 게시판 테이블 인덱스
-CREATE INDEX idx_board_type ON board(board_type);
-CREATE INDEX idx_board_member_id ON board(member_id);
-CREATE INDEX idx_board_created_at ON board(created_at);
-CREATE INDEX idx_board_category ON board(category);
+CREATE INDEX IF NOT EXISTS idx_board_member_id ON board(member_id);
+CREATE INDEX IF NOT EXISTS idx_board_category ON board(category);
 
 -- ================================================
 -- 기본 데이터 삽입 (테스트용)

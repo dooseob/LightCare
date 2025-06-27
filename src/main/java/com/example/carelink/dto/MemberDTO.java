@@ -44,6 +44,8 @@ public class MemberDTO extends BaseDTO {
     @Pattern(regexp = "^01(?:0|1|[6-9])-(?:\\d{3}|\\d{4})-\\d{4}$", message = "올바른 휴대폰 번호 형식이 아닙니다.")
     private String phone;         // 휴대폰 번호
 
+    @NotBlank(message = "회원 유형을 선택해주세요.")
+    @Pattern(regexp = "^(USER|FACILITY|ADMIN)$", message = "올바른 회원 유형을 선택해주세요.")
     private String role;          // 회원 역할 (USER, FACILITY, ADMIN)
     private String address;       // 주소 (DDL에 따라 VARCHAR 길이 제한 추가 고려)
 
@@ -66,4 +68,16 @@ public class MemberDTO extends BaseDTO {
     // 프로필 이미지 파일 업로드용 (DB에 저장되지 않는 필드, DTO가 폼 데이터를 받을 때 사용)
     // myinfo.html의 <input type="file" name="profileImageFile"> 와 매핑됩니다.
     private transient MultipartFile profileImageFile; // 파일 자체를 받기 위한 필드
+
+    // ========== 시설 관리자 회원가입 시 추가 정보 (transient 필드) ==========
+    // 이 필드들은 DB에 저장되지 않고, 회원가입 폼에서만 사용되어 FacilityDTO로 전달됩니다.
+    
+    private transient String facilityName;        // 시설명
+    private transient String facilityType;        // 시설 유형 (NURSING_HOME, HOSPITAL, DAY_CARE, HOME_CARE)
+    private transient String businessNumber;      // 사업자등록번호
+    private transient String facilityAddress;     // 시설 주소
+    private transient String facilityPhone;       // 시설 전화번호
+    private transient String facilityDescription; // 시설 소개
+    private transient Integer capacity;           // 수용 인원
+    private transient String operatingHours;      // 운영 시간
 }

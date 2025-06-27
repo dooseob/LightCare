@@ -1,12 +1,15 @@
 package com.example.carelink.service;
 
 import com.example.carelink.dao.MemberMapper;
+import com.example.carelink.dao.FacilityMapper;
 import com.example.carelink.dto.LoginDTO;
 import com.example.carelink.dto.MemberDTO;
+import com.example.carelink.dto.FacilityDTO;
 import com.example.carelink.common.Constants;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value; // @Value를 사용한다면 유지
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile; // MultipartFile 유지
@@ -29,6 +32,8 @@ import java.util.UUID; // UUID 유지 (파일 이름 생성)
 public class MemberService {
 
     private final MemberMapper memberMapper;
+    private final FacilityMapper facilityMapper;
+    private final PasswordEncoder passwordEncoder;
 
     // @Value 설정과 관련 변수 유지 (프로필 이미지 업로드 기능이 DTO에 있으므로)
     @Value("${file.upload-dir.profile}")
@@ -63,8 +68,8 @@ public class MemberService {
                 return null;
             }
 
-            // 비밀번호 검증 (평문 비교) - 보안 취약
-            if (loginDTO.getPassword().equals(member.getPassword())) {
+            // 비밀번호 검증 (BCrypt 암호화 비교)
+            if (passwordEncoder.matches(loginDTO.getPassword(), member.getPassword())) {
                 memberMapper.updateLoginSuccess(member.getMemberId());
                 log.info("로그인 성공: {}", loginDTO.getUserId());
                 return member;
@@ -90,11 +95,19 @@ public class MemberService {
                 throw new IllegalArgumentException("이미 사용중인 아이디입니다.");
             }
 
-            // 비밀번호는 평문으로 저장됩니다 (암호화 없음 - 보안 취약)
-            // memberDTO.setPassword(memberDTO.getPassword()); // 이 라인은 불필요, 이미 DTO에 값이 있음
+            // 비밀번호 BCrypt 암호화
+            String encodedPassword = passwordEncoder.encode(memberDTO.getPassword());
+            memberDTO.setPassword(encodedPassword);
 
+            // 역할 유효성 검증 (Bean Validation으로도 검증되지만, 서비스에서 추가 검증)
             if (memberDTO.getRole() == null || memberDTO.getRole().isEmpty()) {
-                memberDTO.setRole(Constants.MEMBER_ROLE_USER);
+                throw new IllegalArgumentException("회원 유형을 선택해주세요.");
+            }
+            
+            // 허용되지 않은 역할 체크 (ADMIN은 회원가입으로 생성 불가)
+            if (!Constants.MEMBER_ROLE_USER.equals(memberDTO.getRole()) && 
+                !Constants.MEMBER_ROLE_FACILITY.equals(memberDTO.getRole())) {
+                throw new IllegalArgumentException("허용되지 않은 회원 유형입니다.");
             }
             memberDTO.setIsActive(true);
             memberDTO.setLoginFailCount(0);
@@ -104,11 +117,65 @@ public class MemberService {
             if (result == 0) {
                 throw new RuntimeException("회원가입 데이터 저장에 실패했습니다.");
             }
+
+            // 시설 관리자인 경우 시설 정보도 함께 등록
+            if (Constants.MEMBER_ROLE_FACILITY.equals(memberDTO.getRole())) {
+                registerFacilityInfo(memberDTO);
+            }
+
             log.info("회원가입 완료: {}", memberDTO.getUserId());
 
         } catch (Exception e) {
             log.error("회원가입 처리 중 오류 발생: {}", memberDTO.getUserId(), e);
             throw new RuntimeException("회원가입 처리 중 오류가 발생했습니다.", e);
+        }
+    }
+
+    /**
+     * 시설 관리자 회원가입 시 시설 정보 등록
+     */
+    private void registerFacilityInfo(MemberDTO memberDTO) {
+        try {
+            // MemberDTO의 transient 필드에서 시설 정보를 추출하여 FacilityDTO 생성
+            FacilityDTO facilityDTO = new FacilityDTO();
+            
+            // 필수 정보 설정
+            facilityDTO.setFacilityName(memberDTO.getFacilityName());
+            facilityDTO.setFacilityType(memberDTO.getFacilityType());
+            facilityDTO.setAddress(memberDTO.getFacilityAddress());
+            facilityDTO.setPhone(memberDTO.getFacilityPhone());
+            facilityDTO.setRegisteredMemberId(memberDTO.getMemberId());
+            
+            // 선택 정보 설정
+            if (memberDTO.getFacilityDescription() != null && !memberDTO.getFacilityDescription().trim().isEmpty()) {
+                facilityDTO.setDescription(memberDTO.getFacilityDescription());
+            }
+            if (memberDTO.getCapacity() != null) {
+                facilityDTO.setCapacity(memberDTO.getCapacity());
+            }
+            if (memberDTO.getOperatingHours() != null && !memberDTO.getOperatingHours().trim().isEmpty()) {
+                facilityDTO.setOperatingHours(memberDTO.getOperatingHours());
+            }
+            
+            // 시설 승인 관련 설정 (기본값: 승인 대기)
+            facilityDTO.setApproved(false);
+            facilityDTO.setApprovalStatus("PENDING");
+            
+            // 평점 초기화
+            facilityDTO.setAverageRating(0.0f);
+            facilityDTO.setReviewCount(0);
+            
+            // 시설 정보 저장
+            int facilityResult = facilityMapper.insertFacility(facilityDTO);
+            if (facilityResult == 0) {
+                throw new RuntimeException("시설 정보 저장에 실패했습니다.");
+            }
+            
+            log.info("시설 정보 등록 완료: {} (회원 ID: {})", facilityDTO.getFacilityName(), memberDTO.getMemberId());
+            
+        } catch (Exception e) {
+            log.error("시설 정보 등록 중 오류 발생: 회원 ID {}", memberDTO.getMemberId(), e);
+            throw new RuntimeException("시설 정보 등록 중 오류가 발생했습니다.", e);
         }
     }
 
@@ -221,8 +288,8 @@ public class MemberService {
             throw new IllegalArgumentException("사용자를 찾을 수 없습니다.");
         }
 
-        // 현재 비밀번호 확인 (평문 비교) - 보안 취약
-        if (!currentPassword.equals(member.getPassword())) {
+        // 현재 비밀번호 확인 (BCrypt 비교)
+        if (!passwordEncoder.matches(currentPassword, member.getPassword())) {
             throw new IllegalArgumentException("현재 비밀번호가 일치하지 않습니다.");
         }
 
@@ -234,8 +301,9 @@ public class MemberService {
             throw new IllegalArgumentException("새 비밀번호는 최소 8자 이상이어야 합니다.");
         }
 
-        // 새 비밀번호 업데이트 (평문 저장) - 보안 취약
-        member.setPassword(newPassword);
+        // 새 비밀번호 BCrypt 암호화
+        String encodedNewPassword = passwordEncoder.encode(newPassword);
+        member.setPassword(encodedNewPassword);
         int result = memberMapper.updatePassword(member);
         if (result == 0) {
             throw new RuntimeException("비밀번호 변경에 실패했습니다.");
