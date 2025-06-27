@@ -1,7 +1,9 @@
 package com.example.carelink.controller;
 
+import com.example.carelink.common.Constants;
 import com.example.carelink.common.PageInfo;
 import com.example.carelink.dto.BoardDTO;
+import com.example.carelink.dto.MemberDTO;
 import com.example.carelink.service.BoardService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -116,12 +118,13 @@ public class BoardController {
                           HttpSession session,
                           RedirectAttributes redirectAttributes) {
         
-        // 로그인 체크
-        Long memberId = (Long) session.getAttribute("memberId");
-        if (memberId == null) {
+        // 로그인 체크 (통일된 방식)
+        MemberDTO loginMember = (MemberDTO) session.getAttribute(Constants.SESSION_MEMBER);
+        if (loginMember == null) {
             redirectAttributes.addFlashAttribute("error", "로그인이 필요합니다.");
             return "redirect:/member/login";
         }
+        Long memberId = loginMember.getMemberId();
         
         BoardDTO boardDTO = new BoardDTO();
         boardDTO.setMemberId(memberId); // 세션에서 가져온 사용자 ID 설정
@@ -161,12 +164,13 @@ public class BoardController {
                            HttpSession session,
                            RedirectAttributes redirectAttributes) {
         try {
-            // 로그인 체크
-            Long memberId = (Long) session.getAttribute("memberId");
-            if (memberId == null) {
+            // 로그인 체크 (통일된 방식)
+            MemberDTO loginMember = (MemberDTO) session.getAttribute(Constants.SESSION_MEMBER);
+            if (loginMember == null) {
                 redirectAttributes.addFlashAttribute("error", "로그인이 필요합니다.");
                 return "redirect:/member/login";
             }
+            Long memberId = loginMember.getMemberId();
             
             // 세션에서 가져온 사용자 ID 설정 (보안 강화)
             boardDTO.setMemberId(memberId);
@@ -245,12 +249,13 @@ public class BoardController {
                          Model model,
                          RedirectAttributes redirectAttributes) {
         try {
-            // 로그인 체크
-            Long memberId = (Long) session.getAttribute("memberId");
-            if (memberId == null) {
+            // 로그인 체크 (통일된 방식)
+            MemberDTO loginMember = (MemberDTO) session.getAttribute(Constants.SESSION_MEMBER);
+            if (loginMember == null) {
                 redirectAttributes.addFlashAttribute("error", "로그인이 필요합니다.");
                 return "redirect:/member/login";
             }
+            Long memberId = loginMember.getMemberId();
             
             BoardDTO board = boardService.getBoardById(id);
             
@@ -280,12 +285,13 @@ public class BoardController {
                           HttpSession session,
                           RedirectAttributes redirectAttributes) {
         try {
-            // 로그인 체크
-            Long memberId = (Long) session.getAttribute("memberId");
-            if (memberId == null) {
+            // 로그인 체크 (통일된 방식)
+            MemberDTO loginMember = (MemberDTO) session.getAttribute(Constants.SESSION_MEMBER);
+            if (loginMember == null) {
                 redirectAttributes.addFlashAttribute("error", "로그인이 필요합니다.");
                 return "redirect:/member/login";
             }
+            Long memberId = loginMember.getMemberId();
             
             // 기존 게시글 정보 조회
             BoardDTO existingBoard = boardService.getBoardById(id);
@@ -336,12 +342,13 @@ public class BoardController {
                             HttpSession session,
                             RedirectAttributes redirectAttributes) {
         try {
-            // 로그인 체크
-            Long memberId = (Long) session.getAttribute("memberId");
-            if (memberId == null) {
+            // 로그인 체크 (통일된 방식)
+            MemberDTO loginMember = (MemberDTO) session.getAttribute(Constants.SESSION_MEMBER);
+            if (loginMember == null) {
                 redirectAttributes.addFlashAttribute("error", "로그인이 필요합니다.");
                 return "redirect:/member/login";
             }
+            Long memberId = loginMember.getMemberId();
             
             // 기존 게시글 정보 조회하여 작성자 확인
             BoardDTO existingBoard = null;
