@@ -6,6 +6,7 @@ import com.example.carelink.dto.MemberDTO;
 import com.example.carelink.common.Constants;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -20,6 +21,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class MemberService {
 
     private final MemberMapper memberMapper;
+    private final PasswordEncoder passwordEncoder;
 
     /**
      * 로그인 처리
@@ -46,8 +48,17 @@ public class MemberService {
                 return null;
             }
             
-            // 비밀번호 검증 (실제로는 암호화된 비밀번호와 비교해야 함)
-            if (loginDTO.getPassword().equals(member.getPassword())) {
+            // 비밀번호 검증 (BCrypt 암호화 지원)
+            boolean passwordMatches = false;
+            if (member.getPassword().startsWith("$2a$")) {
+                // BCrypt로 암호화된 비밀번호
+                passwordMatches = passwordEncoder.matches(loginDTO.getPassword(), member.getPassword());
+            } else {
+                // 기존 평문 비밀번호 (마이그레이션 전)
+                passwordMatches = loginDTO.getPassword().equals(member.getPassword());
+            }
+            
+            if (passwordMatches) {
                 // 로그인 성공 시 실패 횟수 초기화 및 마지막 로그인 시간 업데이트
                 memberMapper.updateLoginSuccess(member.getMemberId());
                 log.info("로그인 성공: {}", loginDTO.getUserId());
@@ -80,8 +91,8 @@ public class MemberService {
             memberDTO.setActive(true);
             memberDTO.setLoginFailCount(0);
             
-            // 실제로는 비밀번호 암호화 필요
-            // memberDTO.setPassword(passwordEncoder.encode(memberDTO.getPassword()));
+            // 비밀번호 BCrypt 암호화
+            memberDTO.setPassword(passwordEncoder.encode(memberDTO.getPassword()));
             
             // 회원 정보 저장
             memberMapper.insertMember(memberDTO);
