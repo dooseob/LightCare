@@ -107,6 +107,14 @@ public class MemberController {
         
         // 유효성 검증 실패 시
         if (bindingResult.hasErrors()) {
+            log.warn("회원가입 유효성 검사 실패: {}", bindingResult.getAllErrors());
+            return "member/join";
+        }
+
+        // 비밀번호와 비밀번호 확인 일치 여부 검사
+        if (!memberDTO.getPassword().equals(memberDTO.getPasswordConfirm())) {
+            bindingResult.rejectValue("passwordConfirm", "password.mismatch", "비밀번호 확인이 일치하지 않습니다.");
+            log.warn("회원가입 실패: 비밀번호 확인 불일치");
             return "member/join";
         }
 
@@ -118,8 +126,13 @@ public class MemberController {
             redirectAttributes.addFlashAttribute("message", "회원가입이 완료되었습니다. 로그인해주세요.");
             return "redirect:/member/login";
             
+        } catch (IllegalArgumentException e) {
+            // 서비스 계층에서 발생한 아이디 중복 등의 비즈니스 로직 예외 처리
+            log.warn("회원가입 실패: {}", e.getMessage());
+            bindingResult.rejectValue("userId", "duplicate.userId", e.getMessage());
+            return "member/join";
         } catch (Exception e) {
-            log.error("회원가입 처리 중 오류 발생", e);
+            log.error("회원가입 처리 중 알 수 없는 오류 발생", e);
             redirectAttributes.addFlashAttribute("error", "회원가입 처리 중 오류가 발생했습니다.");
             return "member/join";
         }
