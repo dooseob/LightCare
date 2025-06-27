@@ -57,7 +57,7 @@ public class MemberController {
             MemberDTO loginMember = memberService.login(loginDTO);
             
             if (loginMember != null) {
-                // 세션에 로그인 정보 저장
+                // 세션에 로그인 정보 저장 (통일된 방식)
                 session.setAttribute(Constants.SESSION_MEMBER, loginMember);
                 session.setAttribute("memberId", loginMember.getMemberId());
                 log.info("로그인 성공: {}", loginMember.getUserId());
@@ -148,11 +148,12 @@ public class MemberController {
         
         try {
             boolean isDuplicate = memberService.isUserIdDuplicate(userId);
-            result.put("isDuplicate", isDuplicate);
+            result.put("available", !isDuplicate);  // 사용 가능 여부로 변경
             result.put("message", isDuplicate ? "이미 사용중인 아이디입니다." : "사용 가능한 아이디입니다.");
             
         } catch (Exception e) {
             log.error("아이디 중복 체크 중 오류 발생", e);
+            result.put("available", false);
             result.put("error", "중복 체크 중 오류가 발생했습니다.");
         }
         
@@ -193,9 +194,10 @@ public class MemberController {
         try {
             memberService.updateMember(memberDTO);
             
-            // 세션 정보 업데이트
+            // 세션 정보 업데이트 (통일된 방식)
             MemberDTO updatedMember = memberService.findById(memberDTO.getMemberId());
             session.setAttribute(Constants.SESSION_MEMBER, updatedMember);
+            session.setAttribute("memberId", updatedMember.getMemberId());
             
             redirectAttributes.addFlashAttribute("message", "회원정보가 수정되었습니다.");
             return "redirect:/member/myinfo";

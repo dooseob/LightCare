@@ -42,6 +42,15 @@ public class MemberDTO extends BaseDTO {
     private String profileImage;  // 프로필 이미지 경로
     private boolean isActive;     // 계정 활성화 여부
     
+    // 시설 관리자 전용 필드들
+    private String facilityName;     // 시설명
+    private String facilityType;     // 시설 유형 (NURSING_HOME, HOSPITAL, DAY_CARE)
+    private String businessNumber;   // 사업자등록번호
+    private String facilityAddress;  // 시설 주소
+    private String facilityPhone;    // 시설 전화번호
+    private String directorName;     // 시설장 이름
+    private String description;      // 시설 소개
+    
     // 비밀번호 확인용 (저장되지 않는 필드)
     private transient String passwordConfirm;
     

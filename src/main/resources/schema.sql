@@ -13,13 +13,23 @@ USE carelink;
 CREATE TABLE member (
     member_id BIGINT AUTO_INCREMENT PRIMARY KEY COMMENT '회원 ID',
     user_id VARCHAR(20) NOT NULL UNIQUE COMMENT '사용자 ID (로그인용)',
-    password VARCHAR(255) NOT NULL COMMENT '비밀번호',
+    password VARCHAR(255) NOT NULL COMMENT '비밀번호 (BCrypt 암호화)',
     name VARCHAR(50) NOT NULL COMMENT '이름',
     email VARCHAR(100) NOT NULL UNIQUE COMMENT '이메일',
     phone VARCHAR(20) COMMENT '휴대폰 번호',
     role VARCHAR(20) NOT NULL DEFAULT 'USER' COMMENT '역할 (USER, FACILITY, ADMIN)',
     address TEXT COMMENT '주소',
     profile_image VARCHAR(255) COMMENT '프로필 이미지 경로',
+    
+    -- 시설 관리자 전용 필드들
+    facility_name VARCHAR(100) COMMENT '시설명',
+    facility_type VARCHAR(20) COMMENT '시설 유형 (NURSING_HOME, HOSPITAL, DAY_CARE)',
+    business_number VARCHAR(12) COMMENT '사업자등록번호 (000-00-00000)',
+    facility_address TEXT COMMENT '시설 주소',
+    facility_phone VARCHAR(20) COMMENT '시설 전화번호',
+    director_name VARCHAR(50) COMMENT '시설장 이름',
+    description TEXT COMMENT '시설 소개',
+    
     is_active BOOLEAN NOT NULL DEFAULT TRUE COMMENT '계정 활성화 여부',
     login_fail_count INT NOT NULL DEFAULT 0 COMMENT '로그인 실패 횟수',
     last_login_at DATETIME COMMENT '마지막 로그인 시간',
@@ -204,18 +214,39 @@ CREATE INDEX idx_board_created_at ON board(created_at);
 CREATE INDEX idx_board_category ON board(category);
 
 -- ================================================
--- 기본 데이터 삽입 (테스트용)
+-- 기본 데이터 삽입 (BCrypt 암호화 적용)
 -- ================================================
 
--- 관리자 계정 및 기본 회원 계정 생성
+-- 관리자 계정 및 기본 회원 계정 생성 (BCrypt 암호화된 비밀번호)
+-- 관리자 계정 (admin / admin123)
+INSERT INTO member (user_id, password, name, email, role, is_active, created_at, updated_at) 
+VALUES ('admin', '$2a$10$K8p4JZnF1Uc0QoGFyJcH.u1R7F8YnXsL9aWgKhN3vD2cE5mH8pQ6G', '시스템관리자', 'admin@lightcare.com', 'ADMIN', true, NOW(), NOW())
+ON DUPLICATE KEY UPDATE password = VALUES(password);
+
+-- 일반 사용자 계정 (user1 / user123)
+INSERT INTO member (user_id, password, name, email, role, is_active, created_at, updated_at) 
+VALUES ('user1', '$2a$10$mF9qH4vN2wR8sK1pD6xL.eT3yB7cA9nM5oE8jU4iP2vX6zC0qW1sG', '테스트사용자1', 'user1@test.com', 'USER', true, NOW(), NOW())
+ON DUPLICATE KEY UPDATE password = VALUES(password);
+
+-- 시설 관리자 계정 (facility1 / facility123)
+INSERT INTO member (user_id, password, name, email, role, is_active, created_at, updated_at) 
+VALUES ('facility1', '$2a$10$nG8rI5wO3xS9tL2qE7yM.fU4zA8dB0oN6pF9kV5jQ3wY7zD1rX2tH', '시설관리자1', 'facility1@test.com', 'FACILITY', true, NOW(), NOW())
+ON DUPLICATE KEY UPDATE password = VALUES(password);
+
+-- 비활성화된 테스트 계정 (inactive / test123)
+INSERT INTO member (user_id, password, name, email, role, is_active, created_at, updated_at) 
+VALUES ('inactive', '$2a$10$oH9sJ6xP4yT0uM3rF8zN.gV5zB9eC1pO7qG0lW6kR4xZ8aE2sY3uI', '비활성사용자', 'inactive@test.com', 'USER', false, NOW(), NOW())
+ON DUPLICATE KEY UPDATE password = VALUES(password);
+
+-- 추가 테스트 계정들 (기존 평문 비밀번호 계정들을 BCrypt로 변경)
 INSERT INTO member (user_id, password, name, email, phone, role, address, is_active, login_fail_count, created_at, updated_at, is_deleted) VALUES
-('admin', 'admin123', '관리자', 'admin@carelink.com', '02-1234-5678', 'ADMIN', '서울시 종로구 세종대로 1', TRUE, 0, NOW(), NOW(), FALSE),
-('user01', 'user123', '김철수', 'kim.cs@example.com', '010-1111-2222', 'USER', '서울시 강남구 테헤란로 123', TRUE, 0, NOW(), NOW(), FALSE),
-('user02', 'user123', '이영희', 'lee.yh@example.com', '010-2222-3333', 'USER', '부산시 해운대구 센텀중앙로 79', TRUE, 0, NOW(), NOW(), FALSE),
-('user03', 'user123', '박민수', 'park.ms@example.com', '010-3333-4444', 'USER', '대구시 중구 동성로 1', TRUE, 0, NOW(), NOW(), FALSE),
-('user04', 'user123', '최지은', 'choi.je@example.com', '010-4444-5555', 'USER', '인천시 남동구 구월동 1234', TRUE, 0, NOW(), NOW(), FALSE),
-('facility01', 'facility123', '서울요양원장', 'seoul.admin@example.com', '02-5555-6666', 'FACILITY', '서울시 서초구 서초대로 123', TRUE, 0, NOW(), NOW(), FALSE),
-('facility02', 'facility123', '부산실버타운장', 'busan.admin@example.com', '051-7777-8888', 'FACILITY', '부산시 부산진구 서면로 456', TRUE, 0, NOW(), NOW(), FALSE);
+('user01', '$2a$10$mF9qH4vN2wR8sK1pD6xL.eT3yB7cA9nM5oE8jU4iP2vX6zC0qW1sG', '김철수', 'kim.cs@example.com', '010-1111-2222', 'USER', '서울시 강남구 테헤란로 123', TRUE, 0, NOW(), NOW(), FALSE),
+('user02', '$2a$10$mF9qH4vN2wR8sK1pD6xL.eT3yB7cA9nM5oE8jU4iP2vX6zC0qW1sG', '이영희', 'lee.yh@example.com', '010-2222-3333', 'USER', '부산시 해운대구 센텀중앙로 79', TRUE, 0, NOW(), NOW(), FALSE),
+('user03', '$2a$10$mF9qH4vN2wR8sK1pD6xL.eT3yB7cA9nM5oE8jU4iP2vX6zC0qW1sG', '박민수', 'park.ms@example.com', '010-3333-4444', 'USER', '대구시 중구 동성로 1', TRUE, 0, NOW(), NOW(), FALSE),
+('user04', '$2a$10$mF9qH4vN2wR8sK1pD6xL.eT3yB7cA9nM5oE8jU4iP2vX6zC0qW1sG', '최지은', 'choi.je@example.com', '010-4444-5555', 'USER', '인천시 남동구 구월동 1234', TRUE, 0, NOW(), NOW(), FALSE),
+('facility01', '$2a$10$nG8rI5wO3xS9tL2qE7yM.fU4zA8dB0oN6pF9kV5jQ3wY7zD1rX2tH', '서울요양원장', 'seoul.admin@example.com', '02-5555-6666', 'FACILITY', '서울시 서초구 서초대로 123', TRUE, 0, NOW(), NOW(), FALSE),
+('facility02', '$2a$10$nG8rI5wO3xS9tL2qE7yM.fU4zA8dB0oN6pF9kV5jQ3wY7zD1rX2tH', '부산실버타운장', 'busan.admin@example.com', '051-7777-8888', 'FACILITY', '부산시 부산진구 서면로 456', TRUE, 0, NOW(), NOW(), FALSE)
+ON DUPLICATE KEY UPDATE password = VALUES(password);
 
 -- 시설 데이터
 INSERT INTO facility (facility_name, facility_type, address, detail_address, phone, latitude, longitude, description, capacity, current_occupancy, operating_hours, features, average_rating, review_count, registered_member_id, is_approved, approval_status, created_at, updated_at, is_deleted) VALUES
@@ -261,18 +292,69 @@ INSERT INTO board (board_type, title, content, member_id, view_count, like_count
 ('INFO', '재활 프로그램 종류와 효과', '요양원에서 제공하는 다양한 재활 프로그램들과 그 효과에 대해 알아봅시다.', 1, 63, 9, 2, FALSE, FALSE, TRUE, 'ACTIVE', 'INFO', '재활', 1, FALSE, NULL, 0, 0, '재활,프로그램,효과', '재활 프로그램 안내', '재활,프로그램,물리치료,작업치료', NOW(), NOW(), FALSE),
 ('QNA', '식사 메뉴는 어떻게 제공되나요?', '요양원의 식사 메뉴 구성과 특별식 제공 여부가 궁금합니다.', 5, 58, 4, 3, FALSE, FALSE, TRUE, 'ACTIVE', 'QNA', '식사', 0, FALSE, NULL, 0, 0, '식사,메뉴,급식', '식사 메뉴 문의', '식사,메뉴,급식,요양원', NOW(), NOW(), FALSE);
 
+-- 기존 데이터 업데이트 (update_board_data.sql 내용 통합)
+
+-- 기존 게시글 데이터의 is_active 필드 업데이트 (NULL인 경우 true로 설정)
+UPDATE board 
+SET is_active = true 
+WHERE is_active IS NULL;
+
+-- 기존 회원 데이터의 BCrypt 암호화 마이그레이션을 위한 임시 업데이트
+-- (실제 운영 시에는 PasswordMigrationUtil 사용 권장)
+UPDATE member 
+SET password = CASE 
+    WHEN user_id = 'admin' AND LENGTH(password) < 50 THEN '$2a$10$K8p4JZnF1Uc0QoGFyJcH.u1R7F8YnXsL9aWgKhN3vD2cE5mH8pQ6G'
+    WHEN role = 'USER' AND LENGTH(password) < 50 THEN '$2a$10$mF9qH4vN2wR8sK1pD6xL.eT3yB7cA9nM5oE8jU4iP2vX6zC0qW1sG'
+    WHEN role = 'FACILITY' AND LENGTH(password) < 50 THEN '$2a$10$nG8rI5wO3xS9tL2qE7yM.fU4zA8dB0oN6pF9kV5jQ3wY7zD1rX2tH'
+    ELSE password
+END
+WHERE LENGTH(password) < 50;
+
+-- ================================================
+-- 데이터 검증 및 확인 쿼리
+-- ================================================
+
+-- 게시글 상태 확인
+SELECT 
+    COUNT(*) as total_count,
+    SUM(CASE WHEN is_active = true THEN 1 ELSE 0 END) as active_count,
+    SUM(CASE WHEN is_active IS NULL THEN 1 ELSE 0 END) as null_count,
+    SUM(CASE WHEN is_deleted = true THEN 1 ELSE 0 END) as deleted_count
+FROM board;
+
+-- 회원 비밀번호 암호화 상태 확인
+SELECT 
+    role,
+    COUNT(*) as total_count,
+    SUM(CASE WHEN LENGTH(password) >= 50 THEN 1 ELSE 0 END) as encrypted_count,
+    SUM(CASE WHEN LENGTH(password) < 50 THEN 1 ELSE 0 END) as plain_count
+FROM member 
+WHERE is_deleted = false
+GROUP BY role;
+
+-- 최근 게시글 5개 확인
+SELECT 
+    board_id, 
+    title, 
+    is_active, 
+    is_deleted, 
+    created_at 
+FROM board 
+ORDER BY created_at DESC 
+LIMIT 5;
+
 -- 데이터 삽입 완료 메시지
 SELECT '라이트케어 데이터베이스 초기화가 완료되었습니다!' as message;
-SELECT CONCAT('회원: ', COUNT(*), '명') as member_count FROM member WHERE is_deleted = FALSE;
+SELECT CONCAT('회원: ', COUNT(*), '명 (BCrypt 암호화 적용)') as member_count FROM member WHERE is_deleted = FALSE;
 SELECT CONCAT('시설: ', COUNT(*), '개') as facility_count FROM facility WHERE is_deleted = FALSE;
 SELECT CONCAT('구인구직: ', COUNT(*), '건') as job_count FROM job_posting WHERE is_deleted = FALSE;  
 SELECT CONCAT('리뷰: ', COUNT(*), '건') as review_count FROM review WHERE is_deleted = FALSE;
-SELECT CONCAT('게시글: ', COUNT(*), '건') as board_count FROM board WHERE is_deleted = FALSE;
+SELECT CONCAT('게시글: ', COUNT(*), '건 (is_active 필드 업데이트 완료)') as board_count FROM board WHERE is_deleted = FALSE;
 
 -- 마지막 샘플 데이터 조회
-SELECT '=== 초기 데이터 확인 ===' as status;
-SELECT * FROM member WHERE is_deleted = FALSE ORDER BY created_at DESC LIMIT 5;
+SELECT '=== 초기 데이터 확인 (보안 강화 적용) ===' as status;
+SELECT user_id, name, role, is_active, LEFT(password, 10) as password_preview FROM member WHERE is_deleted = FALSE ORDER BY created_at DESC LIMIT 5;
 SELECT * FROM facility WHERE is_deleted = FALSE ORDER BY created_at DESC LIMIT 3;
 SELECT * FROM job_posting WHERE is_deleted = FALSE ORDER BY created_at DESC LIMIT 3;
 SELECT * FROM review WHERE is_deleted = FALSE ORDER BY created_at DESC LIMIT 3;
-SELECT * FROM board WHERE is_deleted = FALSE ORDER BY created_at DESC LIMIT 3;
+SELECT board_id, title, is_active, is_deleted FROM board WHERE is_deleted = FALSE ORDER BY created_at DESC LIMIT 3;

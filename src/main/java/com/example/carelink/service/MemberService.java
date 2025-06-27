@@ -86,8 +86,18 @@ public class MemberService {
                 throw new IllegalArgumentException("이미 사용중인 아이디입니다.");
             }
             
+            // 역할 유효성 검증
+            if (!Constants.MEMBER_ROLE_USER.equals(memberDTO.getRole()) && 
+                !Constants.MEMBER_ROLE_FACILITY.equals(memberDTO.getRole())) {
+                throw new IllegalArgumentException("올바르지 않은 역할입니다.");
+            }
+            
+            // 시설 관리자인 경우 필수 필드 검증
+            if (Constants.MEMBER_ROLE_FACILITY.equals(memberDTO.getRole())) {
+                validateFacilityFields(memberDTO);
+            }
+            
             // 기본값 설정
-            memberDTO.setRole(Constants.MEMBER_ROLE_USER);
             memberDTO.setActive(true);
             memberDTO.setLoginFailCount(0);
             
@@ -96,11 +106,48 @@ public class MemberService {
             
             // 회원 정보 저장
             memberMapper.insertMember(memberDTO);
-            log.info("회원가입 완료: {}", memberDTO.getUserId());
+            log.info("회원가입 완료: {} (역할: {})", memberDTO.getUserId(), memberDTO.getRole());
             
+        } catch (IllegalArgumentException e) {
+            // 비즈니스 로직 예외는 그대로 전파
+            throw e;
         } catch (Exception e) {
             log.error("회원가입 처리 중 오류 발생: {}", memberDTO.getUserId(), e);
             throw new RuntimeException("회원가입 처리 중 오류가 발생했습니다.", e);
+        }
+    }
+    
+    /**
+     * 시설 관리자 필수 필드 검증
+     */
+    private void validateFacilityFields(MemberDTO memberDTO) {
+        if (memberDTO.getFacilityName() == null || memberDTO.getFacilityName().trim().isEmpty()) {
+            throw new IllegalArgumentException("시설명은 필수입니다.");
+        }
+        if (memberDTO.getFacilityType() == null || memberDTO.getFacilityType().trim().isEmpty()) {
+            throw new IllegalArgumentException("시설 유형은 필수입니다.");
+        }
+        if (memberDTO.getBusinessNumber() == null || memberDTO.getBusinessNumber().trim().isEmpty()) {
+            throw new IllegalArgumentException("사업자등록번호는 필수입니다.");
+        }
+        if (memberDTO.getFacilityAddress() == null || memberDTO.getFacilityAddress().trim().isEmpty()) {
+            throw new IllegalArgumentException("시설 주소는 필수입니다.");
+        }
+        if (memberDTO.getFacilityPhone() == null || memberDTO.getFacilityPhone().trim().isEmpty()) {
+            throw new IllegalArgumentException("시설 전화번호는 필수입니다.");
+        }
+        if (memberDTO.getDirectorName() == null || memberDTO.getDirectorName().trim().isEmpty()) {
+            throw new IllegalArgumentException("시설장 이름은 필수입니다.");
+        }
+        
+        // 사업자등록번호 형식 검증
+        if (!memberDTO.getBusinessNumber().matches("^\\d{3}-\\d{2}-\\d{5}$")) {
+            throw new IllegalArgumentException("사업자등록번호 형식이 올바르지 않습니다.");
+        }
+        
+        // 시설 전화번호 형식 검증
+        if (!memberDTO.getFacilityPhone().matches("^0\\d{1,2}-\\d{3,4}-\\d{4}$")) {
+            throw new IllegalArgumentException("시설 전화번호 형식이 올바르지 않습니다.");
         }
     }
 
