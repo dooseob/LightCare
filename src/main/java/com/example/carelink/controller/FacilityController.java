@@ -88,18 +88,26 @@ public class FacilityController {
     /**
      * 시설 상세 정보 페이지
      */
+// FacilityController.java 파일 내 getFacilityDetail 메서드 수정
     @GetMapping("/detail/{facilityId}")
     public String getFacilityDetail(@PathVariable("facilityId") Long facilityId, Model model) {
         log.info("시설 상세 정보 페이지 접속 - facilityId: {}", facilityId);
 
+        // 서비스에서 ID를 통해 시설 상세 정보를 조회합니다.
         FacilityDTO facility = facilityService.getFacilityById(facilityId);
 
         if (facility == null) {
-            log.warn("Facility with ID {} not found. Redirecting to search page.", facilityId);
+            log.warn("ID {} 에 해당하는 시설 정보를 찾을 수 없습니다.", facilityId);
+            // 시설 정보가 없을 경우 에러 메시지를 추가하고 리다이렉트
+            model.addAttribute("error", "해당 시설 정보를 찾을 수 없습니다.");
             return "redirect:/facility/search";
         }
 
+        // 시설 정보를 모델에 추가합니다.
         model.addAttribute("facility", facility);
+
+        // ⭐ ⭐ ⭐ 추가: 페이지 제목을 모델에 추가 ⭐ ⭐ ⭐
+        model.addAttribute("pageTitle", facility.getFacilityName() + " 상세보기");
 
         return "facility/detail";
     }

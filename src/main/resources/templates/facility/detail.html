@@ -1,191 +1,190 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org" lang="ko">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title th:text="${facility.facilityName} + ' 상세보기 - 라이트케어'">시설 상세보기 - 라이트케어</title>
-    <link href="/css/common.css" rel="stylesheet">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    <script type="text/javascript" src="//dapi.kakao.com/v2/maps/sdk.js?appkey=3c4987cb946a721903add5fc474941a3&autoload=false&libraries=services"></script>
+<head th:replace="~{layout/header :: header}">
 </head>
-<body>
-<div th:replace="~{layout/header :: header}"></div>
+<body class="d-flex flex-column min-vh-100 pt-5">
 
-<div class="container mt-4">
-    <div class="card mb-4">
-        <div class="card-body">
-            <div class="row">
-                <div class="col-md-3">
-                    <img th:src="@{/images/{image}(image=${facility.facilityImage ?: 'default_facility.jpg'})}"
-                         src="/images/default-facility.png"
-                         class="img-fluid rounded"
-                         alt="시설 로고">
+<nav th:replace="~{layout/header :: navbar}"></nav>
+
+<div th:replace="~{layout/header :: messages}"></div>
+
+<main class="flex-grow-1">
+    <div class="container mt-4">
+        <div class="card mb-4">
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-3">
+                        <img th:src="@{/images/{image}(image=${facility.facilityImage ?: 'default_facility.jpg'})}"
+                             src="/images/default-facility.png"
+                             class="img-fluid rounded"
+                             alt="시설 로고">
+                    </div>
+                    <div class="col-md-9">
+                        <h2 th:text="${facility.facilityName}">시설명</h2>
+                        <div class="mb-3">
+                            <span class="badge bg-primary me-2" th:text="${facility.facilityType}">시설유형</span>
+                            <span class="badge bg-success" th:if="${facility.gradeRating != null}" th:text="${facility.gradeRating + '등급'}">등급</span>
+                            <span class="badge bg-secondary" th:if="${facility.gradeRating == null}">미정</span>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <p><i class="fas fa-map-marker-alt"></i> <span th:text="${facility.address}">주소</span></p>
+                                <p><i class="fas fa-phone"></i> <span th:text="${facility.phone}">전화번호</span></p>
+                                <p><i class="fas fa-envelope"></i> <span>이메일 정보 없음</span></p>
+                            </div>
+                            <div class="col-md-6">
+                                <p><i class="fas fa-user-tie"></i> 원장: <span th:text="${facility.registeredMemberName}">원장명</span></p>
+                                <p><i class="fas fa-calendar-alt"></i> 설립일: <span>설립일 정보 없음</span></p>
+                                <p><i class="fas fa-bed"></i> 정원: <span th:text="${facility.capacity}">정원</span>명</p>
+                            </div>
+                        </div>
+
+                        <div class="d-flex gap-2">
+                            <button class="btn btn-primary" th:data-phone="${facility.phone}" onclick="callFacilityPhone(this)">
+                                <i class="fas fa-phone"></i> 전화하기
+                            </button>
+                            <button class="btn btn-outline-primary" onclick="showOnMap()">
+                                <i class="fas fa-map"></i> 지도에서 보기
+                            </button>
+                            <button class="btn btn-outline-success" onclick="writeReview()">
+                                <i class="fas fa-star"></i> 리뷰 작성
+                            </button>
+                        </div>
+                    </div>
                 </div>
-                <div class="col-md-9">
-                    <h2 th:text="${facility.facilityName}">시설명</h2>
-                    <div class="mb-3">
-                        <span class="badge bg-primary me-2" th:text="${facility.facilityType}">시설유형</span>
-                        <span class="badge bg-success" th:if="${facility.gradeRating != null}" th:text="${facility.gradeRating + '등급'}">등급</span>
-                        <span class="badge bg-secondary" th:if="${facility.gradeRating == null}">미정</span>
-                    </div>
+            </div>
+        </div>
 
-                    <div class="row mb-3">
-                        <div class="col-md-6">
-                            <p><i class="fas fa-map-marker-alt"></i> <span th:text="${facility.address}">주소</span></p>
-                            <p><i class="fas fa-phone"></i> <span th:text="${facility.phone}">전화번호</span></p>
-                            <p><i class="fas fa-envelope"></i> <span>이메일 정보 없음</span></p>
+        <div class="row">
+            <div class="col-md-8">
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5><i class="fas fa-info-circle"></i> 시설 소개</h5>
+                    </div>
+                    <div class="card-body">
+                        <p th:text="${facility.description}">시설 소개 내용이 여기에 표시됩니다.</p>
+                    </div>
+                </div>
+
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5><i class="fas fa-map-marker-alt"></i> 위치</h5>
+                    </div>
+                    <div class="card-body">
+                        <div id="facilityMap" style="width:100%; height:300px;">
+                            <div class="d-flex align-items-center justify-content-center h-100 text-muted">
+                                <div class="text-center">
+                                    <i class="fas fa-map fa-2x mb-2"></i>
+                                    <p>지도가 로딩됩니다.</p>
+                                </div>
+                            </div>
                         </div>
-                        <div class="col-md-6">
-                            <p><i class="fas fa-user-tie"></i> 원장: <span th:text="${facility.registeredMemberName}">원장명</span></p>
-                            <p><i class="fas fa-calendar-alt"></i> 설립일: <span>설립일 정보 없음</span></p>
-                            <p><i class="fas fa-bed"></i> 정원: <span th:text="${facility.capacity}">정원</span>명</p>
+                        <p class="mt-3 mb-0">
+                            <i class="fas fa-map-marker-alt"></i>
+                            <span th:text="${facility.address}">주소가 여기에 표시됩니다</span>
+                        </p>
+                    </div>
+                </div>
+
+                <div class="card mb-4">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5><i class="fas fa-comments"></i> 시설 리뷰</h5>
+                        <button class="btn btn-sm btn-outline-primary" onclick="writeReview()">
+                            <i class="fas fa-plus"></i> 리뷰 작성
+                        </button>
+                    </div>
+                    <div class="card-body">
+                        <div id="reviewList">
+                            <div class="text-center text-muted py-4">
+                                <i class="fas fa-comments fa-2x mb-2"></i>
+                                <p>리뷰 기능이 구현될 예정입니다.</p>
+                            </div>
                         </div>
                     </div>
+                </div>
+            </div>
 
-                    <div class="d-flex gap-2">
-                        <button class="btn btn-primary" th:data-phone="${facility.phone}" onclick="callFacilityPhone(this)">
-                            <i class="fas fa-phone"></i> 전화하기
-                        </button>
-                        <button class="btn btn-outline-primary" onclick="showOnMap()">
-                            <i class="fas fa-map"></i> 지도에서 보기
-                        </button>
-                        <button class="btn btn-outline-success" onclick="writeReview()">
-                            <i class="fas fa-star"></i> 리뷰 작성
-                        </button>
+            <div class="col-md-4">
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h6><i class="fas fa-chart-bar"></i> 시설 정보</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="row text-center">
+                            <div class="col-6">
+                                <div class="stat-item">
+                                    <h4 th:text="${facility.gradeRating ?: '-'}">-</h4>
+                                    <small>등급</small>
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <div class="stat-item">
+                                    <h4 th:text="${facility.capacity ?: '-'}">-</h4>
+                                    <small>정원</small>
+                                </div>
+                            </div>
+                        </div>
+                        <hr>
+                        <div class="row text-center">
+                            <div class="col-6">
+                                <div class="stat-item">
+                                    <h4 th:text="${facility.currentOccupancy ?: 0}">-</h4>
+                                    <small>현재 입소자</small>
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <div class="stat-item">
+                                    <h4 th:text="${facility.averageRating ?: '0.0'}">4.5</h4>
+                                    <small>평균 평점</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h6><i class="fas fa-phone"></i> 연락처</h6>
+                    </div>
+                    <div class="card-body">
+                        <p><strong>전화번호:</strong><br>
+                            <span th:text="${facility.phone}">전화번호</span></p>
+                        <p><strong>이메일:</strong><br>
+                            <span>이메일 정보 없음</span></p>
+                        <p th:if="${facility.homepage}">
+                            <strong>홈페이지:</strong><br>
+                            <a th:href="${facility.homepage}" target="_blank" th:text="${facility.homepage}">홈페이지</a>
+                        </p>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <h6><i class="fas fa-tools"></i> 관련 기능</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="d-grid gap-2">
+                            <button class="btn btn-outline-primary" onclick="searchNearbyJobs()">
+                                <i class="fas fa-briefcase"></i> 주변 구인정보
+                            </button>
+                            <button class="btn btn-outline-success" onclick="writeReview()">
+                                <i class="fas fa-star"></i> 리뷰 작성
+                            </button>
+                            <button class="btn btn-outline-info" onclick="shareToKakao()">
+                                <i class="fas fa-share"></i> 공유하기
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
     </div>
-
-    <div class="row">
-        <div class="col-md-8">
-            <div class="card mb-4">
-                <div class="card-header">
-                    <h5><i class="fas fa-info-circle"></i> 시설 소개</h5>
-                </div>
-                <div class="card-body">
-                    <p th:text="${facility.description}">시설 소개 내용이 여기에 표시됩니다.</p>
-                </div>
-            </div>
-
-            <div class="card mb-4">
-                <div class="card-header">
-                    <h5><i class="fas fa-map-marker-alt"></i> 위치</h5>
-                </div>
-                <div class="card-body">
-                    <div id="facilityMap" style="width:100%; height:300px;">
-                        <div class="d-flex align-items-center justify-content-center h-100 text-muted">
-                            <div class="text-center">
-                                <i class="fas fa-map fa-2x mb-2"></i>
-                                <p>지도가 로딩됩니다.</p>
-                            </div>
-                        </div>
-                    </div>
-                    <p class="mt-3 mb-0">
-                        <i class="fas fa-map-marker-alt"></i>
-                        <span th:text="${facility.address}">주소가 여기에 표시됩니다</span>
-                    </p>
-                </div>
-            </div>
-
-            <div class="card mb-4">
-                <div class="card-header d-flex justify-content-between align-items-center">
-                    <h5><i class="fas fa-comments"></i> 시설 리뷰</h5>
-                    <button class="btn btn-sm btn-outline-primary" onclick="writeReview()">
-                        <i class="fas fa-plus"></i> 리뷰 작성
-                    </button>
-                </div>
-                <div class="card-body">
-                    <div id="reviewList">
-                        <div class="text-center text-muted py-4">
-                            <i class="fas fa-comments fa-2x mb-2"></i>
-                            <p>리뷰 기능이 구현될 예정입니다.</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div class="col-md-4">
-            <div class="card mb-4">
-                <div class="card-header">
-                    <h6><i class="fas fa-chart-bar"></i> 시설 정보</h6>
-                </div>
-                <div class="card-body">
-                    <div class="row text-center">
-                        <div class="col-6">
-                            <div class="stat-item">
-                                <h4 th:text="${facility.gradeRating ?: '-'}">-</h4>
-                                <small>등급</small>
-                            </div>
-                        </div>
-                        <div class="col-6">
-                            <div class="stat-item">
-                                <h4 th:text="${facility.capacity ?: '-'}">-</h4>
-                                <small>정원</small>
-                            </div>
-                        </div>
-                    </div>
-                    <hr>
-                    <div class="row text-center">
-                        <div class="col-6">
-                            <div class="stat-item">
-                                <h4 th:text="${facility.currentOccupancy ?: 0}">-</h4>
-                                <small>현재 입소자</small>
-                            </div>
-                        </div>
-                        <div class="col-6">
-                            <div class="stat-item">
-                                <h4 th:text="${facility.averageRating ?: '0.0'}">4.5</h4>
-                                <small>평균 평점</small>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="card mb-4">
-                <div class="card-header">
-                    <h6><i class="fas fa-phone"></i> 연락처</h6>
-                </div>
-                <div class="card-body">
-                    <p><strong>전화번호:</strong><br>
-                        <span th:text="${facility.phone}">전화번호</span></p>
-                    <p><strong>이메일:</strong><br>
-                        <span>이메일 정보 없음</span></p>
-                    <p th:if="${facility.homepage}">
-                        <strong>홈페이지:</strong><br>
-                        <a th:href="${facility.homepage}" target="_blank" th:text="${facility.homepage}">홈페이지</a>
-                    </p>
-                </div>
-            </div>
-
-            <div class="card">
-                <div class="card-header">
-                    <h6><i class="fas fa-tools"></i> 관련 기능</h6>
-                </div>
-                <div class="card-body">
-                    <div class="d-grid gap-2">
-                        <button class="btn btn-outline-primary" onclick="searchNearbyJobs()">
-                            <i class="fas fa-briefcase"></i> 주변 구인정보
-                        </button>
-                        <button class="btn btn-outline-success" onclick="writeReview()">
-                            <i class="fas fa-star"></i> 리뷰 작성
-                        </button>
-                        <button class="btn btn-outline-info" onclick="shareToKakao()">
-                            <i class="fas fa-share"></i> 공유하기
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
+</main>
 
 <div th:replace="~{layout/footer :: footer}"></div>
 
+<script type="text/javascript" src="//dapi.kakao.com/v2/maps/sdk.js?appkey=3c4987cb946a721903add5fc474941a3&autoload=false&libraries=services"></script>
 <script th:inline="javascript">
     /*<![CDATA[*/
     let map;
