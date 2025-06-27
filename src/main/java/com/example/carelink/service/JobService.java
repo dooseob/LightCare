@@ -23,13 +23,15 @@ public class JobService {
     /**
      * 구인구직 목록 조회
      */
-    public List<JobDTO> getJobList(int page, String keyword, String jobType) {
-        log.info("구인구직 목록 조회 시작 - page: {}, keyword: {}, jobType: {}", page, keyword, jobType);
+    public List<JobDTO> getJobList(int currentPage, String keyword, String jobType) {
+        log.info("구인구직 목록 조회 시작 - page: {}, keyword: {}, jobType: {}", currentPage, keyword, jobType);
         
         try {
             JobDTO searchDTO = new JobDTO();
-            searchDTO.setPage(page);
-            searchDTO.setSize(10);
+            
+            int pageSize = 10;
+            searchDTO.setSize(pageSize);
+            searchDTO.setPage((currentPage - 1) * pageSize);
             
             if (keyword != null && !keyword.trim().isEmpty()) {
                 searchDTO.setSearchKeyword(keyword.trim());
@@ -151,12 +153,6 @@ public class JobService {
         log.info("구인구직 삭제 시작 - jobId: {}", id);
         
         try {
-            // 구인구직 존재 확인
-            JobDTO existingJob = jobMapper.findJobById(id);
-            if (existingJob == null) {
-                throw new RuntimeException("삭제할 구인구직을 찾을 수 없습니다. ID: " + id);
-            }
-            
             int result = jobMapper.deleteJob(id);
             log.info("구인구직 삭제 완료 - jobId: {}", id);
             
@@ -168,23 +164,17 @@ public class JobService {
     }
     
     /**
-     * 인기 구인구직 목록 조회
+     * 인기 구인구직 조회
      */
     public List<JobDTO> getPopularJobs() {
-        log.info("인기 구인구직 목록 조회 시작");
-        
         try {
-            List<JobDTO> popularJobs = jobMapper.getPopularJobs();
-            log.info("인기 구인구직 목록 조회 완료 - 조회된 건수: {}", popularJobs.size());
-            
-            return popularJobs;
+            return jobMapper.getPopularJobs();
         } catch (Exception e) {
-            log.error("인기 구인구직 목록 조회 중 오류 발생", e);
-            // 임시로 빈 리스트 반환 (개발 초기 에러 방지)
+            log.error("인기 구인구직 조회 중 오류 발생", e);
             return new ArrayList<>();
         }
     }
-
+    
     /**
      * 전체 구인구직 수 조회 (통계용)
      */
@@ -193,33 +183,25 @@ public class JobService {
             return jobMapper.getJobCount();
         } catch (Exception e) {
             log.error("구인구직 수 조회 중 오류 발생", e);
-            // 임시로 0 반환 (개발 초기 에러 방지)
-            return 0;
+            return 0; // 오류 시 0 반환
         }
     }
     
     /**
-     * 구인구직 데이터 검증
+     * 구인구직 데이터 유효성 검증
      */
     private void validateJobData(JobDTO jobDTO) {
         if (jobDTO.getTitle() == null || jobDTO.getTitle().trim().isEmpty()) {
-            throw new IllegalArgumentException("제목은 필수 입력 항목입니다.");
+            throw new IllegalArgumentException("제목은 필수 입력값입니다.");
         }
-        
         if (jobDTO.getContent() == null || jobDTO.getContent().trim().isEmpty()) {
-            throw new IllegalArgumentException("내용은 필수 입력 항목입니다.");
+            throw new IllegalArgumentException("내용은 필수 입력값입니다.");
         }
-        
         if (jobDTO.getJobType() == null || jobDTO.getJobType().trim().isEmpty()) {
-            throw new IllegalArgumentException("구인구직 유형은 필수 선택 항목입니다.");
+            throw new IllegalArgumentException("구인구직 유형은 필수 입력값입니다.");
         }
-        
-        if (jobDTO.getWorkType() == null || jobDTO.getWorkType().trim().isEmpty()) {
-            throw new IllegalArgumentException("근무 형태는 필수 선택 항목입니다.");
-        }
-        
         if (jobDTO.getMemberId() == null) {
-            throw new IllegalArgumentException("작성자 정보가 없습니다.");
+            throw new IllegalArgumentException("작성자 정보가 필요합니다.");
         }
     }
 } 

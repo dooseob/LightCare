@@ -1,114 +1,121 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
-
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.example.carelink.dao.FacilityMapper">
 
-    <!-- 시설 ResultMap -->
-    <resultMap id="FacilityResultMap" type="com.example.carelink.dto.FacilityDTO">
+    <resultMap id="facilityResultMap" type="com.example.carelink.dto.FacilityDTO">
         <id property="facilityId" column="facility_id"/>
         <result property="facilityName" column="facility_name"/>
         <result property="facilityType" column="facility_type"/>
         <result property="address" column="address"/>
-        <result property="region" column="region"/>
+        <result property="detailAddress" column="detail_address"/>
         <result property="phone" column="phone"/>
-        <result property="email" column="email"/>
-        <result property="website" column="website"/>
-        <result property="description" column="description"/>
-        <result property="capacity" column="capacity"/>
-        <result property="currentOccupancy" column="current_occupancy"/>
-        <result property="directorName" column="director_name"/>
-        <result property="established" column="established"/>
-        <result property="gradeRating" column="grade_rating"/>
         <result property="latitude" column="latitude"/>
         <result property="longitude" column="longitude"/>
-        <result property="logoImageUrl" column="logo_image_url"/>
-        <result property="createdAt" column="created_at"/>
-        <result property="updatedAt" column="updated_at"/>
-        <result property="isDeleted" column="is_deleted"/>
+        <result property="description" column="description"/>
+        <result property="facilityImage" column="facility_image"/>
+        <result property="homepage" column="homepage"/>
+        <result property="capacity" column="capacity"/>
+        <result property="currentOccupancy" column="current_occupancy"/>
+        <result property="operatingHours" column="operating_hours"/>
+        <result property="features" column="features"/>
+        <result property="averageRating" column="average_rating"/>
+        <result property="reviewCount" column="review_count"/>
+        <result property="registeredMemberId" column="registered_member_id"/>
+        <result property="registeredMemberName" column="registered_member_name"/>
+        <result property="gradeRating" column="grade_rating"/>
+        <result property="isApproved" column="is_approved"/>
+        <result property="approvalStatus" column="approval_status"/>
     </resultMap>
 
-    <!-- 시설 검색 -->
-    <select id="searchFacilities" resultMap="FacilityResultMap">
-        SELECT * FROM facility 
-        WHERE is_deleted = 0
-        <if test="facilityName != null and facilityName != ''">
-            AND facility_name LIKE CONCAT('%', #{facilityName}, '%')
-        </if>
-        <if test="facilityType != null and facilityType != ''">
-            AND facility_type = #{facilityType}
-        </if>
-        <if test="region != null and region != ''">
-            AND region = #{region}
-        </if>
-        <if test="gradeRating != null">
-            AND grade_rating >= #{gradeRating}
-        </if>
-        ORDER BY created_at DESC
-        <if test="page != null and size != null">
-            LIMIT #{size} OFFSET #{page}
-        </if>
-    </select>
-
-    <!-- 시설 상세 정보 조회 -->
-    <select id="getFacilityById" resultMap="FacilityResultMap">
-        SELECT * FROM facility 
-        WHERE facility_id = #{facilityId} AND is_deleted = 0
-    </select>
-
-    <!-- 전체 시설 목록 조회 -->
-    <select id="getAllFacilities" resultMap="FacilityResultMap">
-        SELECT * FROM facility 
-        WHERE is_deleted = 0
+    <select id="searchFacilities" resultMap="facilityResultMap">
+        SELECT *
+        FROM facility
+        <where>
+            <if test="facilityName != null and facilityName != ''">
+                AND facility_name LIKE CONCAT('%', #{facilityName}, '%')
+            </if>
+            <if test="facilityType != null and facilityType != ''">
+                AND facility_type = #{facilityType}
+            </if>
+            <if test="region != null and region != ''">
+                AND address LIKE CONCAT(#{region}, '%')
+            </if>
+            <if test="gradeRating != null">
+                AND grade_rating = #{gradeRating}
+            </if>
+            <if test="swLat != null and swLng != null and neLat != null and neLng != null">
+                AND (latitude BETWEEN #{swLat} AND #{neLat})
+                AND (longitude BETWEEN #{swLng} AND #{neLng})
+            </if>
+        </where>
         ORDER BY created_at DESC
     </select>
 
-    <!-- 시설 등록 -->
-    <insert id="insertFacility" useGeneratedKeys="true" keyProperty="facilityId">
+    <select id="getFacilityById" resultMap="facilityResultMap">
+        SELECT *
+        FROM facility
+        WHERE facility_id = #{facilityId}
+    </select>
+
+    <select id="getAllFacilities" resultMap="facilityResultMap">
+        SELECT *
+        FROM facility
+        ORDER BY created_at DESC
+    </select>
+
+    <insert id="insertFacility" parameterType="com.example.carelink.dto.FacilityDTO" useGeneratedKeys="true" keyProperty="facilityId">
         INSERT INTO facility (
-            facility_name, facility_type, address, region, phone, email, 
-            website, description, capacity, director_name, established, 
-            grade_rating, latitude, longitude, logo_image_url, created_at
+            facility_name, facility_type, address, detail_address, phone,
+            latitude, longitude, description, facility_image, homepage,
+            capacity, current_occupancy, operating_hours, features,
+            average_rating, review_count, registered_member_id, registered_member_name,
+            grade_rating, is_approved, approval_status
         ) VALUES (
-            #{facilityName}, #{facilityType}, #{address}, #{region}, #{phone}, #{email},
-            #{website}, #{description}, #{capacity}, #{directorName}, #{established},
-            #{gradeRating}, #{latitude}, #{longitude}, #{logoImageUrl}, NOW()
-        )
+                     #{facilityName}, #{facilityType}, #{address}, #{detailAddress}, #{phone},
+                     #{latitude}, #{longitude}, #{description}, #{facilityImage}, #{homepage},
+                     #{capacity}, #{currentOccupancy}, #{operatingHours}, #{features},
+                     #{averageRating}, #{reviewCount}, #{registeredMemberId}, #{registeredMemberName},
+                     #{gradeRating}, #{isApproved}, #{approvalStatus}
+                 )
     </insert>
 
-    <!-- 시설 정보 수정 -->
-    <update id="updateFacility">
-        UPDATE facility SET
+    <update id="updateFacility" parameterType="com.example.carelink.dto.FacilityDTO">
+        UPDATE facility
+        SET
             facility_name = #{facilityName},
             facility_type = #{facilityType},
             address = #{address},
-            region = #{region},
+            detail_address = #{detailAddress},
             phone = #{phone},
-            email = #{email},
-            website = #{website},
-            description = #{description},
-            capacity = #{capacity},
-            current_occupancy = #{currentOccupancy},
-            director_name = #{directorName},
-            grade_rating = #{gradeRating},
             latitude = #{latitude},
             longitude = #{longitude},
-            logo_image_url = #{logoImageUrl},
-            updated_at = NOW()
-        WHERE facility_id = #{facilityId} AND is_deleted = 0
-    </update>
-
-    <!-- 시설 삭제 (논리 삭제) -->
-    <update id="deleteFacility">
-        UPDATE facility SET 
-            is_deleted = 1,
+            description = #{description},
+            facility_image = #{facilityImage},
+            homepage = #{homepage},
+            capacity = #{capacity},
+            current_occupancy = #{currentOccupancy},
+            operating_hours = #{operatingHours},
+            features = #{features},
+            average_rating = #{averageRating},
+            review_count = #{reviewCount},
+            registered_member_id = #{registeredMemberId},
+            registered_member_name = #{registeredMemberName},
+            grade_rating = #{gradeRating},
+            is_approved = #{isApproved},
+            approval_status = #{approvalStatus},
             updated_at = NOW()
         WHERE facility_id = #{facilityId}
     </update>
 
-    <!-- 지역별 시설 개수 조회 -->
+    <delete id="deleteFacility">
+        DELETE FROM facility WHERE facility_id = #{facilityId}
+    </delete>
+
     <select id="countFacilitiesByRegion" resultType="int">
-        SELECT COUNT(*) FROM facility 
-        WHERE region = #{region} AND is_deleted = 0
+        SELECT COUNT(*)
+        FROM facility
+        WHERE address LIKE CONCAT(#{region}, '%')
     </select>
 
     <!-- 전체 시설 수 조회 (통계용) -->
@@ -118,4 +125,4 @@
         WHERE is_deleted = 0
     </select>
 
-</mapper> 
+</mapper>

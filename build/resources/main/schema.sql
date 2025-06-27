@@ -267,6 +267,12 @@ SELECT CONCAT('회원: ', COUNT(*), '명') as member_count FROM member WHERE is_
 SELECT CONCAT('시설: ', COUNT(*), '개') as facility_count FROM facility WHERE is_deleted = FALSE;
 SELECT CONCAT('구인구직: ', COUNT(*), '건') as job_count FROM job_posting WHERE is_deleted = FALSE;  
 SELECT CONCAT('리뷰: ', COUNT(*), '건') as review_count FROM review WHERE is_deleted = FALSE;
-SELECT CONCAT('게시글: ', COUNT(*), '건') as board_count FROM board WHERE is_deleted = FALSE; 
-select * from board;
+SELECT CONCAT('게시글: ', COUNT(*), '건') as board_count FROM board WHERE is_deleted = FALSE;
 
+-- 마지막 샘플 데이터 조회
+SELECT '=== 초기 데이터 확인 ===' as status;
+SELECT * FROM member WHERE is_deleted = FALSE ORDER BY created_at DESC LIMIT 5;
+SELECT * FROM facility WHERE is_deleted = FALSE ORDER BY created_at DESC LIMIT 3;
+SELECT * FROM job_posting WHERE is_deleted = FALSE ORDER BY created_at DESC LIMIT 3;
+SELECT * FROM review WHERE is_deleted = FALSE ORDER BY created_at DESC LIMIT 3;
+SELECT * FROM board WHERE is_deleted = FALSE ORDER BY created_at DESC LIMIT 3;

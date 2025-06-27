@@ -10,6 +10,9 @@ server:
 
 # 데이터베이스 설정
 spring:
+  jackson:
+    serialization:
+      write-dates-as-timestamps: false
   datasource:
     url: jdbc:mysql://localhost:3306/carelink?useSSL=false&serverTimezone=Asia/Seoul&allowPublicKeyRetrieval=true&useUnicode=true&characterEncoding=UTF-8
     username: root
@@ -24,11 +27,20 @@ spring:
       pool-name: CareLink-HikariCP
       auto-commit: false
       transaction-isolation: TRANSACTION_READ_COMMITTED
-  #sql:
-   # init:
-    #  mode: always
-     # schema-locations: classpath:schema.sql
-      #data-locations: classpath:sample_data.sql
+
+# Thymeleaf 설정
+thymeleaf:
+  prefix: classpath:/templates/
+  suffix: .html
+  mode: HTML
+  encoding: UTF-8
+  cache: false  # 개발 단계에서는 캐시 비활성화
+
+# 파일 업로드 설정
+servlet:
+  multipart:
+    max-file-size: 10MB
+    max-request-size: 10MB
 
 # MyBatis 설정
 mybatis:
@@ -49,17 +61,4 @@ logging:
     org.mybatis: DEBUG
     org.apache.ibatis: DEBUG
     org.springframework.transaction: DEBUG
-
-# Thymeleaf 설정
-thymeleaf:
-  prefix: classpath:/templates/
-  suffix: .html
-  mode: HTML
-  encoding: UTF-8
-  cache: false  # 개발 단계에서는 캐시 비활성화
-  
-# 파일 업로드 설정
-servlet:
-  multipart:
-    max-file-size: 10MB
-    max-request-size: 10MB 
+    org.springframework.web: DEBUG

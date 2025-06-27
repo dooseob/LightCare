@@ -1,125 +1,106 @@
 package com.example.carelink.controller;
 
-import com.example.carelink.dto.FacilityDTO; // FacilityDTO를 사용하기 위한 임포트
+import com.example.carelink.dto.FacilityDTO;
 import com.example.carelink.service.FacilityService;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.annotation.Bean;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
-import org.springframework.web.bind.annotation.*;
-import com.fasterxml.jackson.databind.ObjectMapper; // ObjectMapper 임포트
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 
 import java.util.List;
+import java.util.ArrayList; // ArrayList를 사용하기 위해 추가된 import 문
 
-/**
- * 시설 검색 및 지도 기능 컨트롤러
- * 팀원 B 담당
- */
 @Controller
 @RequestMapping("/facility")
 @RequiredArgsConstructor
+@Slf4j
 public class FacilityController {
 
     private final FacilityService facilityService;
-    private final ObjectMapper objectMapper = new ObjectMapper(); // ObjectMapper 인스턴스 생성
 
     /**
-     * 시설 검색 페이지 및 검색 실행
-     * (HTML 폼의 GET 요청 처리)
+     * Jackson ObjectMapper에 Java 8 날짜/시간 모듈을 등록합니다.
+     * 이 메서드는 Spring 컨텍스트에 ObjectMapper 빈을 등록하여
+     * LocalDateTime 직렬화 문제를 해결합니다.
+     */
+    @Bean
+    public ObjectMapper objectMapper() {
+        ObjectMapper mapper = new ObjectMapper();
+        mapper.registerModule(new JavaTimeModule());
+        return mapper;
+    }
+
+    /**
+     * 시설 검색 페이지 및 검색 결과 조회
      */
     @GetMapping("/search")
-    public String searchPage(
+    public String searchFacilities(
             @RequestParam(value = "facilityName", required = false) String facilityName,
             @RequestParam(value = "region", required = false) String region,
             @RequestParam(value = "facilityType", required = false) String facilityType,
-            @RequestParam(value = "gradeRating", required = false) String gradeRating, // HTML의 select name과 일치
-            Model model) {
+            @RequestParam(value = "gradeRating", required = false) String gradeRating,
+            Model model
+    ) {
+        log.info("시설 검색 페이지 접속 - facilityName: {}, region: {}, facilityType: {}, gradeRating: {}",
+                facilityName, region, facilityType, gradeRating);
 
-        // FacilityDTO 객체를 생성하여 검색 조건들을 담습니다.
-        FacilityDTO searchDTO = new FacilityDTO();
-        // === 이 라인이 변경되었습니다 ===
-        searchDTO.setName(facilityName); // setFacilityName -> setName 으로 변경
-        // ============================
-        searchDTO.setRegion(region);
-        searchDTO.setFacilityType(facilityType);
+        FacilityDTO searchCondition = new FacilityDTO();
+        searchCondition.setFacilityName(facilityName);
+        searchCondition.setAddress(region);
+        searchCondition.setFacilityType(facilityType);
 
-        // gradeRating은 String으로 넘어오므로, int로 변환하여 DTO에 설정합니다.
-        if (gradeRating != null && !gradeRating.isEmpty()) {
-            try {
-                searchDTO.setGradeRating(Integer.parseInt(gradeRating));
-            } catch (NumberFormatException e) {
-                System.err.println("경고: 유효하지 않은 등급 필터 값: " + gradeRating + " (오류: " + e.getMessage() + ")");
+        try {
+            if (gradeRating != null && !gradeRating.isEmpty()) {
+                searchCondition.setGradeRating(Integer.parseInt(gradeRating));
             }
+        } catch (NumberFormatException e) {
+            log.warn("Invalid gradeRating format: {}", gradeRating);
         }
 
-        // 검색 서비스 호출
-        List<FacilityDTO> facilityList = facilityService.searchFacilities(searchDTO);
+        // DTO 객체를 서비스 메서드로 전달하여 검색을 수행합니다.
+        List<FacilityDTO> facilityList = facilityService.searchFacilities(searchCondition);
 
-        // 모델에 검색 결과를 추가합니다.
+        // 검색 결과가 null일 경우 빈 리스트로 초기화하여 Thymeleaf 오류를 방지합니다.
+        if (facilityList == null) {
+            facilityList = new ArrayList<>();
+        }
+
+        // 검색 결과를 모델에 추가합니다.
         model.addAttribute("facilityList", facilityList);
-
-        // 폼 필드에 현재 검색 조건을 유지하기 위해 모델에 다시 추가합니다.
         model.addAttribute("facilityName", facilityName);
         model.addAttribute("region", region);
         model.addAttribute("facilityType", facilityType);
         model.addAttribute("gradeRating", gradeRating);
 
-        // JavaScript에서 사용할 수 있도록 facilityList를 JSON 문자열로 변환하여 모델에 추가합니다.
-        try {
-            String facilityListJson = objectMapper.writeValueAsString(facilityList);
-            model.addAttribute("facilityListJson", facilityListJson);
-        } catch (Exception e) {
-            System.err.println("Error converting facilityList to JSON for HTML: " + e.getMessage());
-            model.addAttribute("facilityListJson", "[]"); // 오류 발생 시 빈 배열 전달
-        }
+        log.info("검색된 시설 수: {}", facilityList.size());
 
-        return "facility/search"; // 시설 검색 페이지 템플릿 반환
+        // 'search.html' 템플릿을 반환합니다.
+        return "facility/search";
     }
 
     /**
      * 시설 상세 정보 페이지
      */
-    @GetMapping("/detail/{id}")
-    public String detailPage(@PathVariable Long id, Model model) {
-        FacilityDTO facility = facilityService.getFacilityById(id);
-        model.addAttribute("facility", facility);
-        return "facility/detail";
-    }
+    @GetMapping("/detail/{facilityId}")
+    public String getFacilityDetail(@PathVariable("facilityId") Long facilityId, Model model) {
+        log.info("시설 상세 정보 페이지 접속 - facilityId: {}", facilityId);
 
-    /**
-     * 지도용 시설 목록 API (AJAX 요청)
-     */
-    @GetMapping("/api/list")
-    @ResponseBody // JSON 또는 XML 등 데이터 형식으로 응답
-    public List<FacilityDTO> getFacilitiesForMap(
-            @RequestParam(value = "region", required = false) String region,
-            @RequestParam(value = "facilityType", required = false) String facilityType,
-            @RequestParam(value = "facilityName", required = false) String facilityName,
-            @RequestParam(value = "gradeRating", required = false) String gradeRating,
-            @RequestParam(value = "swLat", required = false) Double swLat,
-            @RequestParam(value = "swLng", required = false) Double swLng,
-            @RequestParam(value = "neLat", required = false) Double neLat,
-            @RequestParam(value = "neLng", required = false) Double neLng
-    ) {
-        FacilityDTO searchDTO = new FacilityDTO();
-        // === 이 라인도 변경되었습니다 ===
-        searchDTO.setName(facilityName); // setFacilityName -> setName 으로 변경
-        // ============================
-        searchDTO.setRegion(region);
-        searchDTO.setFacilityType(facilityType);
+        FacilityDTO facility = facilityService.getFacilityById(facilityId);
 
-        if (gradeRating != null && !gradeRating.isEmpty()) {
-            try {
-                searchDTO.setGradeRating(Integer.parseInt(gradeRating));
-            } catch (NumberFormatException e) {
-                System.err.println("경고: 지도 API 유효하지 않은 등급 필터 값: " + gradeRating);
-            }
+        if (facility == null) {
+            log.warn("Facility with ID {} not found. Redirecting to search page.", facilityId);
+            return "redirect:/facility/search";
         }
 
-        searchDTO.setSwLat(swLat);
-        searchDTO.setSwLng(swLng);
-        searchDTO.setNeLat(neLat);
-        searchDTO.setNeLng(neLng);
+        model.addAttribute("facility", facility);
 
-        return facilityService.searchFacilities(searchDTO);
+        return "facility/detail";
     }
 }

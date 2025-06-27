@@ -78,10 +78,10 @@ public class BoardDTO extends BaseDTO {
     private String metaDescription;  // 메타 설명
     private String metaKeywords;     // 메타 키워드
     
-    // 페이징을 위한 필드
-    private int page = 1;
-    private int size = 10;
-    private int offset = 0;
+    // 페이징을 위한 필드 (BaseDTO와 일치하도록 Integer 타입 사용)
+    private Integer page = 1;
+    private Integer size = 10;
+    private Integer offset = 0;
     
     private LocalDateTime createdAt;  // 생성일시
     private LocalDateTime updatedAt;  // 수정일시
