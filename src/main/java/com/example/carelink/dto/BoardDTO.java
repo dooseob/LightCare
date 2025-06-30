@@ -54,7 +54,7 @@ public class BoardDTO extends BaseDTO {
     private String subCategory;     // 서브 카테고리
     
     // 우선순위 (상단 고정용)
-    private Integer priority;        // 우선순위
+    private Integer priority = 1;    // 우선순위 (기본값 설정)
     private Boolean isPinned;        // 상단 고정 여부
     
     // 답글/댓글 관련

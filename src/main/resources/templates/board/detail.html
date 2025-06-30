@@ -10,6 +10,7 @@
     <!-- 메시지 표시 -->
     <div th:replace="~{layout/header :: messages}"></div>
 
+
     <!-- 메인 콘텐츠 -->
     <main class="flex-grow-1">
         <div class="container py-4">
@@ -102,7 +103,9 @@
                                     <i class="fas fa-edit me-1"></i>수정
                                 </a>
                                 <button type="button" class="btn btn-outline-danger btn-sm" 
-                                        onclick="deleteBoard()">
+                                        onclick="deleteBoard(event)" 
+                                        th:data-board-id="${board.boardId}"
+                                        th:data-type="${type}">
                                     <i class="fas fa-trash me-1"></i>삭제
                                 </button>
                             </div>
@@ -212,167 +215,7 @@
     <!-- JavaScript -->
     <div th:replace="~{layout/footer :: scripts}"></div>
 
-    <script>
-        // 게시글 추천 기능
-        function likeBoard() {
-            const boardId = /*[[${board.boardId}]]*/ 1;
-            
-            fetch(`/board/like/${boardId}`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/x-www-form-urlencoded',
-                },
-                body: 'action=like'
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    // 추천수 업데이트
-                    const likeCountElement = document.getElementById('likeCount');
-                    const currentCount = parseInt(likeCountElement.textContent);
-                    likeCountElement.textContent = currentCount + 1;
-                    
-                    // 성공 메시지 표시
-                    showMessage(data.message, 'success');
-                    
-                    // 버튼 비활성화 (중복 추천 방지)
-                    const likeButton = document.querySelector('button[onclick="likeBoard()"]');
-                    likeButton.disabled = true;
-                    likeButton.innerHTML = '<i class="fas fa-check me-1"></i>추천완료';
-                } else {
-                    showMessage(data.message, 'error');
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                showMessage('추천 처리 중 오류가 발생했습니다.', 'error');
-            });
-        }
-
-        // 게시글 공유 기능
-        function shareBoard() {
-            const title = /*[[${board.title}]]*/ '제목';
-            const url = window.location.href;
-            
-            if (navigator.share) {
-                // Web Share API 지원하는 경우
-                navigator.share({
-                    title: title,
-                    url: url
-                }).then(() => {
-                    showMessage('공유되었습니다.', 'success');
-                }).catch((error) => {
-                    console.log('공유 취소:', error);
-                });
-            } else {
-                // 클립보드에 복사
-                navigator.clipboard.writeText(url).then(() => {
-                    showMessage('링크가 클립보드에 복사되었습니다.', 'success');
-                }).catch(() => {
-                    // 클립보드 복사 실패 시 prompt 사용
-                    prompt('다음 링크를 복사하세요:', url);
-                });
-            }
-        }
-
-        // 게시글 신고 기능
-        function reportBoard() {
-            if (confirm('이 게시글을 신고하시겠습니까?')) {
-                // 실제로는 신고 API 호출
-                alert('신고가 접수되었습니다. 관리자가 검토 후 조치하겠습니다.');
-            }
-        }
-
-        // 게시글 삭제 기능
-        function deleteBoard() {
-            if (confirm('정말로 이 게시글을 삭제하시겠습니까?\n삭제된 게시글은 복구할 수 없습니다.')) {
-                const boardId = /*[[${board.boardId}]]*/ 1;
-                const type = /*[[${type}]]*/ 'all';
-                
-                // 폼을 동적으로 생성하여 DELETE 요청
-                const form = document.createElement('form');
-                form.method = 'POST';
-                form.action = `/board/delete/${boardId}`;
-                
-                const typeInput = document.createElement('input');
-                typeInput.type = 'hidden';
-                typeInput.name = 'type';
-                typeInput.value = type;
-                form.appendChild(typeInput);
-                
-                document.body.appendChild(form);
-                form.submit();
-            }
-        }
-
-        // 메시지 표시 함수
-        function showMessage(message, type) {
-            const alertClass = type === 'success' ? 'alert-success' : 'alert-danger';
-            const iconClass = type === 'success' ? 'fa-check-circle' : 'fa-exclamation-triangle';
-            
-            const alertDiv = document.createElement('div');
-            alertDiv.className = `alert ${alertClass} alert-dismissible fade show`;
-            alertDiv.innerHTML = `
-                <i class="fas ${iconClass} me-2"></i>
-                ${message}
-                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-            `;
-            
-            // 메시지를 페이지 상단에 표시
-            const container = document.querySelector('.container');
-            container.insertBefore(alertDiv, container.firstChild);
-            
-            // 3초 후 자동 제거
-            setTimeout(() => {
-                alertDiv.remove();
-            }, 3000);
-        }
-
-        // 페이지 로드 시 스크롤 위치 복원
-        document.addEventListener('DOMContentLoaded', function() {
-            const scrollPosition = sessionStorage.getItem('boardScrollPosition');
-            if (scrollPosition && window.performance.navigation.type === 2) {
-                // 뒤로가기로 온 경우에만 스크롤 위치 복원
-                window.scrollTo(0, parseInt(scrollPosition));
-                sessionStorage.removeItem('boardScrollPosition');
-            }
-        });
-
-        // 목록으로 갈 때 현재 스크롤 위치 저장
-        document.querySelector('a[href*="/board"]').addEventListener('click', function() {
-            sessionStorage.setItem('boardScrollPosition', window.scrollY);
-        });
-
-        // 키보드 단축키
-        document.addEventListener('keydown', function(e) {
-            // Ctrl + Enter: 추천
-            if (e.ctrlKey && e.key === 'Enter') {
-                e.preventDefault();
-                likeBoard();
-            }
-            
-            // ESC: 목록으로 돌아가기
-            if (e.key === 'Escape') {
-                e.preventDefault();
-                window.location.href = `/board?type=` + /*[[${type}]]*/ 'all' + `&page=` + /*[[${page}]]*/ 1;
-            }
-            
-            // 좌측 화살표: 이전글
-            if (e.key === 'ArrowLeft' && e.altKey) {
-                const prevLink = document.querySelector('a[href*="prevBoard"]');
-                if (prevLink) {
-                    window.location.href = prevLink.href;
-                }
-            }
-            
-            // 우측 화살표: 다음글
-            if (e.key === 'ArrowRight' && e.altKey) {
-                const nextLink = document.querySelector('a[href*="nextBoard"]');
-                if (nextLink) {
-                    window.location.href = nextLink.href;
-                }
-            }
-        });
-    </script>
+    <!-- 게시글 상세 페이지 전용 스크립트 -->
+    <script src="/js/board-detail.js"></script>
 </body>
 </html> 

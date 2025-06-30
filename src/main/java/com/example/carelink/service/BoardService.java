@@ -9,6 +9,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Map;
+import java.util.HashMap;
 
 /**
  * 게시판 관련 비즈니스 로직 서비스
@@ -108,8 +110,13 @@ public class BoardService {
         try {
             BoardDTO board = boardMapper.getBoardByIdIncludeDeleted(id);
             if (board != null) {
-                log.info("게시글 상세 조회 (삭제 포함) 완료 - boardId: {}, title: {}, is_deleted: {}", 
-                    id, board.getTitle(), board.getIsDeleted());
+                log.info("📄 게시글 조회 성공 (삭제 포함) - boardId: {}, title: {}", id, board.getTitle());
+                log.info("   🔍 DB에서 조회된 isDeleted 원본값: {}", board.getIsDeleted());
+                log.info("   🔍 isDeleted null 체크: {}", board.getIsDeleted() == null ? "NULL" : "NOT NULL");
+                if (board.getIsDeleted() != null) {
+                    log.info("   🔍 isDeleted boolean 값: {} ({})", board.getIsDeleted(), 
+                        board.getIsDeleted() ? "삭제됨" : "정상");
+                }
             } else {
                 log.warn("존재하지 않는 게시글 조회 시도 (삭제 포함) - boardId: {}", id);
             }
@@ -187,8 +194,23 @@ public class BoardService {
                 }
             }
             
+            // 등록 전 상태 로그
+            log.info("📝 등록 전 상태 확인 - isDeleted: {}, isActive: {}", 
+                boardDTO.getIsDeleted(), boardDTO.getIsActive());
+            
             int result = boardMapper.insertBoard(boardDTO);
-            log.info("게시글 등록 완료 - boardId: {}", boardDTO.getBoardId());
+            log.info("✅ 게시글 등록 완료 - boardId: {}", boardDTO.getBoardId());
+            
+            // 등록 직후 DB에서 다시 조회해서 확인
+            if (boardDTO.getBoardId() != null) {
+                BoardDTO savedBoard = boardMapper.getBoardByIdIncludeDeleted(boardDTO.getBoardId());
+                if (savedBoard != null) {
+                    log.info("🔍 등록 직후 DB 상태 확인 - boardId: {}, isDeleted: {}, isActive: {}", 
+                        savedBoard.getBoardId(), savedBoard.getIsDeleted(), savedBoard.getIsActive());
+                } else {
+                    log.warn("⚠️ 등록 직후 게시글을 찾을 수 없습니다. boardId: {}", boardDTO.getBoardId());
+                }
+            }
             
             return result;
         } catch (Exception e) {
@@ -205,14 +227,17 @@ public class BoardService {
         log.info("게시글 수정 시작 - boardId: {}, title: {}", boardDTO.getBoardId(), boardDTO.getTitle());
         
         try {
-            // 게시글 존재 확인
-            BoardDTO existingBoard = boardMapper.getBoardById(boardDTO.getBoardId());
+            // 게시글 존재 확인 (삭제된 것 포함)
+            BoardDTO existingBoard = boardMapper.getBoardByIdIncludeDeleted(boardDTO.getBoardId());
             if (existingBoard == null) {
                 throw new RuntimeException("수정할 게시글을 찾을 수 없습니다. ID: " + boardDTO.getBoardId());
             }
             
-            // 필수 값 검증
+            // 필수 값 검증 및 기본값 설정
             validateBoardData(boardDTO);
+            if (boardDTO.getPriority() == null) {
+                boardDTO.setPriority(1); // 기본 우선순위
+            }
             
             int result = boardMapper.updateBoard(boardDTO);
             log.info("게시글 수정 완료 - boardId: {}", boardDTO.getBoardId());
@@ -225,64 +250,76 @@ public class BoardService {
     }
     
     /**
-     * 게시글 삭제
+     * 게시글 삭제 (논리적 삭제)
      */
-    @Transactional(rollbackFor = Exception.class)
-    public int deleteBoard(Long id) {
+    @Transactional
+    public Map<String, Object> deleteBoard(Long id) {
         log.info("게시글 삭제 시작 - boardId: {}", id);
         
+        Map<String, Object> result = new HashMap<>();
+        
         try {
-            // 삭제 전 게시글 상태 확인 (삭제된 것도 포함하여 조회)
+            // 게시글 존재 확인 (삭제된 것 포함하여 조회)
             BoardDTO existingBoard = boardMapper.getBoardByIdIncludeDeleted(id);
-            if (existingBoard != null) {
-                log.info("삭제 전 게시글 상태 - boardId: {}, is_deleted: {}, status: {}", 
-                    id, existingBoard.getIsDeleted(), existingBoard.getStatus());
-                
-                // 이미 삭제된 게시글인지 확인
-                if (existingBoard.getIsDeleted() != null && existingBoard.getIsDeleted()) {
-                    log.warn("이미 삭제된 게시글입니다. boardId: {}", id);
-                    return 0; // 이미 삭제된 상태이므로 실패로 처리 (중복 삭제 방지)
-                }
-            } else {
+            if (existingBoard == null) {
                 log.warn("삭제 요청된 게시글을 찾을 수 없습니다. ID: {}", id);
-                return 0;
+                result.put("success", false);
+                result.put("code", "NOT_FOUND");
+                result.put("message", "게시글을 찾을 수 없습니다.");
+                return result;
             }
             
-            // 삭제 쿼리 실행 (삭제되지 않은 게시글만 대상)
-            log.info("삭제 쿼리 실행 시작 - boardId: {}", id);
-            int result = boardMapper.deleteBoard(id);
-            log.info("삭제 쿼리 실행 완료 - boardId: {}, 영향받은 행: {}", id, result);
+            // 디버깅: 현재 게시글 상태 상세 로그
+            log.info("🔍 게시글 상태 확인 - boardId: {}", id);
+            log.info("   - title: {}", existingBoard.getTitle());
+            log.info("   - isDeleted 값: {}", existingBoard.getIsDeleted());
+            log.info("   - isDeleted 타입: {}", existingBoard.getIsDeleted() != null ? existingBoard.getIsDeleted().getClass().getSimpleName() : "null");
             
-            // 즉시 플러시하여 실제 데이터베이스에 반영
-            log.info("트랜잭션 플러시 실행 - boardId: {}", id);
+            // 삭제 상태 상세 분석
+            log.info("🔍 삭제 상태 상세 분석:");
+            log.info("   - isDeleted 원본값: {}", existingBoard.getIsDeleted());
+            log.info("   - isDeleted == null: {}", existingBoard.getIsDeleted() == null);
+            log.info("   - isDeleted != null: {}", existingBoard.getIsDeleted() != null);
+            if (existingBoard.getIsDeleted() != null) {
+                log.info("   - isDeleted.booleanValue(): {}", existingBoard.getIsDeleted().booleanValue());
+                log.info("   - Boolean.TRUE.equals(isDeleted): {}", Boolean.TRUE.equals(existingBoard.getIsDeleted()));
+            }
             
-            // 삭제 결과 확인
-            if (result > 0) {
-                // 삭제 후 상태 재확인 (삭제된 것도 포함하여 조회)
-                BoardDTO deletedBoard = boardMapper.getBoardByIdIncludeDeleted(id);
-                if (deletedBoard != null) {
-                    log.info("삭제 후 게시글 상태 - boardId: {}, is_deleted: {}, status: {}", 
-                        id, deletedBoard.getIsDeleted(), deletedBoard.getStatus());
-                    
-                    // 삭제 성공 여부 확인
-                    if (deletedBoard.getIsDeleted() != null && deletedBoard.getIsDeleted()) {
-                        log.info("게시글 삭제 성공 확인 - boardId: {}", id);
-                        return 1; // 성공
-                    } else {
-                        log.error("삭제 쿼리 실행되었으나 게시글이 여전히 활성 상태입니다. boardId: {}", id);
-                        throw new RuntimeException("삭제 처리가 정상적으로 완료되지 않았습니다.");
-                    }
-                } else {
-                    log.error("삭제 후 게시글 조회 실패 - boardId: {}", id);
-                    throw new RuntimeException("삭제 후 상태 확인에 실패했습니다.");
-                }
+            // 이미 삭제된 게시글인지 확인
+            boolean isAlreadyDeleted = existingBoard.getIsDeleted() != null && existingBoard.getIsDeleted();
+            log.info("🔍 최종 삭제 판정: {}", isAlreadyDeleted);
+            
+            if (isAlreadyDeleted) {
+                log.info("❌ 이미 삭제된 게시글입니다. boardId: {}, isDeleted: {}", id, existingBoard.getIsDeleted());
+                result.put("success", false);
+                result.put("code", "ALREADY_DELETED");
+                result.put("message", "이미 삭제된 게시글입니다.");
+                return result;
+            }
+            
+            log.info("✅ 삭제 가능한 게시글입니다. boardId: {}, isDeleted: {}", id, existingBoard.getIsDeleted());
+            
+            // 삭제 실행
+            int deleteResult = boardMapper.deleteBoard(id);
+            if (deleteResult > 0) {
+                log.info("게시글 삭제 완료 - boardId: {}, 영향받은 행: {}", id, deleteResult);
+                result.put("success", true);
+                result.put("code", "DELETED");
+                result.put("message", "게시글이 삭제되었습니다.");
             } else {
-                log.error("삭제 쿼리 실행되었으나 영향받은 행이 0개입니다. boardId: {}", id);
-                throw new RuntimeException("삭제 대상 게시글을 찾을 수 없거나 이미 삭제되었습니다.");
+                log.warn("게시글 삭제 실패 - boardId: {}, 영향받은 행: {}", id, deleteResult);
+                result.put("success", false);
+                result.put("code", "DELETE_FAILED");
+                result.put("message", "게시글 삭제에 실패했습니다.");
             }
+            
+            return result;
         } catch (Exception e) {
             log.error("게시글 삭제 중 오류 발생 - boardId: {}", id, e);
-            throw new RuntimeException("게시글 삭제 중 오류가 발생했습니다: " + e.getMessage(), e);
+            result.put("success", false);
+            result.put("code", "ERROR");
+            result.put("message", "게시글 삭제 중 오류가 발생했습니다: " + e.getMessage());
+            return result;
         }
     }
     
@@ -482,38 +519,5 @@ public class BoardService {
         }
     }
     
-    /**
-     * 모든 게시글 상태 조회 (개발용 - 삭제된 것 포함)
-     */
-    public List<BoardDTO> getAllBoardsWithStatus() {
-        log.info("모든 게시글 상태 조회 시작 (개발용)");
-        
-        try {
-            List<BoardDTO> allBoards = boardMapper.getAllBoardsWithStatus();
-            log.info("모든 게시글 상태 조회 완료 - 총 {}건", allBoards.size());
-            
-            return allBoards;
-        } catch (Exception e) {
-            log.error("모든 게시글 상태 조회 중 오류 발생", e);
-            return List.of();
-        }
-    }
 
-    /**
-     * 기존 데이터의 is_active 필드 업데이트 (임시 - 개발용)
-     */
-    @Transactional
-    public int updateExistingDataActiveStatus() {
-        log.info("기존 데이터 is_active 필드 업데이트 시작");
-        
-        try {
-            int updatedCount = boardMapper.updateExistingDataActiveStatus();
-            log.info("기존 데이터 is_active 필드 업데이트 완료 - 업데이트된 행: {}", updatedCount);
-            
-            return updatedCount;
-        } catch (Exception e) {
-            log.error("기존 데이터 is_active 필드 업데이트 중 오류 발생", e);
-            throw new RuntimeException("기존 데이터 업데이트 중 오류가 발생했습니다.", e);
-        }
-    }
 } 

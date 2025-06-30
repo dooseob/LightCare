@@ -95,13 +95,5 @@ public interface BoardMapper {
      */
     BoardDTO getNextBoard(@Param("boardId") Long boardId);
     
-    /**
-     * 모든 게시글 상태 조회 (개발용 - 삭제된 것 포함)
-     */
-    List<BoardDTO> getAllBoardsWithStatus();
-    
-    /**
-     * 기존 데이터의 is_active 필드 업데이트 (임시 - 개발용)
-     */
-    int updateExistingDataActiveStatus();
+
 } 

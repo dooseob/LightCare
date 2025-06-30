@@ -1,6 +1,9 @@
 # 빌드 결과물
 /build/
 /target/
+AppData/
+Application Data/
+*.json
 *.jar
 *.war
 *.zip
@@ -20,6 +23,9 @@ out/ # IntelliJ build output
 *.iml
 *.ipr
 *.iws
+.idea/
+node_modules/
+.env
 
 # Eclipse
 .classpath
@@ -37,6 +43,13 @@ Thumbs.db
 *.log
 logs/
 *.lock # 락 파일 포함 (예: Gradle lock 파일)
+*.tmp
+.DS_Store
 
 # 기타
 *.out
+
+# 브라우저 캐시 무시
+**/Edge Wallet/
+**/WindowsApps/
+**/Temporary Internet Files/
