@@ -31,38 +31,75 @@
                             </h4>
                         </div>
                         <div class="card-body">
-                            <form th:action="@{/review/write}" method="post" th:object="${reviewDTO}">
-                                <input type="hidden" th:field="*{facilityId}">
+                            <form th:action="@{/review/write}" method="post" th:object="${reviewDTO}" id="reviewForm">
+                                <!-- 시설 ID (hidden) -->
+                                <input type="hidden" th:field="*{facilityId}" id="facilityId">
                                 
                                 <!-- 시설 선택 -->
                                 <div class="mb-4" th:if="${reviewDTO.facilityId == null}">
                                     <label class="form-label fw-bold">시설 선택 *</label>
-                                    <select class="form-select" th:field="*{facilityId}" required>
+                                    <select class="form-select" name="facilityId" id="facilitySelect" required>
                                         <option value="">시설을 선택해주세요</option>
                                         <option th:each="facility : ${facilityList}" 
                                                 th:value="${facility.facilityId}" 
-                                                th:text="${facility.name + ' (' + facility.address + ')'}">
+                                                th:text="${facility.facilityName + ' (' + facility.address + ')'}"
+                                                th:selected="${facility.facilityId == reviewDTO.facilityId}"
+                                                th:data-status="${facility.status}"
+                                                th:disabled="${!facility.normalStatus}">
                                             시설명 (주소)
                                         </option>
                                     </select>
-                                    <div class="form-text">리뷰를 작성할 시설을 선택해주세요.</div>
+                                    <div class="form-text text-danger" th:if="${facilityList.empty}">
+                                        현재 등록된 시설이 없습니다. 시설 등록 후 리뷰를 작성해주세요.
+                                    </div>
+                                    <div class="form-text" th:unless="${facilityList.empty}">
+                                        리뷰를 작성할 시설을 선택해주세요. 삭제되거나 승인되지 않은 시설은 선택할 수 없습니다.
+                                    </div>
                                 </div>
 
                                 <!-- 선택된 시설 정보 표시 -->
-                                <div class="mb-4" th:if="${reviewDTO.facilityId != null}">
+                                <div class="mb-4" th:if="${reviewDTO.facilityId != null and selectedFacility != null}">
                                     <label class="form-label fw-bold">선택된 시설</label>
-                                    <div class="alert alert-info">
+                                    <div class="alert" th:classappend="${selectedFacility.normalStatus ? 'alert-info' : 'alert-warning'}">
                                         <i class="fas fa-building me-2"></i>
-                                        <strong>시설명:</strong> <span th:text="${selectedFacility?.name}">시설명</span><br>
-                                        <strong>주소:</strong> <span th:text="${selectedFacility?.address}">주소</span><br>
-                                        <strong>유형:</strong> <span th:text="${selectedFacility?.facilityType}">유형</span>
+                                        <strong>시설명:</strong> <span th:text="${selectedFacility.facilityName}">시설명</span><br>
+                                        <i class="fas fa-map-marker-alt me-2"></i>
+                                        <strong>주소:</strong> <span th:text="${selectedFacility.address}">주소</span><br>
+                                        <i class="fas fa-tag me-2"></i>
+                                        <strong>유형:</strong> <span th:text="${selectedFacility.facilityType}">유형</span><br>
+                                        <i class="fas fa-phone me-2"></i>
+                                        <strong>연락처:</strong> <span th:text="${selectedFacility.phone}">연락처</span><br>
+                                        <i class="fas fa-info-circle me-2"></i>
+                                        <strong>상태:</strong> <span th:text="${selectedFacility.status}">상태</span>
+                                        <div class="mt-2 text-danger" th:if="${!selectedFacility.normalStatus}">
+                                            <i class="fas fa-exclamation-triangle me-1"></i>
+                                            <span th:text="${selectedFacility.statusMessage}">상태 메시지</span>
+                                        </div>
+                                    </div>
+                                    <div class="mt-2">
+                                        <a href="/review/write" class="btn btn-outline-secondary btn-sm">
+                                            <i class="fas fa-sync-alt me-1"></i>다른 시설 선택
+                                        </a>
+                                    </div>
+                                </div>
+
+                                <!-- 시설 선택 오류 메시지 -->
+                                <div class="mb-4" th:if="${reviewDTO.facilityId != null and selectedFacility == null}">
+                                    <div class="alert alert-danger">
+                                        <i class="fas fa-exclamation-triangle me-2"></i>
+                                        선택한 시설을 찾을 수 없습니다. 다른 시설을 선택해주세요.
+                                    </div>
+                                    <div class="mt-2">
+                                        <a href="/review/write" class="btn btn-primary">
+                                            <i class="fas fa-redo me-1"></i>시설 다시 선택하기
+                                        </a>
                                     </div>
                                 </div>
 
                                 <!-- 제목 -->
                                 <div class="mb-4">
                                     <label class="form-label fw-bold">제목 *</label>
-                                    <input type="text" class="form-control" th:field="*{title}" 
+                                    <input type="text" class="form-control" th:field="*{title}" id="title"
                                            placeholder="리뷰 제목을 입력해주세요 (예: 친절한 직원들과 깨끗한 시설)" 
                                            maxlength="200" required>
                                     <div class="form-text">최대 200자까지 입력 가능합니다.</div>
@@ -73,16 +110,16 @@
                                     <label class="form-label fw-bold">전체 평점 *</label>
                                     <div class="rating-input-group">
                                         <div class="d-flex align-items-center">
-                                            <div class="rating-stars me-3" id="overallRating">
-                                                <span class="star" data-rating="1">★</span>
-                                                <span class="star" data-rating="2">★</span>
-                                                <span class="star" data-rating="3">★</span>
-                                                <span class="star" data-rating="4">★</span>
-                                                <span class="star" data-rating="5">★</span>
+                                            <div class="rating-stars" id="overallRating">
+                                                <span class="star" data-rating="1" title="매우 불만족">★</span>
+                                                <span class="star" data-rating="2" title="불만족">★</span>
+                                                <span class="star" data-rating="3" title="보통">★</span>
+                                                <span class="star" data-rating="4" title="만족">★</span>
+                                                <span class="star" data-rating="5" title="매우 만족">★</span>
                                             </div>
-                                            <span id="ratingText" class="fw-bold">평점을 선택해주세요</span>
+                                            <span id="ratingText" class="ms-2">평점을 선택해주세요</span>
                                         </div>
-                                        <input type="hidden" th:field="*{rating}" id="ratingValue" required>
+                                        <input type="hidden" name="rating" id="ratingValue" th:value="${reviewDTO != null ? reviewDTO.rating : ''}" required>
                                     </div>
                                     <div class="form-text">별표를 클릭하여 평점을 선택해주세요.</div>
                                 </div>
@@ -90,59 +127,75 @@
                                 <!-- 세부 평점 -->
                                 <div class="mb-4">
                                     <label class="form-label fw-bold">세부 평점</label>
-                                    <div class="row">
-                                        <div class="col-md-6 mb-3">
-                                            <label class="form-label">서비스 품질</label>
-                                            <div class="rating-stars detailed-rating" data-field="serviceRating">
-                                                <span class="star" data-rating="1">★</span>
-                                                <span class="star" data-rating="2">★</span>
-                                                <span class="star" data-rating="3">★</span>
-                                                <span class="star" data-rating="4">★</span>
-                                                <span class="star" data-rating="5">★</span>
+                                    <div class="row g-3">
+                                        <div class="col-md-6">
+                                            <div class="rating-group">
+                                                <label class="form-label">서비스 품질</label>
+                                                <div class="d-flex align-items-center">
+                                                    <div class="rating-stars detailed-rating" data-field="serviceRating">
+                                                        <span class="star" data-rating="1" title="매우 불만족">★</span>
+                                                        <span class="star" data-rating="2" title="불만족">★</span>
+                                                        <span class="star" data-rating="3" title="보통">★</span>
+                                                        <span class="star" data-rating="4" title="만족">★</span>
+                                                        <span class="star" data-rating="5" title="매우 만족">★</span>
+                                                    </div>
+                                                </div>
+                                                <input type="hidden" name="serviceRating" class="detailed-rating-input" th:value="${reviewDTO != null ? reviewDTO.serviceRating : ''}">
                                             </div>
-                                            <input type="hidden" th:field="*{serviceRating}" class="detailed-rating-input">
                                         </div>
-                                        <div class="col-md-6 mb-3">
-                                            <label class="form-label">시설 환경</label>
-                                            <div class="rating-stars detailed-rating" data-field="facilityRating">
-                                                <span class="star" data-rating="1">★</span>
-                                                <span class="star" data-rating="2">★</span>
-                                                <span class="star" data-rating="3">★</span>
-                                                <span class="star" data-rating="4">★</span>
-                                                <span class="star" data-rating="5">★</span>
+                                        <div class="col-md-6">
+                                            <div class="rating-group">
+                                                <label class="form-label">시설 환경</label>
+                                                <div class="d-flex align-items-center">
+                                                    <div class="rating-stars detailed-rating" data-field="facilityRating">
+                                                        <span class="star" data-rating="1" title="매우 불만족">★</span>
+                                                        <span class="star" data-rating="2" title="불만족">★</span>
+                                                        <span class="star" data-rating="3" title="보통">★</span>
+                                                        <span class="star" data-rating="4" title="만족">★</span>
+                                                        <span class="star" data-rating="5" title="매우 만족">★</span>
+                                                    </div>
+                                                </div>
+                                                <input type="hidden" name="facilityRating" class="detailed-rating-input" th:value="${reviewDTO != null ? reviewDTO.facilityRating : ''}">
                                             </div>
-                                            <input type="hidden" th:field="*{facilityRating}" class="detailed-rating-input">
                                         </div>
-                                        <div class="col-md-6 mb-3">
-                                            <label class="form-label">직원 친절도</label>
-                                            <div class="rating-stars detailed-rating" data-field="staffRating">
-                                                <span class="star" data-rating="1">★</span>
-                                                <span class="star" data-rating="2">★</span>
-                                                <span class="star" data-rating="3">★</span>
-                                                <span class="star" data-rating="4">★</span>
-                                                <span class="star" data-rating="5">★</span>
+                                        <div class="col-md-6">
+                                            <div class="rating-group">
+                                                <label class="form-label">직원 친절도</label>
+                                                <div class="d-flex align-items-center">
+                                                    <div class="rating-stars detailed-rating" data-field="staffRating">
+                                                        <span class="star" data-rating="1" title="매우 불만족">★</span>
+                                                        <span class="star" data-rating="2" title="불만족">★</span>
+                                                        <span class="star" data-rating="3" title="보통">★</span>
+                                                        <span class="star" data-rating="4" title="만족">★</span>
+                                                        <span class="star" data-rating="5" title="매우 만족">★</span>
+                                                    </div>
+                                                </div>
+                                                <input type="hidden" name="staffRating" class="detailed-rating-input" th:value="${reviewDTO != null ? reviewDTO.staffRating : ''}">
                                             </div>
-                                            <input type="hidden" th:field="*{staffRating}" class="detailed-rating-input">
                                         </div>
-                                        <div class="col-md-6 mb-3">
-                                            <label class="form-label">가격 만족도</label>
-                                            <div class="rating-stars detailed-rating" data-field="priceRating">
-                                                <span class="star" data-rating="1">★</span>
-                                                <span class="star" data-rating="2">★</span>
-                                                <span class="star" data-rating="3">★</span>
-                                                <span class="star" data-rating="4">★</span>
-                                                <span class="star" data-rating="5">★</span>
+                                        <div class="col-md-6">
+                                            <div class="rating-group">
+                                                <label class="form-label">가격 만족도</label>
+                                                <div class="d-flex align-items-center">
+                                                    <div class="rating-stars detailed-rating" data-field="priceRating">
+                                                        <span class="star" data-rating="1" title="매우 불만족">★</span>
+                                                        <span class="star" data-rating="2" title="불만족">★</span>
+                                                        <span class="star" data-rating="3" title="보통">★</span>
+                                                        <span class="star" data-rating="4" title="만족">★</span>
+                                                        <span class="star" data-rating="5" title="매우 만족">★</span>
+                                                    </div>
+                                                </div>
+                                                <input type="hidden" name="priceRating" class="detailed-rating-input" th:value="${reviewDTO != null ? reviewDTO.priceRating : ''}">
                                             </div>
-                                            <input type="hidden" th:field="*{priceRating}" class="detailed-rating-input">
                                         </div>
                                     </div>
-                                    <div class="form-text">각 항목별로 세부 평점을 매겨주세요 (선택사항).</div>
+                                    <div class="form-text mt-2">각 항목별로 세부 평점을 매겨주세요 (선택사항).</div>
                                 </div>
 
                                 <!-- 리뷰 내용 -->
                                 <div class="mb-4">
                                     <label class="form-label fw-bold">리뷰 내용 *</label>
-                                    <textarea class="form-control" rows="8" th:field="*{content}" 
+                                    <textarea class="form-control" rows="8" th:field="*{content}" id="content"
                                               placeholder="시설 이용 경험을 자세히 작성해주세요.&#10;&#10;예시:&#10;- 시설의 장점과 단점&#10;- 직원들의 서비스 품질&#10;- 시설 환경과 청결도&#10;- 다른 이용자들에게 도움이 될 정보" 
                                               maxlength="2000" required></textarea>
                                     <div class="form-text">
@@ -163,7 +216,7 @@
 
                                 <!-- 버튼 -->
                                 <div class="d-flex justify-content-between">
-                                    <button type="button" class="btn btn-secondary" onclick="window.history.back()">
+                                    <button type="button" class="btn btn-secondary" id="cancelBtn">
                                         <i class="fas fa-arrow-left me-1"></i>취소
                                     </button>
                                     <button type="submit" class="btn btn-primary" id="submitBtn">
@@ -218,6 +271,9 @@
     
     <!-- JavaScript -->
     <div th:replace="~{layout/footer :: scripts}"></div>
+    
+    <!-- 리뷰 작성 전용 JavaScript -->
+    <script th:src="@{/js/review-write.js}"></script>
 
     <style>
         .rating-stars {
@@ -249,118 +305,5 @@
             color: #ffc107;
         }
     </style>
-
-    <script>
-        // 전체 평점 처리
-        document.addEventListener('DOMContentLoaded', function() {
-            const overallRating = document.getElementById('overallRating');
-            const ratingValue = document.getElementById('ratingValue');
-            const ratingText = document.getElementById('ratingText');
-            const contentTextarea = document.querySelector('textarea[name="content"]');
-            const contentLength = document.getElementById('contentLength');
-            const submitBtn = document.getElementById('submitBtn');
-
-            // 전체 평점 클릭 이벤트
-            overallRating.addEventListener('click', function(e) {
-                if (e.target.classList.contains('star')) {
-                    const rating = parseInt(e.target.dataset.rating);
-                    setOverallRating(rating);
-                }
-            });
-
-            function setOverallRating(rating) {
-                ratingValue.value = rating;
-                const stars = overallRating.querySelectorAll('.star');
-                const ratingTexts = ['', '매우 불만족', '불만족', '보통', '만족', '매우 만족'];
-                
-                stars.forEach((star, index) => {
-                    if (index < rating) {
-                        star.classList.add('active');
-                    } else {
-                        star.classList.remove('active');
-                    }
-                });
-                
-                ratingText.textContent = ratingTexts[rating] + ' (' + rating + '점)';
-            }
-
-            // 세부 평점 처리
-            document.querySelectorAll('.detailed-rating').forEach(function(ratingElement) {
-                const field = ratingElement.dataset.field;
-                const hiddenInput = ratingElement.parentElement.querySelector('.detailed-rating-input');
-                
-                ratingElement.addEventListener('click', function(e) {
-                    if (e.target.classList.contains('star')) {
-                        const rating = parseInt(e.target.dataset.rating);
-                        setDetailedRating(ratingElement, hiddenInput, rating);
-                    }
-                });
-            });
-
-            function setDetailedRating(element, input, rating) {
-                input.value = rating;
-                const stars = element.querySelectorAll('.star');
-                
-                stars.forEach((star, index) => {
-                    if (index < rating) {
-                        star.classList.add('active');
-                    } else {
-                        star.classList.remove('active');
-                    }
-                });
-            }
-
-            // 내용 글자 수 카운터
-            contentTextarea.addEventListener('input', function() {
-                const length = this.value.length;
-                contentLength.textContent = length;
-                
-                if (length < 10) {
-                    contentLength.style.color = '#dc3545';
-                } else {
-                    contentLength.style.color = '#28a745';
-                }
-            });
-
-            // 폼 제출 검증
-            document.querySelector('form').addEventListener('submit', function(e) {
-                const facilityId = document.querySelector('select[name="facilityId"]').value;
-                const title = document.querySelector('input[name="title"]').value.trim();
-                const content = contentTextarea.value.trim();
-                const rating = ratingValue.value;
-
-                if (!facilityId) {
-                    alert('시설을 선택해주세요.');
-                    e.preventDefault();
-                    return;
-                }
-
-                if (!title) {
-                    alert('제목을 입력해주세요.');
-                    e.preventDefault();
-                    return;
-                }
-
-                if (content.length < 10) {
-                    alert('내용을 10자 이상 입력해주세요.');
-                    e.preventDefault();
-                    return;
-                }
-
-                if (!rating) {
-                    alert('평점을 선택해주세요.');
-                    e.preventDefault();
-                    return;
-                }
-
-                // 제출 버튼 비활성화 (중복 제출 방지)
-                submitBtn.disabled = true;
-                submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>등록 중...';
-            });
-
-            // 초기 글자 수 표시
-            contentLength.textContent = contentTextarea.value.length;
-        });
-    </script>
 </body>
 </html> 

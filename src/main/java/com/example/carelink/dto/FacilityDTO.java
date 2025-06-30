@@ -33,6 +33,7 @@ public class FacilityDTO extends BaseDTO {
     private String operatingHours;
     private String features;
     private Boolean isApproved; // DB: is_approved
+    private Boolean isDeleted; // DB: is_deleted
     private String approvalStatus; // DB: approval_status
     private Long registeredMemberId; // DB: registered_member_id
     private String registeredMemberName; // DB: registered_member_name
@@ -46,4 +47,30 @@ public class FacilityDTO extends BaseDTO {
     private Double swLng;
     private Double neLat;
     private Double neLng;
+
+    // 상태 정보 (UI 표시용)
+    private String status; // 시설 상태 (정상, 삭제됨, 승인대기)
+
+    // 시설 상태 확인 메서드
+    public boolean isNormalStatus() {
+        return "정상".equals(status);
+    }
+
+    public boolean isDeletedStatus() {
+        return "삭제됨".equals(status);
+    }
+
+    public boolean isPendingStatus() {
+        return "승인대기".equals(status);
+    }
+
+    // 시설 상태 메시지 반환
+    public String getStatusMessage() {
+        if (isDeletedStatus()) {
+            return "삭제된 시설입니다.";
+        } else if (isPendingStatus()) {
+            return "승인 대기 중인 시설입니다.";
+        }
+        return "";
+    }
 }

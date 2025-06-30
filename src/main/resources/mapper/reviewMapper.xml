@@ -114,13 +114,13 @@
             service_rating, facility_rating, staff_rating, price_rating,
             review_image1, review_image2, review_image3,
             is_visible, status, parent_review_id, reply_depth,
-            created_at
+            is_deleted, created_at
         ) VALUES (
             #{facilityId}, #{memberId}, #{title}, #{content}, #{rating},
             #{serviceRating}, #{facilityRating}, #{staffRating}, #{priceRating},
             #{reviewImage1}, #{reviewImage2}, #{reviewImage3},
             #{isVisible}, #{status}, #{parentReviewId}, #{replyDepth},
-            NOW()
+            #{isDeleted}, NOW()
         )
     </insert>
 

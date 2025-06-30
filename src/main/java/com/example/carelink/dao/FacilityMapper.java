@@ -30,6 +30,11 @@ public interface FacilityMapper {
     List<FacilityDTO> getAllFacilities();
 
     /**
+     * 활성화된 모든 시설 목록 조회 (리뷰 작성용)
+     */
+    List<FacilityDTO> getAllActiveFacilities();
+
+    /**
      * 시설 등록
      */
     int insertFacility(FacilityDTO facilityDTO);

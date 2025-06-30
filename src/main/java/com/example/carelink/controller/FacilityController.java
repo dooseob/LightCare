@@ -1,7 +1,9 @@
 package com.example.carelink.controller;
 
 import com.example.carelink.dto.FacilityDTO;
+import com.example.carelink.dto.ReviewDTO;
 import com.example.carelink.service.FacilityService;
+import com.example.carelink.service.ReviewService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import lombok.RequiredArgsConstructor;
@@ -24,6 +26,7 @@ import java.util.ArrayList; // ArrayList를 사용하기 위해 추가된 import
 public class FacilityController {
 
     private final FacilityService facilityService;
+    private final ReviewService reviewService;
 
     /**
      * Jackson ObjectMapper에 Java 8 날짜/시간 모듈을 등록합니다.
@@ -89,18 +92,39 @@ public class FacilityController {
      * 시설 상세 정보 페이지
      */
     @GetMapping("/detail/{facilityId}")
-    public String getFacilityDetail(@PathVariable("facilityId") Long facilityId, Model model) {
+    public String getFacilityDetail(@PathVariable Long facilityId, Model model) {
         log.info("시설 상세 정보 페이지 접속 - facilityId: {}", facilityId);
-
-        FacilityDTO facility = facilityService.getFacilityById(facilityId);
-
-        if (facility == null) {
-            log.warn("Facility with ID {} not found. Redirecting to search page.", facilityId);
+        
+        try {
+            // 시설 정보 조회
+            FacilityDTO facility = facilityService.getFacilityById(facilityId);
+            if (facility == null) {
+                model.addAttribute("error", "해당 시설을 찾을 수 없습니다.");
+                return "redirect:/facility/search";
+            }
+            
+            // 해당 시설의 리뷰 목록 조회 (최근 5개)
+            List<ReviewDTO> recentReviews = reviewService.getReviewsByFacilityId(facilityId);
+            if (recentReviews.size() > 5) {
+                recentReviews = recentReviews.subList(0, 5);
+            }
+            
+            // 시설의 평균 평점 조회
+            Double averageRating = reviewService.getAverageRating(facilityId);
+            
+            model.addAttribute("facility", facility);
+            model.addAttribute("recentReviews", recentReviews);
+            model.addAttribute("averageRating", averageRating);
+            model.addAttribute("reviewCount", recentReviews.size());
+            model.addAttribute("pageTitle", facility.getFacilityName() + " 상세정보");
+            
+            log.info("시설 상세 정보 조회 완료 - facilityId: {}, 리뷰 수: {}", facilityId, recentReviews.size());
+            
+            return "facility/detail";
+        } catch (Exception e) {
+            log.error("시설 상세 정보 조회 중 오류 발생 - facilityId: {}", facilityId, e);
+            model.addAttribute("error", "시설 정보를 불러오는 중 오류가 발생했습니다.");
             return "redirect:/facility/search";
         }
-
-        model.addAttribute("facility", facility);
-
-        return "facility/detail";
     }
 }

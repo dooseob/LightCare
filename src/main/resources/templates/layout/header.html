@@ -39,11 +39,16 @@
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav me-auto">
                     <!-- 시설 검색 (팀원 B) -->
-                    <li class="nav-item">
-                        <a class="nav-link" href="/facility/search">
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
                             <i class="fas fa-map-marker-alt me-1"></i>
                             시설 찾기
                         </a>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="/facility/search">시설 검색</a></li>
+                            <li><a class="dropdown-item" href="/review">시설 리뷰</a></li>
+                            <li><a class="dropdown-item" href="/review/write">리뷰 작성</a></li>
+                        </ul>
                     </li>
                     
                     <!-- 구인구직 (팀원 C) -->
@@ -70,7 +75,7 @@
                             <li><a class="dropdown-item" href="/board?type=notice">공지사항</a></li>
                             <li><a class="dropdown-item" href="/board?type=info">정보공유</a></li>
                             <li><a class="dropdown-item" href="/board?type=qna">Q&A</a></li>
-                            <li><a class="dropdown-item" href="/review">시설 리뷰</a></li>
+                            <li><a class="dropdown-item" href="/board?type=faq">FAQ</a></li>
                         </ul>
                     </li>
                 </ul>

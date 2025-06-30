@@ -27,14 +27,21 @@ public class ReviewService {
      * 리뷰 목록 조회 (페이징 및 검색 포함)
      */
     public PageInfo<ReviewDTO> getReviewList(int page, String keyword) {
-        return getReviewList(page, keyword, null);
+        return getReviewList(page, keyword, null, null);
     }
     
     /**
      * 리뷰 목록 조회 (페이징, 검색, 평점 필터 포함)
      */
     public PageInfo<ReviewDTO> getReviewList(int page, String keyword, Integer minRating) {
-        log.info("리뷰 목록 조회 시작 - page: {}, keyword: {}, minRating: {}", page, keyword, minRating);
+        return getReviewList(page, keyword, minRating, null);
+    }
+    
+    /**
+     * 리뷰 목록 조회 (페이징, 검색, 평점 필터, 시설 필터 포함)
+     */
+    public PageInfo<ReviewDTO> getReviewList(int page, String keyword, Integer minRating, Long facilityId) {
+        log.info("리뷰 목록 조회 시작 - page: {}, keyword: {}, minRating: {}, facilityId: {}", page, keyword, minRating, facilityId);
         
         try {
             // 검색 조건 설정
@@ -49,6 +56,10 @@ public class ReviewService {
             
             if (minRating != null) {
                 searchDTO.setMinRating(minRating);
+            }
+            
+            if (facilityId != null) {
+                searchDTO.setFacilityId(facilityId);
             }
             
             // 전체 리뷰 수 조회
@@ -111,6 +122,9 @@ public class ReviewService {
                 reviewDTO.setReplyDepth(0);
             }
             // isVisible은 기본적으로 true로 설정 (boolean 타입)
+            reviewDTO.setVisible(true);
+            // isDeleted는 false로 설정 (논리적 삭제를 위해)
+            reviewDTO.setDeleted(false);
             
             int result = reviewMapper.insertReview(reviewDTO);
             log.info("리뷰 등록 완료 - reviewId: {}", reviewDTO.getReviewId());
