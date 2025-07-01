@@ -39,16 +39,11 @@
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav me-auto">
                     <!-- 시설 검색 (팀원 B) -->
-                    <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
+                    <li class="nav-item">
+                        <a class="nav-link" href="/facility/search">
                             <i class="fas fa-map-marker-alt me-1"></i>
                             시설 찾기
                         </a>
-                        <ul class="dropdown-menu">
-                            <li><a class="dropdown-item" href="/facility/search">시설 검색</a></li>
-                            <li><a class="dropdown-item" href="/review">시설 리뷰</a></li>
-                            <li><a class="dropdown-item" href="/review/write">리뷰 작성</a></li>
-                        </ul>
                     </li>
                     
                     <!-- 구인구직 (팀원 C) -->
@@ -75,19 +70,18 @@
                             <li><a class="dropdown-item" href="/board?type=notice">공지사항</a></li>
                             <li><a class="dropdown-item" href="/board?type=info">정보공유</a></li>
                             <li><a class="dropdown-item" href="/board?type=qna">Q&A</a></li>
-                            <li><a class="dropdown-item" href="/board?type=faq">FAQ</a></li>
+                            <li><a class="dropdown-item" href="/review">시설 리뷰</a></li>
                         </ul>
                     </li>
                 </ul>
                 
-                <!-- 사용자 메뉴 -->
+                <!-- 사용자 메뉴 - 사용자 로그인 방식 반영 -->
                 <ul class="navbar-nav">
                     <!-- 로그인된 경우 -->
-                    <li class="nav-item dropdown" th:if="${session.memberId != null}">
+                    <li class="nav-item dropdown" th:if="${session.loginMember != null}">
                         <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
                             <i class="fas fa-user-circle me-1"></i>
-                            <span th:if="${session.loginMember != null}" th:text="${session.loginMember.name}">사용자명</span>
-                            <span th:unless="${session.loginMember != null}" th:text="'테스트사용자' + ${session.memberId}">테스트사용자</span>
+                            <span th:text="${session.loginMember.name}">사용자명</span>
                         </a>
                         <ul class="dropdown-menu dropdown-menu-end">
                             <li><a class="dropdown-item" href="/member/myinfo">내 정보</a></li>
@@ -98,13 +92,13 @@
                     </li>
                     
                     <!-- 로그인 안된 경우 -->
-                    <li class="nav-item" th:unless="${session.memberId != null}">
+                    <li class="nav-item" th:unless="${session.loginMember != null}">
                         <a class="nav-link" href="/member/login">
                             <i class="fas fa-sign-in-alt me-1"></i>
                             로그인
                         </a>
                     </li>
-                    <li class="nav-item" th:unless="${session.memberId != null}">
+                    <li class="nav-item" th:unless="${session.loginMember != null}">
                         <a class="nav-link" href="/member/join">
                             <i class="fas fa-user-plus me-1"></i>
                             회원가입
@@ -139,4 +133,4 @@
         </div>
     </div>
 </body>
-</html> 
+</html>

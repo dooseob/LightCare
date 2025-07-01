@@ -1,0 +1,548 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="ko">
+<head th:replace="~{layout/header :: header}">
+    <title>회원가입 - CareLink</title>
+</head>
+<body class="d-flex flex-column min-vh-100">
+    <!-- 네비게이션 바 -->
+    <nav th:replace="~{layout/header :: navbar}"></nav>
+    
+    <!-- 메시지 표시 -->
+    <div th:replace="~{layout/header :: messages}"></div>
+    
+    <!-- 메인 콘텐츠 -->
+    <main class="flex-grow-1 py-5">
+        <div class="container">
+            <div class="row justify-content-center">
+                <div class="col-md-6 col-lg-5">
+                    <!-- 회원가입 카드 -->
+                    <div class="card shadow">
+                        <div class="card-body p-4">
+                            <!-- 제목 -->
+                            <div class="text-center mb-4">
+                                <h3 class="card-title fw-bold text-primary">
+                                    <i class="fas fa-user-plus me-2"></i>
+                                    회원가입
+                                </h3>
+                                <p class="text-muted">새로운 CareLink 계정을 만드세요</p>
+                            </div>
+                            
+                            <!-- 회원가입 폼 -->
+                            <form th:action="@{/member/join}" method="post" id="joinForm" th:object="${memberDTO}">
+                                
+                                <!-- 아이디 -->
+                                <div class="mb-3">
+                                    <label for="userId" class="form-label">
+                                        <i class="fas fa-user me-1"></i>아이디 <span class="text-danger">*</span>
+                                    </label>
+                                    <input type="text" 
+                                           class="form-control" 
+                                           id="userId" 
+                                           th:field="*{userId}"
+                                           placeholder="아이디를 입력하세요 (4-20자 영문, 숫자)"
+                                           required>
+                                    <div class="invalid-feedback" th:if="${#fields.hasErrors('userId')}" th:text="${#fields.errors('userId')[0]}"></div>
+                                    <div id="userIdFeedback" class="mt-1"></div>
+                                </div>
+                                
+                                <!-- 비밀번호 -->
+                                <div class="mb-3">
+                                    <label for="password" class="form-label">
+                                        <i class="fas fa-lock me-1"></i>비밀번호 <span class="text-danger">*</span>
+                                    </label>
+                                    <div class="input-group">
+                                        <input type="password" 
+                                               class="form-control" 
+                                               id="password" 
+                                               th:field="*{password}"
+                                               placeholder="비밀번호를 입력하세요 (8-20자 영문, 숫자, 특수문자)"
+                                               required>
+                                        <button class="btn btn-outline-secondary" type="button" id="togglePassword">
+                                            <i class="fas fa-eye"></i>
+                                        </button>
+                                    </div>
+                                    <div class="invalid-feedback" th:if="${#fields.hasErrors('password')}" th:text="${#fields.errors('password')[0]}"></div>
+                                </div>
+                                
+                                <!-- 비밀번호 확인 -->
+                                <div class="mb-3">
+                                    <label for="passwordConfirm" class="form-label">
+                                        <i class="fas fa-lock me-1"></i>비밀번호 확인 <span class="text-danger">*</span>
+                                    </label>
+                                    <input type="password" 
+                                           class="form-control" 
+                                           id="passwordConfirm" 
+                                           th:field="*{passwordConfirm}"
+                                           placeholder="비밀번호를 다시 입력하세요"
+                                           required>
+                                    <div id="passwordMismatchFeedback" class="text-danger mt-1" style="display:none;">
+                                        비밀번호가 일치하지 않습니다.
+                                    </div>
+                                    <div class="invalid-feedback" th:if="${#fields.hasErrors('passwordConfirm')}" th:text="${#fields.errors('passwordConfirm')[0]}"></div>
+                                </div>
+                                
+                                <!-- 이름 -->
+                                <div class="mb-3">
+                                    <label for="name" class="form-label">
+                                        <i class="fas fa-signature me-1"></i>이름 <span class="text-danger">*</span>
+                                    </label>
+                                    <input type="text" 
+                                           class="form-control" 
+                                           id="name" 
+                                           th:field="*{name}"
+                                           placeholder="이름을 입력하세요"
+                                           required>
+                                    <div class="invalid-feedback" th:if="${#fields.hasErrors('name')}" th:text="${#fields.errors('name')[0]}"></div>
+                                </div>
+                                
+                                <!-- 역할 선택 -->
+                                <div class="mb-3">
+                                    <label for="role" class="form-label">
+                                        <i class="fas fa-user-tag me-1"></i>역할 <span class="text-danger">*</span>
+                                    </label>
+                                    <select class="form-select" id="role" th:field="*{role}" required>
+                                        <option value="">역할을 선택하세요</option>
+                                        <option value="USER">일반 사용자 (요양보호사, 구직자)</option>
+                                        <option value="FACILITY">시설 관리자 (요양원, 병원)</option>
+                                    </select>
+                                    <small class="form-text text-muted">
+                                        일반 사용자: 구직 활동, 시설 검색 및 리뷰 작성<br>
+                                        시설 관리자: 구인 공고 등록, 시설 정보 관리
+                                    </small>
+                                    <div class="invalid-feedback" th:if="${#fields.hasErrors('role')}" th:text="${#fields.errors('role')[0]}"></div>
+                                </div>
+                                
+                                <!-- 이메일 -->
+                                <div class="mb-3">
+                                    <label for="email" class="form-label">
+                                        <i class="fas fa-envelope me-1"></i>이메일
+                                    </label>
+                                    <input type="email" 
+                                           class="form-control" 
+                                           id="email" 
+                                           th:field="*{email}"
+                                           placeholder="이메일을 입력하세요 (선택 사항)">
+                                    <div class="invalid-feedback" th:if="${#fields.hasErrors('email')}" th:text="${#fields.errors('email')[0]}"></div>
+                                </div>
+                                
+                                <!-- 휴대폰 번호 -->
+                                <div class="mb-3">
+                                    <label for="phone" class="form-label">
+                                        <i class="fas fa-phone me-1"></i>휴대폰 번호
+                                    </label>
+                                    <input type="tel" 
+                                           class="form-control" 
+                                           id="phone" 
+                                           th:field="*{phone}"
+                                           placeholder="휴대폰 번호를 입력하세요 (예: 010-1234-5678)"
+                                           pattern="^01(?:0|1|[6-9])-(?:\d{3}|\d{4})-\d{4}$">
+                                    <small class="form-text text-muted">예: 010-1234-5678</small>
+                                    <div class="invalid-feedback" th:if="${#fields.hasErrors('phone')}" th:text="${#fields.errors('phone')[0]}"></div>
+                                </div>
+                                
+                                <!-- 개인 주소 (일반 사용자용) -->
+                                <div class="mb-3" id="userAddressSection">
+                                    <label for="address" class="form-label">
+                                        <i class="fas fa-map-marker-alt me-1"></i>주소
+                                    </label>
+                                    <input type="text" 
+                                           class="form-control" 
+                                           id="address" 
+                                           th:field="*{address}"
+                                           placeholder="주소를 입력하세요 (선택 사항)">
+                                    <div class="invalid-feedback" th:if="${#fields.hasErrors('address')}" th:text="${#fields.errors('address')[0]}"></div>
+                                </div>
+                                
+                                <!-- 시설 정보 섹션 (시설 관리자용) -->
+                                <div id="facilitySection" style="display: none;">
+                                    <div class="alert alert-info">
+                                        <i class="fas fa-building me-2"></i>
+                                        <strong>시설 정보</strong> - 시설 관리자로 가입하시는 경우 시설 정보를 입력해주세요.
+                                    </div>
+                                    
+                                    <!-- 시설명 -->
+                                    <div class="mb-3">
+                                        <label for="facilityName" class="form-label">
+                                            <i class="fas fa-building me-1"></i>시설명 <span class="text-danger">*</span>
+                                        </label>
+                                        <input type="text" 
+                                               class="form-control" 
+                                               id="facilityName" 
+                                               th:field="*{facilityName}"
+                                               placeholder="시설명을 입력하세요">
+                                        <div class="invalid-feedback" th:if="${#fields.hasErrors('facilityName')}" th:text="${#fields.errors('facilityName')[0]}"></div>
+                                    </div>
+                                    
+                                    <!-- 시설 유형 -->
+                                    <div class="mb-3">
+                                        <label for="facilityType" class="form-label">
+                                            <i class="fas fa-hospital me-1"></i>시설 유형 <span class="text-danger">*</span>
+                                        </label>
+                                        <select class="form-select" id="facilityType" th:field="*{facilityType}">
+                                            <option value="">시설 유형을 선택하세요</option>
+                                            <option value="NURSING_HOME">요양원</option>
+                                            <option value="HOSPITAL">병원</option>
+                                            <option value="DAY_CARE">주간보호센터</option>
+                                            <option value="OTHER">기타</option>
+                                        </select>
+                                        <div class="invalid-feedback" th:if="${#fields.hasErrors('facilityType')}" th:text="${#fields.errors('facilityType')[0]}"></div>
+                                    </div>
+                                    
+                                    <!-- 사업자등록번호 -->
+                                    <div class="mb-3">
+                                        <label for="businessNumber" class="form-label">
+                                            <i class="fas fa-id-card me-1"></i>사업자등록번호 <span class="text-danger">*</span>
+                                        </label>
+                                        <input type="text" 
+                                               class="form-control" 
+                                               id="businessNumber" 
+                                               th:field="*{businessNumber}"
+                                               placeholder="000-00-00000 형식으로 입력하세요"
+                                               pattern="^\d{3}-\d{2}-\d{5}$">
+                                        <small class="form-text text-muted">예: 123-45-67890</small>
+                                        <div class="invalid-feedback" th:if="${#fields.hasErrors('businessNumber')}" th:text="${#fields.errors('businessNumber')[0]}"></div>
+                                    </div>
+                                    
+                                    <!-- 시설 주소 -->
+                                    <div class="mb-3">
+                                        <label for="facilityAddress" class="form-label">
+                                            <i class="fas fa-map-marker-alt me-1"></i>시설 주소 <span class="text-danger">*</span>
+                                        </label>
+                                        <input type="text" 
+                                               class="form-control" 
+                                               id="facilityAddress" 
+                                               th:field="*{facilityAddress}"
+                                               placeholder="시설 주소를 입력하세요">
+                                        <div class="invalid-feedback" th:if="${#fields.hasErrors('facilityAddress')}" th:text="${#fields.errors('facilityAddress')[0]}"></div>
+                                    </div>
+                                    
+                                    <!-- 시설 전화번호 -->
+                                    <div class="mb-3">
+                                        <label for="facilityPhone" class="form-label">
+                                            <i class="fas fa-phone me-1"></i>시설 전화번호 <span class="text-danger">*</span>
+                                        </label>
+                                        <input type="tel" 
+                                               class="form-control" 
+                                               id="facilityPhone" 
+                                               th:field="*{facilityPhone}"
+                                               placeholder="시설 전화번호를 입력하세요 (예: 02-1234-5678)"
+                                               pattern="^0\d{1,2}-\d{3,4}-\d{4}$">
+                                        <small class="form-text text-muted">예: 02-1234-5678, 031-123-4567</small>
+                                        <div class="invalid-feedback" th:if="${#fields.hasErrors('facilityPhone')}" th:text="${#fields.errors('facilityPhone')[0]}"></div>
+                                    </div>
+                                    
+                                    <!-- 시설장 이름 -->
+                                    <div class="mb-3">
+                                        <label for="directorName" class="form-label">
+                                            <i class="fas fa-user-tie me-1"></i>시설장 이름 <span class="text-danger">*</span>
+                                        </label>
+                                        <input type="text" 
+                                               class="form-control" 
+                                               id="directorName" 
+                                               th:field="*{directorName}"
+                                               placeholder="시설장 이름을 입력하세요">
+                                        <div class="invalid-feedback" th:if="${#fields.hasErrors('directorName')}" th:text="${#fields.errors('directorName')[0]}"></div>
+                                    </div>
+                                    
+                                    <!-- 시설 소개 -->
+                                    <div class="mb-4">
+                                        <label for="description" class="form-label">
+                                            <i class="fas fa-info-circle me-1"></i>시설 소개
+                                        </label>
+                                        <textarea class="form-control" 
+                                                  id="description" 
+                                                  th:field="*{description}"
+                                                  rows="3"
+                                                  placeholder="시설에 대한 간단한 소개를 입력하세요 (선택 사항)"></textarea>
+                                        <div class="invalid-feedback" th:if="${#fields.hasErrors('description')}" th:text="${#fields.errors('description')[0]}"></div>
+                                    </div>
+                                </div>
+                                
+                                <!-- 회원가입 버튼 -->
+                                <div class="d-grid mb-3">
+                                    <button type="submit" class="btn btn-primary btn-lg" id="joinSubmitButton">
+                                        <i class="fas fa-user-plus me-2"></i>
+                                        회원가입
+                                    </button>
+                                </div>
+                            </form>
+                            
+                            <!-- 링크들 -->
+                            <div class="row text-center mt-3">
+                                <div class="col">
+                                    <p class="text-muted mb-0">이미 계정이 있으신가요?</p>
+                                    <a th:href="@{/member/login}" class="btn btn-link">
+                                        <i class="fas fa-sign-in-alt me-1"></i>
+                                        로그인 페이지로 이동
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+    
+    <!-- 푸터 -->
+    <footer th:replace="~{layout/footer :: footer}"></footer>
+    
+    <!-- JavaScript -->
+    <div th:replace="~{layout/footer :: scripts}"></div>
+    
+    <script th:inline="javascript">
+        $(document).ready(function() {
+            // Thymeleaf에서 전달된 에러 메시지 처리
+            /*[CDATA[*/
+            const memberDTOErrors = /*[[${#fields.hasErrors('memberDTO')} ? ${#fields.errors('memberDTO')} : null]]*/ null;
+            if (memberDTOErrors) {
+                memberDTOErrors.forEach(error => {
+                    if (error.field === 'userId') {
+                        $('#userId').addClass('is-invalid');
+                        $('#userIdFeedback').addClass('text-danger').text(error.defaultMessage);
+                    } else if (error.field === 'password') {
+                        $('#password').addClass('is-invalid');
+                    } else if (error.field === 'passwordConfirm') {
+                        $('#passwordConfirm').addClass('is-invalid');
+                        $('#passwordMismatchFeedback').text(error.defaultMessage).show();
+                    } else if (error.field === 'name') {
+                        $('#name').addClass('is-invalid');
+                    } else if (error.field === 'role') {
+                        $('#role').addClass('is-invalid');
+                    } else if (error.field === 'email') {
+                        $('#email').addClass('is-invalid');
+                    } else if (error.field === 'phone') {
+                        $('#phone').addClass('is-invalid');
+                    } else if (error.field === 'address') {
+                        $('#address').addClass('is-invalid');
+                    }
+                });
+            }
+            /*]]>*/
+            
+            // 역할 변경에 따른 폼 전환
+            $('#role').on('change', function() {
+                const selectedRole = $(this).val();
+                const userSection = $('#userAddressSection');
+                const facilitySection = $('#facilitySection');
+                
+                if (selectedRole === 'FACILITY') {
+                    // 시설 관리자 선택 시
+                    userSection.hide();
+                    facilitySection.show();
+                    
+                    // 시설 정보 필드들을 필수로 설정
+                    $('#facilityName, #facilityType, #businessNumber, #facilityAddress, #facilityPhone, #directorName').prop('required', true);
+                    $('#address').prop('required', false);
+                    
+                } else if (selectedRole === 'USER') {
+                    // 일반 사용자 선택 시
+                    userSection.show();
+                    facilitySection.hide();
+                    
+                    // 시설 정보 필드들을 선택사항으로 설정
+                    $('#facilityName, #facilityType, #businessNumber, #facilityAddress, #facilityPhone, #directorName').prop('required', false);
+                    $('#address').prop('required', false);
+                    
+                } else {
+                    // 역할 미선택 시
+                    userSection.show();
+                    facilitySection.hide();
+                    
+                    // 모든 추가 필드를 선택사항으로 설정
+                    $('#facilityName, #facilityType, #businessNumber, #facilityAddress, #facilityPhone, #directorName').prop('required', false);
+                    $('#address').prop('required', false);
+                }
+                
+                // 버튼 상태 업데이트
+                updateSubmitButtonState();
+            });
+            
+            // 비밀번호 표시/숨김 토글
+            $('#togglePassword').click(function() {
+                const passwordField = $('#password');
+                const icon = $(this).find('i');
+                
+                if (passwordField.attr('type') === 'password') {
+                    passwordField.attr('type', 'text');
+                    icon.removeClass('fa-eye').addClass('fa-eye-slash');
+                } else {
+                    passwordField.attr('type', 'password');
+                    icon.removeClass('fa-eye-slash').addClass('fa-eye');
+                }
+            });
+            
+            // 비밀번호 일치 여부 실시간 확인
+            const passwordInput = $('#password');
+            const passwordConfirmInput = $('#passwordConfirm');
+            const passwordMismatchFeedback = $('#passwordMismatchFeedback');
+            
+            function checkPasswordMatch() {
+                if (passwordConfirmInput.val() === '') {
+                    passwordMismatchFeedback.hide();
+                    passwordConfirmInput.removeClass('is-invalid').removeClass('is-valid');
+                    return;
+                }
+                if (passwordInput.val() !== passwordConfirmInput.val()) {
+                    passwordMismatchFeedback.text('비밀번호가 일치하지 않습니다.').show();
+                    passwordConfirmInput.addClass('is-invalid').removeClass('is-valid');
+                } else {
+                    passwordMismatchFeedback.hide();
+                    passwordConfirmInput.removeClass('is-invalid').addClass('is-valid');
+                }
+            }
+            
+            passwordInput.on('keyup', checkPasswordMatch);
+            passwordConfirmInput.on('keyup', checkPasswordMatch);
+            
+            // 아이디 중복 체크 (Ajax)
+            const userIdInput = $('#userId');
+            const userIdFeedback = $('#userIdFeedback');
+            const joinSubmitButton = $('#joinSubmitButton');
+            let isUserIdAvailable = false;
+            
+            userIdInput.on('keyup', function() {
+                const userId = $(this).val().trim();
+                
+                if (userId.length >= 4) {
+                    $.ajax({
+                        url: '/member/checkUserId',
+                        type: 'POST',
+                        data: { userId: userId },
+                        success: function(response) {
+                            if (response.available) {
+                                userIdFeedback.removeClass('text-danger').addClass('text-success').text('사용 가능한 아이디입니다.');
+                                userIdInput.removeClass('is-invalid').addClass('is-valid');
+                                isUserIdAvailable = true;
+                            } else {
+                                userIdFeedback.removeClass('text-success').addClass('text-danger').text('이미 사용중인 아이디입니다.');
+                                userIdInput.addClass('is-invalid').removeClass('is-valid');
+                                isUserIdAvailable = false;
+                            }
+                            updateSubmitButtonState();
+                        },
+                        error: function() {
+                            userIdFeedback.removeClass('text-success').addClass('text-danger').text('아이디 확인 중 오류가 발생했습니다.');
+                            userIdInput.addClass('is-invalid').removeClass('is-valid');
+                            isUserIdAvailable = false;
+                            updateSubmitButtonState();
+                        }
+                    });
+                } else {
+                    userIdFeedback.removeClass('text-success').addClass('text-danger').text('아이디는 4자 이상이어야 합니다.');
+                    userIdInput.addClass('is-invalid').removeClass('is-valid');
+                    isUserIdAvailable = false;
+                    updateSubmitButtonState();
+                }
+            });
+            
+            // 폼 제출 버튼 활성화/비활성화 함수
+            function updateSubmitButtonState() {
+                const isPasswordMatch = (passwordInput.val() === passwordConfirmInput.val() && passwordInput.val() !== '');
+                const isNameValid = ($('#name').val() !== '');
+                const isRoleSelected = ($('#role').val() !== '');
+                
+                let isAdditionalFieldsValid = true;
+                
+                // 시설 관리자인 경우 시설 정보 필드 검증
+                if ($('#role').val() === 'FACILITY') {
+                    const facilityName = $('#facilityName').val();
+                    const facilityType = $('#facilityType').val();
+                    const businessNumber = $('#businessNumber').val();
+                    const facilityAddress = $('#facilityAddress').val();
+                    const facilityPhone = $('#facilityPhone').val();
+                    const directorName = $('#directorName').val();
+                    
+                    isAdditionalFieldsValid = facilityName !== '' && facilityType !== '' && 
+                                            businessNumber !== '' && facilityAddress !== '' && 
+                                            facilityPhone !== '' && directorName !== '';
+                }
+                
+                if (isUserIdAvailable && isPasswordMatch && isNameValid && isRoleSelected && isAdditionalFieldsValid) {
+                    joinSubmitButton.prop('disabled', false);
+                } else {
+                    joinSubmitButton.prop('disabled', true);
+                }
+            }
+            
+            // 초기 로드 시 및 모든 입력 필드 변경 시 버튼 상태 업데이트
+            $('input, select').on('keyup blur change', updateSubmitButtonState);
+            updateSubmitButtonState();
+            
+            // 폼 제출 전 최종 유효성 검사
+            $('#joinForm').submit(function(event) {
+                // 비밀번호 불일치 시 제출 방지
+                if (passwordInput.val() !== passwordConfirmInput.val()) {
+                    passwordMismatchFeedback.text('비밀번호 확인이 일치하지 않습니다.').show();
+                    passwordConfirmInput.addClass('is-invalid');
+                    event.preventDefault();
+                    return false;
+                }
+                
+                // 아이디 중복 확인이 완료되지 않았거나 중복인 경우 제출 방지
+                if (!isUserIdAvailable) {
+                    userIdInput.addClass('is-invalid');
+                    userIdFeedback.removeClass('text-success').addClass('text-danger').text('아이디 중복 확인이 필요하거나, 이미 사용중인 아이디입니다.');
+                    event.preventDefault();
+                    return false;
+                }
+                
+                // 이름이 비어있는 경우 제출 방지
+                if ($('#name').val().trim() === '') {
+                    $('#name').addClass('is-invalid');
+                    event.preventDefault();
+                    return false;
+                }
+                
+                // 역할이 선택되지 않은 경우 제출 방지
+                if ($('#role').val() === '') {
+                    $('#role').addClass('is-invalid');
+                    event.preventDefault();
+                    return false;
+                }
+                
+                // 시설 관리자인 경우 시설 정보 필수 필드 검증
+                if ($('#role').val() === 'FACILITY') {
+                    const requiredFacilityFields = [
+                        { id: '#facilityName', name: '시설명' },
+                        { id: '#facilityType', name: '시설 유형' },
+                        { id: '#businessNumber', name: '사업자등록번호' },
+                        { id: '#facilityAddress', name: '시설 주소' },
+                        { id: '#facilityPhone', name: '시설 전화번호' },
+                        { id: '#directorName', name: '시설장 이름' }
+                    ];
+                    
+                    for (let field of requiredFacilityFields) {
+                        if ($(field.id).val().trim() === '') {
+                            $(field.id).addClass('is-invalid');
+                            alert(field.name + '을(를) 입력해주세요.');
+                            event.preventDefault();
+                            return false;
+                        }
+                    }
+                    
+                    // 사업자등록번호 형식 검증
+                    const businessNumberPattern = /^\d{3}-\d{2}-\d{5}$/;
+                    if (!businessNumberPattern.test($('#businessNumber').val())) {
+                        $('#businessNumber').addClass('is-invalid');
+                        alert('사업자등록번호 형식이 올바르지 않습니다. (예: 123-45-67890)');
+                        event.preventDefault();
+                        return false;
+                    }
+                    
+                    // 시설 전화번호 형식 검증
+                    const facilityPhonePattern = /^0\d{1,2}-\d{3,4}-\d{4}$/;
+                    if (!facilityPhonePattern.test($('#facilityPhone').val())) {
+                        $('#facilityPhone').addClass('is-invalid');
+                        alert('시설 전화번호 형식이 올바르지 않습니다. (예: 02-1234-5678)');
+                        event.preventDefault();
+                        return false;
+                    }
+                }
+                
+                return true;
+            });
+        });
+    </script>
+</body>
+</html> 

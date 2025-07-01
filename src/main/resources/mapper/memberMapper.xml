@@ -15,6 +15,16 @@
         <result property="role" column="role"/>
         <result property="address" column="address"/>
         <result property="profileImage" column="profile_image"/>
+        
+        <!-- 시설 관리자 전용 필드들 -->
+        <result property="facilityName" column="facility_name"/>
+        <result property="facilityType" column="facility_type"/>
+        <result property="businessNumber" column="business_number"/>
+        <result property="facilityAddress" column="facility_address"/>
+        <result property="facilityPhone" column="facility_phone"/>
+        <result property="directorName" column="director_name"/>
+        <result property="description" column="description"/>
+        
         <result property="isActive" column="is_active"/>
         <result property="loginFailCount" column="login_fail_count"/>
         <result property="lastLoginAt" column="last_login_at"/>
@@ -58,6 +68,13 @@
             role,
             address,
             profile_image,
+            facility_name,
+            facility_type,
+            business_number,
+            facility_address,
+            facility_phone,
+            director_name,
+            description,
             is_active,
             login_fail_count,
             created_at,
@@ -72,6 +89,13 @@
             #{role},
             #{address},
             #{profileImage},
+            #{facilityName},
+            #{facilityType},
+            #{businessNumber},
+            #{facilityAddress},
+            #{facilityPhone},
+            #{directorName},
+            #{description},
             #{isActive},
             #{loginFailCount},
             NOW(),
@@ -88,6 +112,15 @@
             phone = #{phone},
             address = #{address},
             profile_image = #{profileImage},
+            <if test="role == 'FACILITY'">
+            facility_name = #{facilityName},
+            facility_type = #{facilityType},
+            business_number = #{businessNumber},
+            facility_address = #{facilityAddress},
+            facility_phone = #{facilityPhone},
+            director_name = #{directorName},
+            description = #{description},
+            </if>
             updated_at = NOW()
         WHERE member_id = #{memberId}
           AND is_deleted = false

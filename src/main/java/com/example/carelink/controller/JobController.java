@@ -71,25 +71,14 @@ public class JobController {
 
         }
 
-        // 2. 현재 로그인된 사용자(memberId) 정보 설정 (★ 이제 확실히 해결됩니다! ★)
-        try {
-            // 세션에서 로그인된 MemberDTO 객체 가져오기
-            MemberDTO loggedInMember = (MemberDTO) session.getAttribute(Constants.SESSION_MEMBER);
-
-            if (loggedInMember != null && loggedInMember.getMemberId() != null) {
-
-                jobDTO.setMemberId(loggedInMember.getMemberId()); // memberId 타입이 String이라면 String 그대로
-
-            } else {
-
-                return "redirect:/member/login"; // 로그인 페이지로 강제 이동
-            }
-        } catch (Exception e) {
-
-            e.printStackTrace();
-            // 예외 발생 시에도 로그인 페이지로 리다이렉트하거나 에러 페이지로
+        // 로그인 체크 (통일된 방식)
+        MemberDTO loginMember = (MemberDTO) session.getAttribute(Constants.SESSION_MEMBER);
+        if (loginMember == null) {
             return "redirect:/member/login";
         }
+        
+        // 현재 로그인된 사용자 정보 설정
+        jobDTO.setMemberId(loginMember.getMemberId());
 
         // ★ 3. priority 기본값 설정 (가장 흔한 해결책) ★
         // 예: 새로 생성되는 게시글의 우선순위를 0 (가장 낮은 우선순위)으로 설정

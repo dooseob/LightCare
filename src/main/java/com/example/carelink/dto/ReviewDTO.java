@@ -73,7 +73,7 @@ public class ReviewDTO extends BaseDTO {
     // 정렬용
     private String sortBy;          // 정렬 기준 (LATEST, RATING_HIGH, RATING_LOW, LIKE_COUNT)
     
-    // 시설 평균 평점 (조회용)
+    // 시설 평균 평점 (조회용) - 사용자가 추가한 필드
     private Double facilityAverageRating;    // 시설의 평균 평점
     private Integer facilityReviewCount;     // 시설의 전체 리뷰 수
-} 
+}

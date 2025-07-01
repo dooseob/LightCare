@@ -150,8 +150,8 @@
                                     </small>
                                 </div>
                                 <div class="col-md-6 text-end">
-                                    <!-- 작성자만 수정/삭제 가능 -->
-                                    <div class="btn-group" role="group" th:if="${session.memberId != null and session.memberId == review.memberId}">
+                                    <!-- 작성자만 수정/삭제 가능 - 사용자 로그인 방식 반영 -->
+                                    <div class="btn-group" role="group" th:if="${session.loginMember != null and session.loginMember.memberId == review.memberId}">
                                         <a th:href="@{/review/edit/{id}(id=${review.reviewId})}" class="btn btn-outline-primary btn-sm">
                                             <i class="fas fa-edit me-1"></i>수정
                                         </a>
@@ -161,7 +161,7 @@
                                     </div>
                                     <!-- 작성자가 아닌 경우 신고 버튼만 표시 -->
                                     <button type="button" class="btn btn-outline-warning btn-sm" 
-                                            th:if="${session.memberId != null and session.memberId != review.memberId}"
+                                            th:if="${session.loginMember != null and session.loginMember.memberId != review.memberId}"
                                             data-action="reportReview">
                                         <i class="fas fa-exclamation-triangle me-1"></i>신고
                                     </button>

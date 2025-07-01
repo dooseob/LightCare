@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # 빌드 결과물
 /build/
 /target/
@@ -53,3 +54,50 @@ logs/
 **/Edge Wallet/
 **/WindowsApps/
 **/Temporary Internet Files/
+=======
+# 빌드 결과물
+/build/
+/target/
+*.jar
+*.war
+*.zip
+*.tar.gz
+*.class
+bin/ # Eclipse build output
+out/ # IntelliJ build output
+
+# Gradle
+.gradle
+**/build/
+!src/**/build/
+gradle-app.setting
+!gradle-wrapper.jar
+.gradletasknamecache
+
+# IDE 및 환경 설정 파일
+# IntelliJ IDEA
+.idea/
+*.iml
+*.ipr
+*.iws
+
+# Eclipse
+.classpath
+.project
+.settings/
+
+# VS Code
+.vscode/
+
+# 운영체제 파일
+.DS_Store
+Thumbs.db
+
+# 로그 파일
+*.log
+logs/
+*.lock # 락 파일 포함 (예: Gradle lock 파일)
+
+# 기타
+*.out
+>>>>>>> main
