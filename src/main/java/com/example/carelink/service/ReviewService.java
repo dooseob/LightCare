@@ -284,4 +284,55 @@ public class ReviewService {
             return 0; // 오류 시 0 반환
         }
     }
+
+    /**
+     * 리뷰 수정
+     */
+    @Transactional
+    public int updateReview(ReviewDTO reviewDTO) {
+        log.info("리뷰 수정 시작 - reviewId: {}, title: {}", reviewDTO.getReviewId(), reviewDTO.getTitle());
+        
+        try {
+            // 기존 리뷰 존재 확인
+            ReviewDTO existingReview = reviewMapper.findReviewById(reviewDTO.getReviewId());
+            if (existingReview == null) {
+                throw new RuntimeException("수정할 리뷰를 찾을 수 없습니다. ID: " + reviewDTO.getReviewId());
+            }
+            
+            // 필수 값 검증
+            validateReviewData(reviewDTO);
+            
+            // status 기본값 설정 (수정 시에도 기존 상태 유지 또는 기본값 설정)
+            if (reviewDTO.getStatus() == null || reviewDTO.getStatus().isEmpty()) {
+                reviewDTO.setStatus("ACTIVE");
+            }
+            
+            int result = reviewMapper.updateReview(reviewDTO);
+            log.info("리뷰 수정 완료 - reviewId: {}", reviewDTO.getReviewId());
+            
+            return result;
+        } catch (Exception e) {
+            log.error("리뷰 수정 중 오류 발생 - reviewId: {}", reviewDTO.getReviewId(), e);
+            throw new RuntimeException("리뷰 수정 중 오류가 발생했습니다.", e);
+        }
+    }
+    
+    /**
+     * 조회수 증가
+     */
+    @Transactional
+    public int incrementViewCount(Long id) {
+        log.info("조회수 증가 시작 - reviewId: {}", id);
+        
+        try {
+            int result = reviewMapper.incrementViewCount(id);
+            log.info("조회수 증가 완료 - reviewId: {}", id);
+            
+            return result;
+        } catch (Exception e) {
+            log.error("조회수 증가 중 오류 발생 - reviewId: {}", id, e);
+            // 조회수 증가 실패는 전체 프로세스에 영향을 주지 않도록 예외를 던지지 않음
+            return 0;
+        }
+    }
 } 

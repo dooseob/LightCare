@@ -215,14 +215,225 @@ public class ReviewController {
         try {
             ReviewDTO review = reviewService.getReviewById(id);
             
+            if (review == null) {
+                model.addAttribute("error", "리뷰를 찾을 수 없습니다.");
+                return "redirect:/review";
+            }
+            
+            // 조회수 증가
+            reviewService.incrementViewCount(id);
+            
+            // 같은 시설의 다른 리뷰들 조회 (최대 5개)
+            List<ReviewDTO> otherReviews = reviewService.getReviewsByFacilityId(review.getFacilityId())
+                    .stream()
+                    .filter(r -> !r.getReviewId().equals(id))
+                    .limit(5)
+                    .collect(java.util.stream.Collectors.toList());
+            
             model.addAttribute("review", review);
+            model.addAttribute("otherReviews", otherReviews);
             model.addAttribute("pageTitle", review.getTitle());
+            model.addAttribute("currentMemberId", getCurrentMemberId()); // 현재 사용자 ID 추가
             
             return "review/detail";
         } catch (Exception e) {
+            log.error("리뷰 상세보기 중 오류 발생 - reviewId: {}", id, e);
             model.addAttribute("error", "리뷰를 불러올 수 없습니다: " + e.getMessage());
             return "redirect:/review";
         }
+    }
+    
+    /**
+     * 리뷰 수정 페이지
+     */
+    @GetMapping("/edit/{id}")
+    public String editPage(@PathVariable Long id, Model model, RedirectAttributes redirectAttributes) {
+        try {
+            ReviewDTO review = reviewService.getReviewById(id);
+            
+            if (review == null) {
+                redirectAttributes.addFlashAttribute("error", "수정할 리뷰를 찾을 수 없습니다.");
+                return "redirect:/review";
+            }
+            
+            // 작성자 권한 확인
+            Long currentMemberId = getCurrentMemberId();
+            if (!review.getMemberId().equals(currentMemberId)) {
+                redirectAttributes.addFlashAttribute("error", "작성자만 수정할 수 있습니다.");
+                return "redirect:/review/detail/" + id;
+            }
+            
+            model.addAttribute("reviewDTO", review);
+            model.addAttribute("pageTitle", "리뷰 수정");
+            
+            return "review/edit";
+        } catch (Exception e) {
+            log.error("리뷰 수정 페이지 로딩 중 오류 발생 - reviewId: {}", id, e);
+            redirectAttributes.addFlashAttribute("error", "수정 페이지를 불러오는 중 오류가 발생했습니다: " + e.getMessage());
+            return "redirect:/review";
+        }
+    }
+    
+    /**
+     * 리뷰 수정 처리
+     */
+    @PostMapping("/update")
+    public String updateReview(@ModelAttribute ReviewDTO reviewDTO, RedirectAttributes redirectAttributes) {
+        try {
+            log.info("리뷰 수정 요청 - reviewId: {}, title: {}", reviewDTO.getReviewId(), reviewDTO.getTitle());
+            
+            // 기존 리뷰 조회
+            ReviewDTO existingReview = reviewService.getReviewById(reviewDTO.getReviewId());
+            if (existingReview == null) {
+                redirectAttributes.addFlashAttribute("error", "수정할 리뷰를 찾을 수 없습니다.");
+                return "redirect:/review";
+            }
+            
+            // 작성자 권한 확인
+            Long currentMemberId = getCurrentMemberId();
+            if (!existingReview.getMemberId().equals(currentMemberId)) {
+                redirectAttributes.addFlashAttribute("error", "작성자만 수정할 수 있습니다.");
+                return "redirect:/review/detail/" + reviewDTO.getReviewId();
+            }
+            
+            // 제목 검증
+            if (reviewDTO.getTitle() == null || reviewDTO.getTitle().trim().isEmpty()) {
+                redirectAttributes.addFlashAttribute("error", "제목을 입력해주세요.");
+                redirectAttributes.addFlashAttribute("reviewDTO", reviewDTO);
+                return "redirect:/review/edit/" + reviewDTO.getReviewId();
+            }
+            
+            // 내용 검증
+            if (reviewDTO.getContent() == null || reviewDTO.getContent().trim().length() < 10) {
+                redirectAttributes.addFlashAttribute("error", "내용을 10자 이상 입력해주세요.");
+                redirectAttributes.addFlashAttribute("reviewDTO", reviewDTO);
+                return "redirect:/review/edit/" + reviewDTO.getReviewId();
+            }
+            
+            // 평점 검증
+            if (reviewDTO.getRating() == null || reviewDTO.getRating() < 1 || reviewDTO.getRating() > 5) {
+                redirectAttributes.addFlashAttribute("error", "평점을 선택해주세요.");
+                redirectAttributes.addFlashAttribute("reviewDTO", reviewDTO);
+                return "redirect:/review/edit/" + reviewDTO.getReviewId();
+            }
+            
+            // 수정할 수 없는 필드들 기존 값 유지
+            reviewDTO.setFacilityId(existingReview.getFacilityId());
+            reviewDTO.setMemberId(existingReview.getMemberId());
+            reviewDTO.setViewCount(existingReview.getViewCount());
+            reviewDTO.setLikeCount(existingReview.getLikeCount());
+            reviewDTO.setDislikeCount(existingReview.getDislikeCount());
+            reviewDTO.setCreatedAt(existingReview.getCreatedAt());
+            
+            // 리뷰 수정
+            reviewService.updateReview(reviewDTO);
+            log.info("리뷰 수정 성공 - reviewId: {}", reviewDTO.getReviewId());
+            
+            redirectAttributes.addFlashAttribute("message", "리뷰가 성공적으로 수정되었습니다.");
+            return "redirect:/review/detail/" + reviewDTO.getReviewId();
+        } catch (Exception e) {
+            log.error("리뷰 수정 중 오류 발생 - reviewId: {}", reviewDTO.getReviewId(), e);
+            redirectAttributes.addFlashAttribute("error", "리뷰 수정 중 오류가 발생했습니다: " + e.getMessage());
+            redirectAttributes.addFlashAttribute("reviewDTO", reviewDTO);
+            return "redirect:/review/edit/" + reviewDTO.getReviewId();
+        }
+    }
+    
+    /**
+     * 리뷰 삭제
+     */
+    @PostMapping("/delete/{id}")
+    public String deleteReview(@PathVariable Long id, RedirectAttributes redirectAttributes) {
+        try {
+            // 기존 리뷰 조회
+            ReviewDTO existingReview = reviewService.getReviewById(id);
+            if (existingReview == null) {
+                redirectAttributes.addFlashAttribute("error", "삭제할 리뷰를 찾을 수 없습니다.");
+                return "redirect:/review";
+            }
+            
+            // 작성자 권한 확인
+            Long currentMemberId = getCurrentMemberId();
+            if (!existingReview.getMemberId().equals(currentMemberId)) {
+                redirectAttributes.addFlashAttribute("error", "작성자만 삭제할 수 있습니다.");
+                return "redirect:/review/detail/" + id;
+            }
+            
+            reviewService.deleteReview(id);
+            redirectAttributes.addFlashAttribute("message", "리뷰가 성공적으로 삭제되었습니다.");
+        } catch (Exception e) {
+            log.error("리뷰 삭제 중 오류 발생 - reviewId: {}", id, e);
+            redirectAttributes.addFlashAttribute("error", "리뷰 삭제 중 오류가 발생했습니다: " + e.getMessage());
+        }
+        
+        return "redirect:/review";
+    }
+    
+    /**
+     * 리뷰 신고 API
+     */
+    @PostMapping("/report/{id}")
+    @ResponseBody
+    public Map<String, Object> reportReview(@PathVariable Long id, @RequestBody Map<String, String> request) {
+        Map<String, Object> result = new HashMap<>();
+        
+        try {
+            String reason = request.get("reason");
+            if (reason == null || reason.trim().isEmpty()) {
+                result.put("success", false);
+                result.put("message", "신고 사유를 입력해주세요.");
+                return result;
+            }
+            
+            // 리뷰 존재 확인
+            ReviewDTO review = reviewService.getReviewById(id);
+            if (review == null) {
+                result.put("success", false);
+                result.put("message", "신고할 리뷰를 찾을 수 없습니다.");
+                return result;
+            }
+            
+            // 본인 리뷰 신고 방지
+            Long currentMemberId = getCurrentMemberId();
+            if (review.getMemberId().equals(currentMemberId)) {
+                result.put("success", false);
+                result.put("message", "본인이 작성한 리뷰는 신고할 수 없습니다.");
+                return result;
+            }
+            
+            // TODO: 실제 신고 처리 로직 구현
+            // 현재는 로그만 남김
+            log.info("리뷰 신고 접수 - reviewId: {}, reason: {}, reporter: {}", id, reason, currentMemberId);
+            
+            result.put("success", true);
+            result.put("message", "신고가 접수되었습니다. 검토 후 적절한 조치를 취하겠습니다.");
+        } catch (Exception e) {
+            log.error("리뷰 신고 처리 중 오류 발생 - reviewId: {}", id, e);
+            result.put("success", false);
+            result.put("message", "신고 처리 중 오류가 발생했습니다.");
+        }
+        
+        return result;
+    }
+    
+    /**
+     * 조회수 증가 API
+     */
+    @PostMapping("/view/{id}")
+    @ResponseBody
+    public Map<String, Object> incrementViewCount(@PathVariable Long id) {
+        Map<String, Object> result = new HashMap<>();
+        
+        try {
+            reviewService.incrementViewCount(id);
+            result.put("success", true);
+        } catch (Exception e) {
+            log.error("조회수 증가 중 오류 발생 - reviewId: {}", id, e);
+            result.put("success", false);
+            result.put("message", "조회수 업데이트 중 오류가 발생했습니다.");
+        }
+        
+        return result;
     }
     
     /**
@@ -301,17 +512,12 @@ public class ReviewController {
     }
     
     /**
-     * 리뷰 삭제
+     * 현재 로그인한 사용자 ID 조회
+     * TODO: 실제 스프링 시큐리티 구현 시 수정 필요
      */
-    @PostMapping("/delete/{id}")
-    public String deleteReview(@PathVariable Long id, RedirectAttributes redirectAttributes) {
-        try {
-            reviewService.deleteReview(id);
-            redirectAttributes.addFlashAttribute("message", "리뷰가 성공적으로 삭제되었습니다.");
-        } catch (Exception e) {
-            redirectAttributes.addFlashAttribute("error", "리뷰 삭제 중 오류가 발생했습니다: " + e.getMessage());
-        }
-        
-        return "redirect:/review";
+    private Long getCurrentMemberId() {
+        // 임시로 2번 사용자로 고정
+        // 실제 구현 시에는 HttpSession 또는 SecurityContext에서 가져와야 함
+        return 2L;
     }
 } 

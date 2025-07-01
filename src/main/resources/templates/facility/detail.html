@@ -22,8 +22,7 @@
                     <h2 th:text="${facility.facilityName}">시설명</h2>
                     <div class="mb-3">
                         <span class="badge bg-primary me-2" th:text="${facility.facilityType}">시설유형</span>
-                        <span class="badge bg-success" th:if="${facility.gradeRating != null}" th:text="${facility.gradeRating + '등급'}">등급</span>
-                        <span class="badge bg-secondary" th:if="${facility.gradeRating == null}">미정</span>
+                        <span class="badge bg-secondary">등급 정보 준비중</span>
                     </div>
 
                     <div class="row mb-3">
@@ -153,8 +152,8 @@
                     <div class="row text-center">
                         <div class="col-6">
                             <div class="stat-item">
-                                <h4 th:text="${facility.gradeRating ?: '-'}">-</h4>
-                                <small>등급</small>
+                                <h4>-</h4>
+                                <small>등급 (준비중)</small>
                             </div>
                         </div>
                         <div class="col-6">

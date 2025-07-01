@@ -27,7 +27,19 @@ document.addEventListener('DOMContentLoaded', function() {
         overallRating: elements.overallRating,
         ratingValue: elements.ratingValue,
         ratingText: elements.ratingText,
-        detailedRatings: elements.detailedRatings
+        detailedRatings: elements.detailedRatings,
+        detailedRatingsCount: elements.detailedRatings.length
+    });
+
+    // 세부 평점 컨테이너 확인
+    elements.detailedRatings.forEach((container, index) => {
+        console.log(`세부 평점 컨테이너 ${index + 1}:`, {
+            container: container,
+            field: container.dataset.field,
+            stars: container.querySelectorAll('.star').length,
+            ratingGroup: container.closest('.rating-group'),
+            inputElement: container.closest('.rating-group')?.querySelector('.detailed-rating-input')
+        });
     });
 
     // 별점 UI 업데이트 함수
@@ -147,16 +159,30 @@ document.addEventListener('DOMContentLoaded', function() {
     // 세부 평점 이벤트 핸들러
     elements.detailedRatings.forEach(container => {
         const stars = container.querySelectorAll('.star');
-        const input = container.parentElement.querySelector('.detailed-rating-input');
+        // rating-group에서 input 찾기 (HTML 구조: rating-group > d-flex > detailed-rating)
+        const ratingGroup = container.closest('.rating-group');
+        const input = ratingGroup ? ratingGroup.querySelector('.detailed-rating-input') : null;
+        
+        console.log('세부 평점 초기화:', {
+            container: container,
+            field: container.dataset.field,
+            ratingGroup: ratingGroup,
+            input: input,
+            stars: stars.length
+        });
         
         stars.forEach(star => {
             // 클릭 이벤트
-            star.addEventListener('click', function() {
+            star.addEventListener('click', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                
                 const rating = parseInt(this.dataset.rating);
                 console.log('세부 평점 클릭:', {
                     rating,
                     field: container.dataset.field,
-                    target: this
+                    target: this,
+                    input: input
                 });
 
                 // hidden input 업데이트
@@ -165,8 +191,11 @@ document.addEventListener('DOMContentLoaded', function() {
                     console.log('세부 평점 입력값 업데이트:', {
                         field: container.dataset.field,
                         rating,
-                        inputValue: input.value
+                        inputValue: input.value,
+                        inputName: input.name
                     });
+                } else {
+                    console.error('세부 평점 input을 찾을 수 없습니다:', container.dataset.field);
                 }
                 
                 // UI 업데이트
@@ -187,7 +216,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
 
         // 초기 세부 평점이 있는 경우 UI 업데이트
-        if (input) {
+        if (input && input.value) {
             const initialRating = parseInt(input.value);
             if (!isNaN(initialRating) && initialRating >= 1 && initialRating <= 5) {
                 console.log('초기 세부 평점 설정:', {

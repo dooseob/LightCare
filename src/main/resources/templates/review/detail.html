@@ -60,11 +60,11 @@
                                 </div>
                                 <div class="col-md-4 text-end">
                                     <div class="btn-group" role="group">
-                                        <button type="button" class="btn btn-outline-success btn-sm" onclick="likeReview()">
+                                        <button type="button" class="btn btn-outline-success btn-sm" data-action="likeReview">
                                             <i class="fas fa-thumbs-up me-1"></i>
                                             추천 <span id="likeCount" th:text="${review.likeCount}">0</span>
                                         </button>
-                                        <button type="button" class="btn btn-outline-secondary btn-sm" onclick="shareReview()">
+                                        <button type="button" class="btn btn-outline-secondary btn-sm" data-action="shareReview">
                                             <i class="fas fa-share me-1"></i>
                                             공유
                                         </button>
@@ -84,32 +84,32 @@
                                             <small class="text-muted">서비스</small>
                                             <div class="rating-detail">
                                                 <span th:each="i : ${#numbers.sequence(1, 5)}" 
-                                                      th:class="${i <= (review.serviceRating ?: 0)} ? 'fas fa-star text-warning' : 'far fa-star text-muted'"></span>
-                                                <span class="ms-1" th:text="${review.serviceRating ?: 0}">0</span>
+                                                      th:class="${i <= (review.serviceRating != null ? review.serviceRating : 0)} ? 'fas fa-star text-warning' : 'far fa-star text-muted'"></span>
+                                                <span class="ms-1" th:text="${review.serviceRating != null ? review.serviceRating : 0}">0</span>
                                             </div>
                                         </div>
                                         <div class="col-md-3 col-6 mb-2">
                                             <small class="text-muted">시설</small>
                                             <div class="rating-detail">
                                                 <span th:each="i : ${#numbers.sequence(1, 5)}" 
-                                                      th:class="${i <= (review.facilityRating ?: 0)} ? 'fas fa-star text-warning' : 'far fa-star text-muted'"></span>
-                                                <span class="ms-1" th:text="${review.facilityRating ?: 0}">0</span>
+                                                      th:class="${i <= (review.facilityRating != null ? review.facilityRating : 0)} ? 'fas fa-star text-warning' : 'far fa-star text-muted'"></span>
+                                                <span class="ms-1" th:text="${review.facilityRating != null ? review.facilityRating : 0}">0</span>
                                             </div>
                                         </div>
                                         <div class="col-md-3 col-6 mb-2">
                                             <small class="text-muted">직원</small>
                                             <div class="rating-detail">
                                                 <span th:each="i : ${#numbers.sequence(1, 5)}" 
-                                                      th:class="${i <= (review.staffRating ?: 0)} ? 'fas fa-star text-warning' : 'far fa-star text-muted'"></span>
-                                                <span class="ms-1" th:text="${review.staffRating ?: 0}">0</span>
+                                                      th:class="${i <= (review.staffRating != null ? review.staffRating : 0)} ? 'fas fa-star text-warning' : 'far fa-star text-muted'"></span>
+                                                <span class="ms-1" th:text="${review.staffRating != null ? review.staffRating : 0}">0</span>
                                             </div>
                                         </div>
                                         <div class="col-md-3 col-6 mb-2">
                                             <small class="text-muted">가격</small>
                                             <div class="rating-detail">
                                                 <span th:each="i : ${#numbers.sequence(1, 5)}" 
-                                                      th:class="${i <= (review.priceRating ?: 0)} ? 'fas fa-star text-warning' : 'far fa-star text-muted'"></span>
-                                                <span class="ms-1" th:text="${review.priceRating ?: 0}">0</span>
+                                                      th:class="${i <= (review.priceRating != null ? review.priceRating : 0)} ? 'fas fa-star text-warning' : 'far fa-star text-muted'"></span>
+                                                <span class="ms-1" th:text="${review.priceRating != null ? review.priceRating : 0}">0</span>
                                             </div>
                                         </div>
                                     </div>
@@ -118,7 +118,7 @@
 
                             <!-- 리뷰 내용 -->
                             <div class="content-area" style="min-height: 200px; line-height: 1.8;">
-                                <div th:utext="${#strings.replace(#strings.escapeXml(review.content), T(java.lang.System).lineSeparator(), '&lt;br&gt;')}">
+                                <div th:text="${review.content}" style="white-space: pre-line;">
                                     리뷰 내용이 여기에 표시됩니다.
                                 </div>
                             </div>
@@ -151,18 +151,18 @@
                                 </div>
                                 <div class="col-md-6 text-end">
                                     <!-- 작성자만 수정/삭제 가능 -->
-                                    <div class="btn-group" role="group" th:if="${#authentication.principal.memberId == review.memberId}">
+                                    <div class="btn-group" role="group" th:if="${session.memberId != null and session.memberId == review.memberId}">
                                         <a th:href="@{/review/edit/{id}(id=${review.reviewId})}" class="btn btn-outline-primary btn-sm">
                                             <i class="fas fa-edit me-1"></i>수정
                                         </a>
-                                        <button type="button" class="btn btn-outline-danger btn-sm" onclick="deleteReview()">
+                                        <button type="button" class="btn btn-outline-danger btn-sm" data-action="deleteReview">
                                             <i class="fas fa-trash me-1"></i>삭제
                                         </button>
                                     </div>
                                     <!-- 작성자가 아닌 경우 신고 버튼만 표시 -->
                                     <button type="button" class="btn btn-outline-warning btn-sm" 
-                                            th:if="${#authentication.principal.memberId != review.memberId}"
-                                            onclick="reportReview()">
+                                            th:if="${session.memberId != null and session.memberId != review.memberId}"
+                                            data-action="reportReview">
                                         <i class="fas fa-exclamation-triangle me-1"></i>신고
                                     </button>
                                 </div>
@@ -201,14 +201,17 @@
                                    class="text-decoration-none" 
                                    th:text="${review.facilityName}">시설명</a>
                             </h6>
-                            <p class="text-muted mb-2" th:text="${review.facilityAddress}">시설 주소</p>
+                            <p class="text-muted mb-2">
+                                <i class="fas fa-map-marker-alt me-1"></i>
+                                시설 상세보기에서 주소 확인 가능
+                            </p>
                             <div class="d-flex align-items-center mb-2">
                                 <span class="me-2">평균 평점:</span>
                                 <div class="rating-stars me-2">
                                     <span th:each="i : ${#numbers.sequence(1, 5)}" 
-                                          th:class="${i <= (review.facilityAverageRating ?: 0)} ? 'fas fa-star text-warning' : 'far fa-star text-muted'"></span>
+                                          th:class="${i <= (review.facilityAverageRating != null ? review.facilityAverageRating : 0)} ? 'fas fa-star text-warning' : 'far fa-star text-muted'"></span>
                                 </div>
-                                <span th:text="${review.facilityAverageRating ?: 0} + ' (' + (review.facilityReviewCount ?: 0) + '개)'">0 (0개)</span>
+                                <span th:text="${(review.facilityAverageRating != null ? review.facilityAverageRating : 0)} + ' (' + (review.facilityReviewCount != null ? review.facilityReviewCount : 0) + '개)'">0 (0개)</span>
                             </div>
                             <a th:href="@{/facility/detail/{id}(id=${review.facilityId})}" class="btn btn-outline-primary btn-sm w-100">
                                 <i class="fas fa-info-circle me-1"></i>시설 상세보기
@@ -257,6 +260,13 @@
     <footer th:replace="~{layout/footer :: footer}"></footer>
 
     <!-- JavaScript -->
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- jQuery (review-detail.js에서 사용할 수도 있음) -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <!-- 공통 JS -->
+    <script th:src="@{/js/common.js}"></script>
+    <!-- 리뷰 상세 JS -->
     <script th:src="@{/js/review-detail.js}"></script>
 </body>
 </html>

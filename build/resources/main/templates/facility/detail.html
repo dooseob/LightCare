@@ -1,16 +1,12 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org" lang="ko">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title th:text="${facility.facilityName} + ' 상세보기 - 라이트케어'">시설 상세보기 - 라이트케어</title>
-    <link href="/css/common.css" rel="stylesheet">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    <script type="text/javascript" src="//dapi.kakao.com/v2/maps/sdk.js?appkey=3c4987cb946a721903add5fc474941a3&autoload=false&libraries=services"></script>
+<head th:replace="~{layout/header :: header}">
+    <title>시설 상세보기</title>
 </head>
-<body>
-<div th:replace="~{layout/header :: header}"></div>
+<body class="d-flex flex-column min-vh-100 pt-5">
+<nav th:replace="~{layout/header :: navbar}"></nav>
+
+<div th:replace="~{layout/header :: messages}"></div>
 
 <div class="container mt-4">
     <div class="card mb-4">
@@ -26,8 +22,7 @@
                     <h2 th:text="${facility.facilityName}">시설명</h2>
                     <div class="mb-3">
                         <span class="badge bg-primary me-2" th:text="${facility.facilityType}">시설유형</span>
-                        <span class="badge bg-success" th:if="${facility.gradeRating != null}" th:text="${facility.gradeRating + '등급'}">등급</span>
-                        <span class="badge bg-secondary" th:if="${facility.gradeRating == null}">미정</span>
+                        <span class="badge bg-secondary">등급 정보 준비중</span>
                     </div>
 
                     <div class="row mb-3">
@@ -157,8 +152,8 @@
                     <div class="row text-center">
                         <div class="col-6">
                             <div class="stat-item">
-                                <h4 th:text="${facility.gradeRating ?: '-'}">-</h4>
-                                <small>등급</small>
+                                <h4>-</h4>
+                                <small>등급 (준비중)</small>
                             </div>
                         </div>
                         <div class="col-6">
@@ -225,6 +220,7 @@
 </div>
 
 <div th:replace="~{layout/footer :: footer}"></div>
+<div th:replace="~{layout/footer :: scripts}"></div>
 
 <script th:inline="javascript">
     /*<![CDATA[*/
@@ -232,81 +228,65 @@
     let marker;
     let infowindow;
 
-    // 페이지 로드 시 지도 초기화
-    document.addEventListener('DOMContentLoaded', function () {
-        kakao.maps.load(function () {
-            initializeMap();
-        });
+    // 시설 정보를 JavaScript 변수로 선언
+    const facilityData = {
+        name: /*[[${facility.facilityName}]]*/ '',
+        latitude: /*[[${facility.latitude}]]*/ 0,
+        longitude: /*[[${facility.longitude}]]*/ 0,
+        address: /*[[${facility.address}]]*/ '',
+        phone: /*[[${facility.phone}]]*/ ''
+    };
+
+    // 카카오맵 API가 로드되면 실행될 콜백 함수
+    kakao.maps.load(function() {
+        // 지도 초기화
+        initKakaoMap('facilityMap');
+        
+        // 시설 위치에 마커 추가
+        if (facilityData.latitude && facilityData.longitude) {
+            const content = `
+                <div style="padding:5px;font-size:12px;">
+                    <strong>${facilityData.name}</strong><br>
+                    주소: ${facilityData.address}<br>
+                    전화: ${facilityData.phone}
+                </div>
+            `;
+            
+            const marker = addMarker(
+                facilityData.latitude,
+                facilityData.longitude,
+                facilityData.name,
+                content
+            );
+            
+            // 마커 위치로 지도 중심 이동
+            if (marker && map) {
+                const position = new kakao.maps.LatLng(facilityData.latitude, facilityData.longitude);
+                map.setCenter(position);
+            }
+        }
     });
 
-    // 지도 초기화
-    function initializeMap() {
-        const latitude = parseFloat(/*[[${facility.latitude}]]*/ '0.0');
-        const longitude = parseFloat(/*[[${facility.longitude}]]*/ '0.0');
-        const facilityName = /*[[${facility.facilityName}]]*/ '시설명';
-        const address = /*[[${facility.address}]]*/ '주소';
-
-        const container = document.getElementById('facilityMap');
-        const options = {
-            center: new kakao.maps.LatLng(latitude, longitude),
-            level: 3
-        };
-        map = new kakao.maps.Map(container, options);
-
-        // 마커 생성
-        marker = new kakao.maps.Marker({
-            position: new kakao.maps.LatLng(latitude, longitude),
-            map: map
-        });
-
-        // 인포윈도우 생성
-        infowindow = new kakao.maps.InfoWindow({
-            content: `
-                    <div class="p-2" style="width:200px;">
-                        <h6 class="mb-1">${facilityName}</h6>
-                        <p class="mb-0 small">${address}</p>
-                    </div>
-                `
-        });
-        infowindow.open(map, marker);
-
-        // 지도 컨트롤 추가
-        const zoomControl = new kakao.maps.ZoomControl();
-        map.addControl(zoomControl, kakao.maps.ControlPosition.RIGHT);
-    }
-
-    // 지도에서 보기 버튼 클릭
-    function showOnMap() {
-        const latitude = parseFloat(/*[[${facility.latitude}]]*/ '0.0');
-        const longitude = parseFloat(/*[[${facility.longitude}]]*/ '0.0');
-
-        if (!map) {
-            alert("지도가 아직 로드되지 않았습니다.");
-            return;
-        }
-
-        // 지도 중심 이동
-        map.setCenter(new kakao.maps.LatLng(latitude, longitude));
-        map.setLevel(3);
-
-        // 해당 섹션으로 스크롤
-        document.getElementById('facilityMap').scrollIntoView({ behavior: 'smooth' });
-    }
-
-    // 시설 전화번호로 전화 걸기
+    // 전화하기 버튼 클릭 이벤트 핸들러
     function callFacilityPhone(button) {
-        const phoneNumber = button.getAttribute('data-phone');
-        if (phoneNumber) {
-            window.location.href = 'tel:' + phoneNumber;
-        } else {
-            alert('전화번호 정보가 없습니다.');
+        const phone = button.getAttribute('data-phone');
+        if (phone) {
+            window.location.href = `tel:${phone}`;
         }
     }
 
     // 리뷰 작성 페이지로 이동
     function writeReview() {
-        const facilityId = /*[[${facility.facilityId}]]*/ 0;
-        window.location.href = `/review/write?facilityId=${facilityId}`;
+        window.location.href = `/review/write?facilityId=[[${facility.facilityId}]]`;
+    }
+
+    // 지도에서 보기 버튼 클릭 이벤트 핸들러
+    function showOnMap() {
+        if (map) {
+            const position = new kakao.maps.LatLng(facilityData.latitude, facilityData.longitude);
+            map.setCenter(position);
+            map.setLevel(3); // 지도 확대 레벨 설정
+        }
     }
 
     // 주변 구인정보 검색

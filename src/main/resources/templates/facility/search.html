@@ -63,7 +63,7 @@
                             </div>
                             <div class="col-md-2">
                                 <label for="gradeRating" class="form-label">등급</label>
-                                <select id="gradeRating" name="gradeRating" class="form-select">
+                                <select id="gradeRating" name="gradeRating" class="form-select" disabled title="현재 사용할 수 없습니다">
                                     <option value="">전체</option>
                                     <option value="1" th:selected="${gradeRating == '1'}">1등급</option>
                                     <option value="2" th:selected="${gradeRating == '2'}">2등급</option>
@@ -71,6 +71,7 @@
                                     <option value="4" th:selected="${gradeRating == '4'}">4등급</option>
                                     <option value="5" th:selected="${gradeRating == '5'}">5등급</option>
                                 </select>
+                                <div class="form-text text-muted small">현재 등급 정보가 준비 중입니다</div>
                             </div>
                             <div class="col-md-1 d-flex align-items-end">
                                 <button type="submit" class="btn btn-primary w-100"><i class="fas fa-search"></i></button>
@@ -185,6 +186,20 @@
                 infowindows.forEach(iw => iw.close());
             }
         );
+
+        // 시설 목록 항목 클릭 시 상세보기 페이지로 이동
+        $('.facility-item').click(function(e) {
+            // 상세보기 버튼을 직접 클릭한 경우는 기본 동작 유지
+            if ($(e.target).closest('.btn').length > 0) {
+                return;
+            }
+            
+            // 시설 ID를 추출하여 상세보기 페이지로 이동
+            const facilityId = $(this).find('a[href*="/facility/detail/"]').attr('href').split('/').pop();
+            if (facilityId) {
+                window.location.href = '/facility/detail/' + facilityId;
+            }
+        });
 
         if (facilities.length > 0) {
             const bounds = new kakao.maps.LatLngBounds();

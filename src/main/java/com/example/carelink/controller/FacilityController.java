@@ -59,13 +59,14 @@ public class FacilityController {
         searchCondition.setAddress(region);
         searchCondition.setFacilityType(facilityType);
 
-        try {
-            if (gradeRating != null && !gradeRating.isEmpty()) {
-                searchCondition.setGradeRating(Integer.parseInt(gradeRating));
-            }
-        } catch (NumberFormatException e) {
-            log.warn("Invalid gradeRating format: {}", gradeRating);
-        }
+        // gradeRating 기능은 현재 데이터베이스 스키마에 없으므로 비활성화
+        // try {
+        //     if (gradeRating != null && !gradeRating.isEmpty()) {
+        //         searchCondition.setGradeRating(Integer.parseInt(gradeRating));
+        //     }
+        // } catch (NumberFormatException e) {
+        //     log.warn("Invalid gradeRating format: {}", gradeRating);
+        // }
 
         // DTO 객체를 서비스 메서드로 전달하여 검색을 수행합니다.
         List<FacilityDTO> facilityList = facilityService.searchFacilities(searchCondition);

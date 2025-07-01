@@ -17,7 +17,8 @@
             <nav aria-label="breadcrumb" class="mb-4">
                 <ol class="breadcrumb">
                     <li class="breadcrumb-item"><a href="/">홈</a></li>
-                    <li class="breadcrumb-item"><a href="/review">리뷰</a></li>
+                    <li class="breadcrumb-item"><a href="/facility/search">시설 찾기</a></li>
+                    <li class="breadcrumb-item"><a href="/review">시설 리뷰</a></li>
                     <li class="breadcrumb-item active" aria-current="page">리뷰 작성</li>
                 </ol>
             </nav>
@@ -276,33 +277,93 @@
     <script src="/js/review-write.js"></script>
 
     <style>
-        .rating-stars {
+        /* 전체 평점 스타일 */
+        #overallRating {
             font-size: 1.5rem;
             cursor: pointer;
         }
         
-        .rating-stars .star {
+        #overallRating .star {
             color: #ddd;
             transition: color 0.2s;
+            cursor: pointer;
+            user-select: none;
+            display: inline-block;
+            margin-right: 4px;
         }
         
-        .rating-stars .star:hover,
-        .rating-stars .star.active {
+        #overallRating .star:hover,
+        #overallRating .star.active {
             color: #ffc107;
         }
         
+        /* 세부 평점 스타일 */
         .detailed-rating {
             font-size: 1.2rem;
+            cursor: pointer;
         }
         
         .detailed-rating .star {
             color: #ddd;
             transition: color 0.2s;
+            cursor: pointer;
+            user-select: none;
+            display: inline-block;
+            margin-right: 2px;
         }
         
         .detailed-rating .star:hover,
         .detailed-rating .star.active {
             color: #ffc107;
+        }
+        
+        /* 별점 그룹 전용 스타일로 common.css 오버라이드 */
+        .rating-input-group .rating-stars .star {
+            font-size: 1.5rem !important;
+            cursor: pointer !important;
+            display: inline-block !important;
+        }
+        
+        .rating-group .rating-stars .star {
+            font-size: 1.2rem !important;
+            cursor: pointer !important;
+            display: inline-block !important;
+        }
+        
+        /* 호버 효과 수정 */
+        .detailed-rating .star:hover ~ .star {
+            color: #ddd !important;
+        }
+        
+        .detailed-rating:hover .star {
+            color: #ffc107;
+        }
+        
+        .detailed-rating .star:hover ~ .star {
+            color: #ddd !important;
+        }
+        
+        #overallRating .star:hover ~ .star {
+            color: #ddd !important;
+        }
+        
+        #overallRating:hover .star {
+            color: #ffc107;
+        }
+        
+        #overallRating .star:hover ~ .star {
+            color: #ddd !important;
+        }
+        
+        /* 평점에 대한 디버깅용 스타일 (임시) */
+        .detailed-rating {
+            border: 1px solid transparent;
+        }
+        
+        .detailed-rating:hover {
+            border: 1px solid #007bff;
+            border-radius: 4px;
+            padding: 2px;
         }
     </style>
 </body>
