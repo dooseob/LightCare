@@ -150,6 +150,7 @@ public class MemberController {
         Map<String, Object> result = new HashMap<>();
 
         try {
+            // boolean isDuplicate = memberService.isUserIdDuplicate(userId);
             boolean isDuplicate = memberService.isUserIdDuplicate(userId);
             result.put("isDuplicate", isDuplicate);
             result.put("message", isDuplicate ? "이미 사용중인 아이디입니다." : "사용 가능한 아이디입니다.");

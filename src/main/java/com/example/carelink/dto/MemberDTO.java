@@ -41,8 +41,10 @@ public class MemberDTO extends BaseDTO {
     @Size(max = 100, message = "이메일은 100자를 초과할 수 없습니다.") // 예시: 이메일 길이 제한 추가
     private String email;         // 이메일
 
-    @Pattern(regexp = "^01(?:0|1|[6-9])-(?:\\d{3}|\\d{4})-\\d{4}$", message = "올바른 휴대폰 번호 형식이 아닙니다.")
-    private String phone;         // 휴대폰 번호
+    // 휴대폰 번호 패턴 수정: 빈 문자열("")도 허용하도록 ^$| 를 추가합니다.
+    @Pattern(regexp = "^$|^01(?:0|1|[6-9])-(?:\\d{3}|\\d{4})-\\d{4}$",
+            message = "올바른 휴대폰 번호 형식이 아닙니다.")
+    private String phone;
 
     private String role;          // 회원 역할 (USER, FACILITY, ADMIN)
     private String address;       // 주소 (DDL에 따라 VARCHAR 길이 제한 추가 고려)

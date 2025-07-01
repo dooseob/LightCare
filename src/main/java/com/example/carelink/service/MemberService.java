@@ -7,6 +7,7 @@ import com.example.carelink.common.Constants;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value; // @Value를 사용한다면 유지
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile; // MultipartFile 유지
@@ -29,12 +30,11 @@ import java.util.UUID; // UUID 유지 (파일 이름 생성)
 public class MemberService {
 
     private final MemberMapper memberMapper;
+    private final PasswordEncoder passwordEncoder; // 비밀번호 암호화를 위해 주입
 
     // @Value 설정과 관련 변수 유지 (프로필 이미지 업로드 기능이 DTO에 있으므로)
     @Value("${file.upload-dir.profile}")
     private String uploadDir;
-
-    // 비밀번호 암호화 메서드 (BCryptPasswordEncoder 또는 SHA-256)는 제거합니다.
 
     /**
      * 로그인 처리
@@ -86,29 +86,65 @@ public class MemberService {
     @Transactional
     public void join(MemberDTO memberDTO) {
         try {
-            if (memberMapper.findByUserId(memberDTO.getUserId()) != null) {
+            // 1. 아이디 중복 확인
+            if (isUserIdDuplicate(memberDTO.getUserId())) {
                 throw new IllegalArgumentException("이미 사용중인 아이디입니다.");
             }
 
-            // 비밀번호는 평문으로 저장됩니다 (암호화 없음 - 보안 취약)
-            // memberDTO.setPassword(memberDTO.getPassword()); // 이 라인은 불필요, 이미 DTO에 값이 있음
+            // 2. 이메일 중복 확인 (이메일은 필수이므로 비어있지 않다고 가정)
+            if (memberDTO.getEmail() != null && !memberDTO.getEmail().isEmpty()) {
+                if (memberMapper.existsByEmail(memberDTO.getEmail())) {
+                    throw new IllegalArgumentException("이미 사용중인 이메일입니다.");
+                }
+            }
+
+            // 3. 비밀번호 암호화
+            String encodedPassword = passwordEncoder.encode(memberDTO.getPassword());
+            memberDTO.setPassword(encodedPassword);
+
+            // 4. 기타 필드 기본값 설정 (DDL의 DEFAULT 값과 일치하도록 명시적 설정)
+            // memberId는 AUTO_INCREMENT이므로 null로 설정하여 DB가 자동 생성하도록 합니다.
+            memberDTO.setMemberId(null); // 이 라인을 추가하여 memberId가 null로 시작하도록 합니다.
 
             if (memberDTO.getRole() == null || memberDTO.getRole().isEmpty()) {
-                memberDTO.setRole(Constants.MEMBER_ROLE_USER);
+                memberDTO.setRole(Constants.MEMBER_ROLE_USER); // Constants.MEMBER_ROLE_USER는 "USER" 문자열을 반환한다고 가정
             }
-            memberDTO.setIsActive(true);
-            memberDTO.setLoginFailCount(0);
-            memberDTO.setIsDeleted(false);
+            memberDTO.setIsActive(true); // SQL DEFAULT TRUE
+            memberDTO.setLoginFailCount(0); // SQL DEFAULT 0
+            memberDTO.setIsDeleted(false); // SQL DEFAULT FALSE
 
+            // DDL에 따라 NULL을 허용하는 필드에 값이 없으면 명시적으로 null 설정
+            if (memberDTO.getPhone() != null && memberDTO.getPhone().isEmpty()) {
+                memberDTO.setPhone(null);
+            }
+            if (memberDTO.getAddress() != null && memberDTO.getAddress().isEmpty()) {
+                memberDTO.setAddress(null);
+            }
+            memberDTO.setProfileImage(null); // 프로필 이미지는 폼에서 직접 받지 않는다면 null로 설정
+
+            // lastLoginAt은 회원가입 시에는 null로 설정
+            memberDTO.setLastLoginAt(null);
+
+            // created_at, updated_at은 DB DEFAULT CURRENT_TIMESTAMP이므로 DTO에 설정해도 DB가 우선합니다.
+            // 명시적으로 설정해도 무방하나, DB의 자동 생성 기능을 신뢰하는 것이 일반적입니다.
+            // memberDTO.setCreatedAt(LocalDateTime.now());
+            // memberDTO.setUpdatedAt(LocalDateTime.now());
+
+
+            // 5. Mapper를 통해 데이터베이스에 저장
             int result = memberMapper.insertMember(memberDTO);
-            if (result == 0) {
-                throw new RuntimeException("회원가입 데이터 저장에 실패했습니다.");
+            if (result == 0) { // insert 쿼리의 반환값(영향받은 행 수)이 0이면 실패
+                throw new RuntimeException("회원가입 데이터 저장에 실패했습니다. (영향받은 행 없음)");
             }
-            log.info("회원가입 완료: {}", memberDTO.getUserId());
+            log.info("회원가입 성공: {}", memberDTO.getUserId());
 
-        } catch (Exception e) {
-            log.error("회원가입 처리 중 오류 발생: {}", memberDTO.getUserId(), e);
-            throw new RuntimeException("회원가입 처리 중 오류가 발생했습니다.", e);
+        } catch (IllegalArgumentException e) { // 아이디/이메일 중복 등 비즈니스 로직 예외
+            log.warn("회원가입 실패 (비즈니스 로직): {}", e.getMessage());
+            throw e; // 호출한 곳으로 예외를 다시 던짐
+        } catch (Exception e) { // 그 외 예상치 못한 모든 예외
+            log.error("회원가입 처리 중 알 수 없는 오류 발생: {}", memberDTO.getUserId(), e);
+            // 더 구체적인 오류 메시지를 사용자에게 전달하기 위해 예외를 래핑할 수 있습니다.
+            throw new RuntimeException("회원가입 처리 중 알 수 없는 오류가 발생했습니다. 잠시 후 다시 시도해주세요.", e);
         }
     }
 

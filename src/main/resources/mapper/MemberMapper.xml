@@ -4,7 +4,7 @@
 
 <mapper namespace="com.example.carelink.dao.MemberMapper">
 
-    <resultMap id="memberResultMap" type="MemberDTO">
+    <resultMap id="memberResultMap" type="com.example.carelink.dto.MemberDTO">
         <id property="memberId" column="member_id"/>
         <result property="userId" column="user_id"/>
         <result property="password" column="password"/>
@@ -41,28 +41,46 @@
           AND is_deleted = false
     </select>
 
-    <insert id="insertMember" parameterType="MemberDTO" useGeneratedKeys="true" keyProperty="memberId">
+    <insert id="insertMember" parameterType="com.example.carelink.dto.MemberDTO" useGeneratedKeys="true" keyProperty="memberId">
         INSERT INTO member (
-            user_id,
-            password,
-            name,
-            email,
-            phone,
-            role,
-            address,          profile_image,    is_active,
-            login_fail_count,
-            created_at,
-            updated_at,
-            is_deleted
+        member_id,          <!-- 1 (자동 증가) -->
+        user_id,            <!-- 2 -->
+        password,           <!-- 3 -->
+        name,               <!-- 4 -->
+        email,              <!-- 5 -->
+        phone,              <!-- 6 -->
+        role,               <!-- 7 -->
+        address,            <!-- 8 -->
+        profile_image,      <!-- 9 -->
+        is_active,          <!-- 10 -->
+        login_fail_count,   <!-- 11 -->
+        last_login_at,      <!-- 12 -->
+        is_deleted          <!-- 13 -->
+        <!-- created_at, updated_at은 DB DEFAULT이므로 제외 -->
         ) VALUES (
-                     #{userId},
-                     #{password},
-                     #{name},
-                     #{email},
-                     #{phone},
-                     #{role},
-                     #{address},        #{profileImage},   TRUE,  0,     NOW(), NOW(), FALSE  )
+        #{memberId},              <!-- DTO에 null 또는 0으로 설정 -->
+        #{userId, jdbcType=VARCHAR},
+        #{password, jdbcType=VARCHAR},
+        #{name, jdbcType=VARCHAR},
+        #{email, jdbcType=VARCHAR},
+        #{phone, jdbcType=VARCHAR},
+        #{role, jdbcType=VARCHAR},
+        #{address, jdbcType=VARCHAR},
+        #{profileImage, jdbcType=VARCHAR},
+        #{isActive, jdbcType=BOOLEAN},
+        #{loginFailCount, jdbcType=INTEGER},
+        #{lastLoginAt, jdbcType=TIMESTAMP},
+        #{isDeleted, jdbcType=BOOLEAN}
+        )
     </insert>
+
+    <select id="existsByUserId" resultType="boolean">
+        SELECT COUNT(*) > 0 FROM member WHERE user_id = #{userId}
+    </select>
+
+    <select id="existsByEmail" resultType="boolean">
+        SELECT COUNT(*) > 0 FROM member WHERE email = #{email}
+    </select>
 
     <update id="updateMember" parameterType="MemberDTO">
         UPDATE member

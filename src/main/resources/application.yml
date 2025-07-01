@@ -8,10 +8,10 @@ server:
 spring:
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
-    url: jdbc:mysql://localhost:3306/carelink?useSSL=false&serverTimezone=Asia/Seoul&characterEncoding=UTF-8
+    url: jdbc:mysql://localhost:3306/carelink?allowPublicKeyRetrieval=true&useSSL=false&serverTimezone=Asia/Seoul&characterEncoding=UTF-8
     username: root
     password: mysql
-    
+
   # Thymeleaf 설정
   thymeleaf:
     prefix: classpath:/templates/
@@ -35,9 +35,13 @@ mybatis:
 # 로깅 설정
 logging:
   level:
-    com.example.carelink: DEBUG
-    org.springframework.web: DEBUG
-    org.mybatis: DEBUG
+    root: INFO # 기본 루트 로그 레벨 (필요시 DEBUG로 변경)
+    com.example.carelink: DEBUG # 본인의 애플리케이션 패키지 로그 레벨을 DEBUG로 높입니다.
+    org.springframework.web: DEBUG # 웹 관련 로그를 자세히 봅니다.
+    org.mybatis: DEBUG # MyBatis 관련 로그를 자세히 봅니다.
+    java.sql: DEBUG # SQL 쿼리를 직접적으로 봅니다. (MyBatis가 SQL을 콘솔에 출력하도록 설정했다면)
+    jdbc.sqltiming: INFO # 실제 쿼리 실행 시간 등을 보려면 INFO (혹은 DEBUG)
+    com.zaxxer.hikari: DEBUG # DB 커넥션 풀 관련
 
 #사용자 프로필 사진을 서버 컴퓨터의 C:/uploads/profile_images/ 폴더에 저장
 file:

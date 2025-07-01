@@ -82,4 +82,17 @@ public interface MemberMapper {
      * 회원 상태 변경 (활성화/비활성화)
      */
     void updateMemberStatus(@Param("memberId") Long memberId, @Param("isActive") boolean isActive);
+
+    /**
+     * 특정 사용자 ID가 존재하는지 확인
+     * (활성/비활성 여부, 삭제 여부와 상관없이 ID 자체의 중복 확인)
+     */
+    boolean existsByUserId(@Param("userId") String userId); // <-- 이 메서드를 추가!
+
+    /**
+     * 특정 이메일이 존재하는지 확인
+     * (활성/비활성 여부, 삭제 여부와 상관없이 이메일 자체의 중복 확인)
+     */
+    boolean existsByEmail(@Param("email") String email); // <-- 이 메서드를 추가!
+
 }
