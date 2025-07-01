@@ -32,24 +32,20 @@ public class SecurityConfig {
                         ).permitAll()
                         // 인증 없이 접근을 허용할 URL 설정
                         .requestMatchers(
-                                new AntPathRequestMatcher("/"),             // 메인 페이지
-                                new AntPathRequestMatcher("/member/login"), // 로그인 폼 페이지
-                                new AntPathRequestMatcher("/member/join"),  // 회원가입 폼 페이지
+                                new AntPathRequestMatcher("/"),                    // 메인 페이지
+                                new AntPathRequestMatcher("/member/login"),       // 로그인 폼 페이지 및 처리
+                                new AntPathRequestMatcher("/member/join"),        // 회원가입 폼 페이지 및 처리
                                 new AntPathRequestMatcher("/member/checkUserId"), // 아이디 중복 확인 Ajax
-                                new AntPathRequestMatcher("/api/**"),       // API 경로 (필요시)
-                                new AntPathRequestMatcher("/error")         // 에러 페이지 (필요시)
+                                new AntPathRequestMatcher("/facility/**"),        // 시설 검색 페이지 (비회원도 접근 가능)
+                                new AntPathRequestMatcher("/board/**"),           // 게시판 페이지 (비회원도 접근 가능)
+                                new AntPathRequestMatcher("/review/**"),          // 리뷰 페이지 (비회원도 접근 가능)
+                                new AntPathRequestMatcher("/job/**"),             // 구인구직 페이지 (비회원도 접근 가능)
+                                new AntPathRequestMatcher("/api/**"),             // API 경로 (필요시)
+                                new AntPathRequestMatcher("/error")               // 에러 페이지 (필요시)
                         ).permitAll()
-                        .anyRequest().authenticated() // 그 외 모든 요청은 인증 필요
+                        .anyRequest().permitAll() // 개발 편의상 모든 요청 허용 (운영 시에는 authenticated()로 변경)
                 )
-                .formLogin(formLogin -> formLogin // 기본 폼 로그인 사용 설정
-                        .loginPage("/member/login") // 로그인 페이지 URL (GET 요청)
-                        .loginProcessingUrl("/member/login") // 로그인 처리 URL (POST 요청)
-                        .defaultSuccessUrl("/", true) // 로그인 성공 시 기본 이동 페이지
-                        .failureUrl("/member/login?error=true") // 로그인 실패 시 이동 페이지
-                        .usernameParameter("userId") // 로그인 폼에서 사용자 ID 필드 이름
-                        .passwordParameter("password") // 로그인 폼에서 비밀번호 필드 이름
-                        .permitAll() // 로그인 관련 페이지는 모든 사용자에게 허용
-                )
+                .formLogin(formLogin -> formLogin.disable()) // 기본 폼 로그인 비활성화 (커스텀 로그인 사용)
                 .logout(logout -> logout
                         .logoutRequestMatcher(new AntPathRequestMatcher("/member/logout")) // 로그아웃 URL
                         .logoutSuccessUrl("/") // 로그아웃 성공 시 이동 페이지

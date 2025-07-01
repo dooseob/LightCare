@@ -1,8 +1,10 @@
 package com.example.carelink.controller;
 
 import com.example.carelink.common.PageInfo;
+import com.example.carelink.common.Constants;
 import com.example.carelink.dto.ReviewDTO;
 import com.example.carelink.dto.FacilityDTO;
+import com.example.carelink.dto.MemberDTO;
 import com.example.carelink.service.ReviewService;
 import com.example.carelink.service.FacilityService;
 import lombok.RequiredArgsConstructor;
@@ -12,6 +14,7 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
+import javax.servlet.http.HttpSession;
 import java.util.List;
 import java.util.Map;
 import java.util.HashMap;
@@ -84,7 +87,17 @@ public class ReviewController {
      */
     @GetMapping("/write")
     public String writePage(Model model,
-                           @RequestParam(required = false) Long facilityId) {
+                           @RequestParam(required = false) Long facilityId,
+                           HttpSession session,
+                           RedirectAttributes redirectAttributes) {
+        
+        // 로그인 체크
+        MemberDTO loginMember = (MemberDTO) session.getAttribute(Constants.SESSION_MEMBER);
+        if (loginMember == null) {
+            log.warn("로그인하지 않은 사용자의 리뷰 작성 페이지 접속 시도");
+            redirectAttributes.addFlashAttribute("error", "로그인이 필요합니다.");
+            return "redirect:/member/login";
+        }
         try {
             log.info("리뷰 작성 페이지 접속 - facilityId: {}", facilityId);
             
@@ -132,13 +145,21 @@ public class ReviewController {
      */
     @PostMapping("/write")
     public String writeReview(@ModelAttribute ReviewDTO reviewDTO,
+                             HttpSession session,
                              RedirectAttributes redirectAttributes) {
         try {
             log.info("리뷰 등록 요청 - title: {}, facilityId: {}", reviewDTO.getTitle(), reviewDTO.getFacilityId());
             
-            // 현재 로그인한 사용자 ID 설정 (실제로는 세션에서 가져와야 함)
-            // TODO: 실제 서비스에서는 HttpSession에서 로그인 사용자 정보를 가져와야 함
-            reviewDTO.setMemberId(2L); // 임시로 2번 사용자로 설정
+            // 현재 로그인한 사용자 ID 설정 (세션에서 가져오기)
+            MemberDTO loginMember = (MemberDTO) session.getAttribute(Constants.SESSION_MEMBER);
+            if (loginMember == null) {
+                log.warn("로그인하지 않은 사용자의 리뷰 작성 시도");
+                redirectAttributes.addFlashAttribute("error", "로그인이 필요합니다.");
+                return "redirect:/member/login";
+            }
+            
+            reviewDTO.setMemberId(loginMember.getMemberId());
+            log.info("리뷰 작성자 설정 - memberId: {}, userId: {}", loginMember.getMemberId(), loginMember.getUserId());
             
             // 필수 값 검증
             if (reviewDTO.getFacilityId() == null) {
@@ -211,7 +232,7 @@ public class ReviewController {
      * 리뷰 상세보기
      */
     @GetMapping("/detail/{id}")
-    public String detailPage(@PathVariable Long id, Model model) {
+    public String detailPage(@PathVariable Long id, Model model, HttpSession session) {
         try {
             ReviewDTO review = reviewService.getReviewById(id);
             
@@ -233,7 +254,7 @@ public class ReviewController {
             model.addAttribute("review", review);
             model.addAttribute("otherReviews", otherReviews);
             model.addAttribute("pageTitle", review.getTitle());
-            model.addAttribute("currentMemberId", getCurrentMemberId()); // 현재 사용자 ID 추가
+            model.addAttribute("currentMemberId", getCurrentMemberId(session)); // 현재 사용자 ID 추가
             
             return "review/detail";
         } catch (Exception e) {
@@ -247,7 +268,7 @@ public class ReviewController {
      * 리뷰 수정 페이지
      */
     @GetMapping("/edit/{id}")
-    public String editPage(@PathVariable Long id, Model model, RedirectAttributes redirectAttributes) {
+    public String editPage(@PathVariable Long id, Model model, HttpSession session, RedirectAttributes redirectAttributes) {
         try {
             ReviewDTO review = reviewService.getReviewById(id);
             
@@ -257,7 +278,7 @@ public class ReviewController {
             }
             
             // 작성자 권한 확인
-            Long currentMemberId = getCurrentMemberId();
+            Long currentMemberId = getCurrentMemberId(session);
             if (!review.getMemberId().equals(currentMemberId)) {
                 redirectAttributes.addFlashAttribute("error", "작성자만 수정할 수 있습니다.");
                 return "redirect:/review/detail/" + id;
@@ -278,7 +299,7 @@ public class ReviewController {
      * 리뷰 수정 처리
      */
     @PostMapping("/update")
-    public String updateReview(@ModelAttribute ReviewDTO reviewDTO, RedirectAttributes redirectAttributes) {
+    public String updateReview(@ModelAttribute ReviewDTO reviewDTO, HttpSession session, RedirectAttributes redirectAttributes) {
         try {
             log.info("리뷰 수정 요청 - reviewId: {}, title: {}", reviewDTO.getReviewId(), reviewDTO.getTitle());
             
@@ -290,7 +311,7 @@ public class ReviewController {
             }
             
             // 작성자 권한 확인
-            Long currentMemberId = getCurrentMemberId();
+            Long currentMemberId = getCurrentMemberId(session);
             if (!existingReview.getMemberId().equals(currentMemberId)) {
                 redirectAttributes.addFlashAttribute("error", "작성자만 수정할 수 있습니다.");
                 return "redirect:/review/detail/" + reviewDTO.getReviewId();
@@ -343,7 +364,7 @@ public class ReviewController {
      * 리뷰 삭제
      */
     @PostMapping("/delete/{id}")
-    public String deleteReview(@PathVariable Long id, RedirectAttributes redirectAttributes) {
+    public String deleteReview(@PathVariable Long id, HttpSession session, RedirectAttributes redirectAttributes) {
         try {
             // 기존 리뷰 조회
             ReviewDTO existingReview = reviewService.getReviewById(id);
@@ -353,7 +374,7 @@ public class ReviewController {
             }
             
             // 작성자 권한 확인
-            Long currentMemberId = getCurrentMemberId();
+            Long currentMemberId = getCurrentMemberId(session);
             if (!existingReview.getMemberId().equals(currentMemberId)) {
                 redirectAttributes.addFlashAttribute("error", "작성자만 삭제할 수 있습니다.");
                 return "redirect:/review/detail/" + id;
@@ -374,7 +395,7 @@ public class ReviewController {
      */
     @PostMapping("/report/{id}")
     @ResponseBody
-    public Map<String, Object> reportReview(@PathVariable Long id, @RequestBody Map<String, String> request) {
+    public Map<String, Object> reportReview(@PathVariable Long id, @RequestBody Map<String, String> request, HttpSession session) {
         Map<String, Object> result = new HashMap<>();
         
         try {
@@ -394,7 +415,7 @@ public class ReviewController {
             }
             
             // 본인 리뷰 신고 방지
-            Long currentMemberId = getCurrentMemberId();
+            Long currentMemberId = getCurrentMemberId(session);
             if (review.getMemberId().equals(currentMemberId)) {
                 result.put("success", false);
                 result.put("message", "본인이 작성한 리뷰는 신고할 수 없습니다.");
@@ -512,12 +533,10 @@ public class ReviewController {
     }
     
     /**
-     * 현재 로그인한 사용자 ID 조회
-     * TODO: 실제 스프링 시큐리티 구현 시 수정 필요
+     * 현재 로그인한 사용자 ID 조회 (세션 기반)
      */
-    private Long getCurrentMemberId() {
-        // 임시로 2번 사용자로 고정
-        // 실제 구현 시에는 HttpSession 또는 SecurityContext에서 가져와야 함
-        return 2L;
+    private Long getCurrentMemberId(HttpSession session) {
+        MemberDTO loginMember = (MemberDTO) session.getAttribute(Constants.SESSION_MEMBER);
+        return (loginMember != null) ? loginMember.getMemberId() : null;
     }
 } 

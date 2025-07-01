@@ -11,162 +11,162 @@ USE carelink;
 -- 1. 회원 테이블 (팀원 A 담당)
 -- ================================================
 CREATE TABLE member (
-    member_id BIGINT AUTO_INCREMENT PRIMARY KEY COMMENT '회원 ID',
-    user_id VARCHAR(20) NOT NULL UNIQUE COMMENT '사용자 ID (로그인용)',
-    password VARCHAR(255) NOT NULL COMMENT '비밀번호',
-    name VARCHAR(50) NOT NULL COMMENT '이름',
-    email VARCHAR(100) NOT NULL UNIQUE COMMENT '이메일',
-    phone VARCHAR(20) COMMENT '휴대폰 번호',
-    role VARCHAR(20) NOT NULL DEFAULT 'USER' COMMENT '역할 (USER, FACILITY, ADMIN)',
-    address TEXT COMMENT '주소',
-    profile_image VARCHAR(255) COMMENT '프로필 이미지 경로',
-    is_active BOOLEAN NOT NULL DEFAULT TRUE COMMENT '계정 활성화 여부',
-    login_fail_count INT NOT NULL DEFAULT 0 COMMENT '로그인 실패 횟수',
-    last_login_at DATETIME COMMENT '마지막 로그인 시간',
-    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '생성일시',
-    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '수정일시',
-    is_deleted BOOLEAN NOT NULL DEFAULT FALSE COMMENT '삭제 여부'
+                        member_id BIGINT AUTO_INCREMENT PRIMARY KEY COMMENT '회원 ID',
+                        user_id VARCHAR(20) NOT NULL UNIQUE COMMENT '사용자 ID (로그인용)',
+                        password VARCHAR(255) NOT NULL COMMENT '비밀번호',
+                        name VARCHAR(50) NOT NULL COMMENT '이름',
+                        email VARCHAR(100) NOT NULL UNIQUE COMMENT '이메일',
+                        phone VARCHAR(20) COMMENT '휴대폰 번호',
+                        role VARCHAR(20) NOT NULL DEFAULT 'USER' COMMENT '역할 (USER, FACILITY, ADMIN)',
+                        address TEXT COMMENT '주소',
+                        profile_image VARCHAR(255) COMMENT '프로필 이미지 경로',
+                        is_active BOOLEAN NOT NULL DEFAULT TRUE COMMENT '계정 활성화 여부',
+                        login_fail_count INT NOT NULL DEFAULT 0 COMMENT '로그인 실패 횟수',
+                        last_login_at DATETIME COMMENT '마지막 로그인 시간',
+                        created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '생성일시',
+                        updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '수정일시',
+                        is_deleted BOOLEAN NOT NULL DEFAULT FALSE COMMENT '삭제 여부'
 ) COMMENT='회원 정보';
 
 -- ================================================
 -- 2. 시설 테이블 (팀원 B 담당)
 -- ================================================
 CREATE TABLE facility (
-    facility_id BIGINT AUTO_INCREMENT PRIMARY KEY COMMENT '시설 ID',
-    facility_name VARCHAR(100) NOT NULL COMMENT '시설명',
-    facility_type VARCHAR(20) NOT NULL COMMENT '시설 유형 (NURSING_HOME, HOSPITAL, DAY_CARE)',
-    address TEXT NOT NULL COMMENT '주소',
-    detail_address TEXT COMMENT '상세 주소',
-    phone VARCHAR(20) NOT NULL COMMENT '전화번호',
-    latitude DECIMAL(10, 8) COMMENT '위도',
-    longitude DECIMAL(11, 8) COMMENT '경도',
-    description TEXT COMMENT '시설 설명',
-    facility_image VARCHAR(255) COMMENT '시설 이미지 경로',
-    homepage VARCHAR(255) COMMENT '홈페이지 URL',
-    capacity INT COMMENT '수용 인원',
-    current_occupancy INT COMMENT '현재 입소자 수',
-    operating_hours VARCHAR(100) COMMENT '운영 시간',
-    features TEXT COMMENT '시설 특징',
-    average_rating FLOAT DEFAULT 0 COMMENT '평균 평점',
-    review_count INT DEFAULT 0 COMMENT '리뷰 수',
-    registered_member_id BIGINT NOT NULL COMMENT '등록한 회원 ID',
-    is_approved BOOLEAN NOT NULL DEFAULT FALSE COMMENT '승인 여부',
-    approval_status VARCHAR(20) NOT NULL DEFAULT 'PENDING' COMMENT '승인 상태 (PENDING, APPROVED, REJECTED)',
-    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '생성일시',
-    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '수정일시',
-    is_deleted BOOLEAN NOT NULL DEFAULT FALSE COMMENT '삭제 여부',
-    FOREIGN KEY (registered_member_id) REFERENCES member(member_id)
+                          facility_id BIGINT AUTO_INCREMENT PRIMARY KEY COMMENT '시설 ID',
+                          facility_name VARCHAR(100) NOT NULL COMMENT '시설명',
+                          facility_type VARCHAR(20) NOT NULL COMMENT '시설 유형 (NURSING_HOME, HOSPITAL, DAY_CARE)',
+                          address TEXT NOT NULL COMMENT '주소',
+                          detail_address TEXT COMMENT '상세 주소',
+                          phone VARCHAR(20) NOT NULL COMMENT '전화번호',
+                          latitude DECIMAL(10, 8) COMMENT '위도',
+                          longitude DECIMAL(11, 8) COMMENT '경도',
+                          description TEXT COMMENT '시설 설명',
+                          facility_image VARCHAR(255) COMMENT '시설 이미지 경로',
+                          homepage VARCHAR(255) COMMENT '홈페이지 URL',
+                          capacity INT COMMENT '수용 인원',
+                          current_occupancy INT COMMENT '현재 입소자 수',
+                          operating_hours VARCHAR(100) COMMENT '운영 시간',
+                          features TEXT COMMENT '시설 특징',
+                          average_rating FLOAT DEFAULT 0 COMMENT '평균 평점',
+                          review_count INT DEFAULT 0 COMMENT '리뷰 수',
+                          registered_member_id BIGINT NOT NULL COMMENT '등록한 회원 ID',
+                          is_approved BOOLEAN NOT NULL DEFAULT FALSE COMMENT '승인 여부',
+                          approval_status VARCHAR(20) NOT NULL DEFAULT 'PENDING' COMMENT '승인 상태 (PENDING, APPROVED, REJECTED)',
+                          created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '생성일시',
+                          updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '수정일시',
+                          is_deleted BOOLEAN NOT NULL DEFAULT FALSE COMMENT '삭제 여부',
+                          FOREIGN KEY (registered_member_id) REFERENCES member(member_id)
 ) COMMENT='시설 정보';
 
 -- ================================================
 -- 3. 구인구직 게시글 테이블 (팀원 C 담당)
 -- ================================================
 CREATE TABLE job_posting (
-    job_id BIGINT AUTO_INCREMENT PRIMARY KEY COMMENT '구인구직 ID',
-    title VARCHAR(200) NOT NULL COMMENT '제목',
-    content TEXT NOT NULL COMMENT '내용',
-    job_type VARCHAR(20) NOT NULL COMMENT '구인구직 유형 (RECRUIT: 구인, SEARCH: 구직)',
-    work_type VARCHAR(20) NOT NULL COMMENT '근무 형태 (FULL_TIME, PART_TIME, TEMPORARY)',
-    position VARCHAR(50) COMMENT '모집 직종',
-    recruit_count INT COMMENT '모집 인원',
-    salary_type VARCHAR(20) COMMENT '급여 유형 (HOURLY, MONTHLY, ANNUAL)',
-    salary_min DECIMAL(10, 0) COMMENT '최소 급여',
-    salary_max DECIMAL(10, 0) COMMENT '최대 급여',
-    salary_description TEXT COMMENT '급여 설명',
-    work_location VARCHAR(100) COMMENT '근무 지역',
-    work_hours VARCHAR(100) COMMENT '근무 시간',
-    experience VARCHAR(50) COMMENT '경력 조건',
-    education VARCHAR(50) COMMENT '학력 조건',
-    qualifications TEXT COMMENT '자격 요건',
-    benefits TEXT COMMENT '복리후생',
-    start_date DATE COMMENT '모집 시작일',
-    end_date DATE COMMENT '모집 마감일',
-    contact_name VARCHAR(50) COMMENT '담당자 이름',
-    contact_phone VARCHAR(20) COMMENT '담당자 연락처',
-    contact_email VARCHAR(100) COMMENT '담당자 이메일',
-    status VARCHAR(20) NOT NULL DEFAULT 'ACTIVE' COMMENT '게시글 상태 (ACTIVE, CLOSED, DRAFT)',
-    view_count INT NOT NULL DEFAULT 0 COMMENT '조회수',
-    apply_count INT NOT NULL DEFAULT 0 COMMENT '지원자 수',
-    member_id BIGINT NOT NULL COMMENT '작성자 ID',
-    facility_id BIGINT COMMENT '관련 시설 ID',
-    attachment_path VARCHAR(255) COMMENT '첨부파일 경로',
-    attachment_name VARCHAR(255) COMMENT '첨부파일 원본명',
-    priority INT NOT NULL DEFAULT 0 COMMENT '우선순위',
-    is_highlight BOOLEAN NOT NULL DEFAULT FALSE COMMENT '강조 표시 여부',
-    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '생성일시',
-    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '수정일시',
-    is_deleted BOOLEAN NOT NULL DEFAULT FALSE COMMENT '삭제 여부',
-    FOREIGN KEY (member_id) REFERENCES member(member_id),
-    FOREIGN KEY (facility_id) REFERENCES facility(facility_id)
+                             job_id BIGINT AUTO_INCREMENT PRIMARY KEY COMMENT '구인구직 ID',
+                             title VARCHAR(200) NOT NULL COMMENT '제목',
+                             content TEXT NOT NULL COMMENT '내용',
+                             job_type VARCHAR(20) NOT NULL COMMENT '구인구직 유형 (RECRUIT: 구인, SEARCH: 구직)',
+                             work_type VARCHAR(20) NOT NULL COMMENT '근무 형태 (FULL_TIME, PART_TIME, TEMPORARY)',
+                             position VARCHAR(50) COMMENT '모집 직종',
+                             recruit_count INT COMMENT '모집 인원',
+                             salary_type VARCHAR(20) COMMENT '급여 유형 (HOURLY, MONTHLY, ANNUAL)',
+                             salary_min DECIMAL(10, 0) COMMENT '최소 급여',
+                             salary_max DECIMAL(10, 0) COMMENT '최대 급여',
+                             salary_description TEXT COMMENT '급여 설명',
+                             work_location VARCHAR(100) COMMENT '근무 지역',
+                             work_hours VARCHAR(100) COMMENT '근무 시간',
+                             experience VARCHAR(50) COMMENT '경력 조건',
+                             education VARCHAR(50) COMMENT '학력 조건',
+                             qualifications TEXT COMMENT '자격 요건',
+                             benefits TEXT COMMENT '복리후생',
+                             start_date DATE COMMENT '모집 시작일',
+                             end_date DATE COMMENT '모집 마감일',
+                             contact_name VARCHAR(50) COMMENT '담당자 이름',
+                             contact_phone VARCHAR(20) COMMENT '담당자 연락처',
+                             contact_email VARCHAR(100) COMMENT '담당자 이메일',
+                             status VARCHAR(20) NOT NULL DEFAULT 'ACTIVE' COMMENT '게시글 상태 (ACTIVE, CLOSED, DRAFT)',
+                             view_count INT NOT NULL DEFAULT 0 COMMENT '조회수',
+                             apply_count INT NOT NULL DEFAULT 0 COMMENT '지원자 수',
+                             member_id BIGINT NOT NULL COMMENT '작성자 ID',
+                             facility_id BIGINT COMMENT '관련 시설 ID',
+                             attachment_path VARCHAR(255) COMMENT '첨부파일 경로',
+                             attachment_name VARCHAR(255) COMMENT '첨부파일 원본명',
+                             priority INT NOT NULL DEFAULT 0 COMMENT '우선순위',
+                             is_highlight BOOLEAN NOT NULL DEFAULT FALSE COMMENT '강조 표시 여부',
+                             created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '생성일시',
+                             updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '수정일시',
+                             is_deleted BOOLEAN NOT NULL DEFAULT FALSE COMMENT '삭제 여부',
+                             FOREIGN KEY (member_id) REFERENCES member(member_id),
+                             FOREIGN KEY (facility_id) REFERENCES facility(facility_id)
 ) COMMENT='구인구직 게시글';
 
 -- ================================================
 -- 4. 시설 리뷰 테이블 (팀원 D 담당)
 -- ================================================
 CREATE TABLE review (
-    review_id BIGINT AUTO_INCREMENT PRIMARY KEY COMMENT '리뷰 ID',
-    facility_id BIGINT NOT NULL COMMENT '시설 ID',
-    member_id BIGINT NOT NULL COMMENT '작성자 ID',
-    title VARCHAR(200) NOT NULL COMMENT '리뷰 제목',
-    content TEXT NOT NULL COMMENT '리뷰 내용',
-    rating INT NOT NULL COMMENT '평점 (1-5점)',
-    service_rating INT COMMENT '서비스 평점',
-    facility_rating INT COMMENT '시설 평점',
-    staff_rating INT COMMENT '직원 평점',
-    price_rating INT COMMENT '가격 평점',
-    review_image1 VARCHAR(255) COMMENT '리뷰 이미지 1',
-    review_image2 VARCHAR(255) COMMENT '리뷰 이미지 2',
-    review_image3 VARCHAR(255) COMMENT '리뷰 이미지 3',
-    like_count INT NOT NULL DEFAULT 0 COMMENT '추천 수',
-    dislike_count INT NOT NULL DEFAULT 0 COMMENT '비추천 수',
-    view_count INT NOT NULL DEFAULT 0 COMMENT '조회수',
-    is_visible BOOLEAN NOT NULL DEFAULT TRUE COMMENT '표시 여부',
-    status VARCHAR(20) NOT NULL DEFAULT 'ACTIVE' COMMENT '상태 (ACTIVE, HIDDEN, REPORTED)',
-    parent_review_id BIGINT COMMENT '부모 리뷰 ID (답글인 경우)',
-    reply_count INT NOT NULL DEFAULT 0 COMMENT '답글 수',
-    reply_depth INT NOT NULL DEFAULT 0 COMMENT '답글 깊이',
-    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '생성일시',
-    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '수정일시',
-    is_deleted BOOLEAN NOT NULL DEFAULT FALSE COMMENT '삭제 여부',
-    FOREIGN KEY (facility_id) REFERENCES facility(facility_id),
-    FOREIGN KEY (member_id) REFERENCES member(member_id),
-    FOREIGN KEY (parent_review_id) REFERENCES review(review_id)
+                        review_id BIGINT AUTO_INCREMENT PRIMARY KEY COMMENT '리뷰 ID',
+                        facility_id BIGINT NOT NULL COMMENT '시설 ID',
+                        member_id BIGINT NOT NULL COMMENT '작성자 ID',
+                        title VARCHAR(200) NOT NULL COMMENT '리뷰 제목',
+                        content TEXT NOT NULL COMMENT '리뷰 내용',
+                        rating INT NOT NULL COMMENT '평점 (1-5점)',
+                        service_rating INT COMMENT '서비스 평점',
+                        facility_rating INT COMMENT '시설 평점',
+                        staff_rating INT COMMENT '직원 평점',
+                        price_rating INT COMMENT '가격 평점',
+                        review_image1 VARCHAR(255) COMMENT '리뷰 이미지 1',
+                        review_image2 VARCHAR(255) COMMENT '리뷰 이미지 2',
+                        review_image3 VARCHAR(255) COMMENT '리뷰 이미지 3',
+                        like_count INT NOT NULL DEFAULT 0 COMMENT '추천 수',
+                        dislike_count INT NOT NULL DEFAULT 0 COMMENT '비추천 수',
+                        view_count INT NOT NULL DEFAULT 0 COMMENT '조회수',
+                        is_visible BOOLEAN NOT NULL DEFAULT TRUE COMMENT '표시 여부',
+                        status VARCHAR(20) NOT NULL DEFAULT 'ACTIVE' COMMENT '상태 (ACTIVE, HIDDEN, REPORTED)',
+                        parent_review_id BIGINT COMMENT '부모 리뷰 ID (답글인 경우)',
+                        reply_count INT NOT NULL DEFAULT 0 COMMENT '답글 수',
+                        reply_depth INT NOT NULL DEFAULT 0 COMMENT '답글 깊이',
+                        created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '생성일시',
+                        updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '수정일시',
+                        is_deleted BOOLEAN NOT NULL DEFAULT FALSE COMMENT '삭제 여부',
+                        FOREIGN KEY (facility_id) REFERENCES facility(facility_id),
+                        FOREIGN KEY (member_id) REFERENCES member(member_id),
+                        FOREIGN KEY (parent_review_id) REFERENCES review(review_id)
 ) COMMENT='시설 리뷰';
 
 -- ================================================
 -- 5. 정보 게시판 테이블 (팀원 D 담당)
 -- ================================================
 CREATE TABLE board (
-    board_id BIGINT AUTO_INCREMENT PRIMARY KEY COMMENT '게시글 ID',
-    board_type VARCHAR(20) NOT NULL COMMENT '게시판 유형 (NOTICE, INFO, QNA, FAQ)',
-    title VARCHAR(200) NOT NULL COMMENT '제목',
-    content TEXT NOT NULL COMMENT '내용',
-    member_id BIGINT NOT NULL COMMENT '작성자 ID',
-    view_count INT NOT NULL DEFAULT 0 COMMENT '조회수',
-    like_count INT NOT NULL DEFAULT 0 COMMENT '추천수',
-    comment_count INT NOT NULL DEFAULT 0 COMMENT '댓글수',
-    attachment_path VARCHAR(255) COMMENT '첨부파일 경로',
-    attachment_name VARCHAR(255) COMMENT '첨부파일 원본명',
-    attachment_size BIGINT COMMENT '첨부파일 크기',
-    is_notice BOOLEAN NOT NULL DEFAULT FALSE COMMENT '공지사항 여부',
-    is_secret BOOLEAN NOT NULL DEFAULT FALSE COMMENT '비밀글 여부',
-    is_active BOOLEAN NOT NULL DEFAULT TRUE COMMENT '활성 상태',
-    status VARCHAR(20) NOT NULL DEFAULT 'ACTIVE' COMMENT '상태 (ACTIVE, HIDDEN, DELETED)',
-    category VARCHAR(50) COMMENT '카테고리',
-    sub_category VARCHAR(50) COMMENT '서브 카테고리',
-    priority INT NOT NULL DEFAULT 0 COMMENT '우선순위',
-    is_pinned BOOLEAN NOT NULL DEFAULT FALSE COMMENT '상단 고정 여부',
-    parent_board_id BIGINT COMMENT '부모 게시글 ID (답글인 경우)',
-    reply_depth INT NOT NULL DEFAULT 0 COMMENT '답글 깊이',
-    reply_order INT NOT NULL DEFAULT 0 COMMENT '답글 순서',
-    tags VARCHAR(500) COMMENT '태그 (콤마로 구분)',
-    meta_description TEXT COMMENT '메타 설명',
-    meta_keywords VARCHAR(500) COMMENT '메타 키워드',
-    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '생성일시',
-    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '수정일시',
-    is_deleted BOOLEAN NOT NULL DEFAULT FALSE COMMENT '삭제 여부',
-    FOREIGN KEY (member_id) REFERENCES member(member_id),
-    FOREIGN KEY (parent_board_id) REFERENCES board(board_id)
+                       board_id BIGINT AUTO_INCREMENT PRIMARY KEY COMMENT '게시글 ID',
+                       board_type VARCHAR(20) NOT NULL COMMENT '게시판 유형 (NOTICE, INFO, QNA, FAQ)',
+                       title VARCHAR(200) NOT NULL COMMENT '제목',
+                       content TEXT NOT NULL COMMENT '내용',
+                       member_id BIGINT NOT NULL COMMENT '작성자 ID',
+                       view_count INT NOT NULL DEFAULT 0 COMMENT '조회수',
+                       like_count INT NOT NULL DEFAULT 0 COMMENT '추천수',
+                       comment_count INT NOT NULL DEFAULT 0 COMMENT '댓글수',
+                       attachment_path VARCHAR(255) COMMENT '첨부파일 경로',
+                       attachment_name VARCHAR(255) COMMENT '첨부파일 원본명',
+                       attachment_size BIGINT COMMENT '첨부파일 크기',
+                       is_notice BOOLEAN NOT NULL DEFAULT FALSE COMMENT '공지사항 여부',
+                       is_secret BOOLEAN NOT NULL DEFAULT FALSE COMMENT '비밀글 여부',
+                       is_active BOOLEAN NOT NULL DEFAULT TRUE COMMENT '활성 상태',
+                       status VARCHAR(20) NOT NULL DEFAULT 'ACTIVE' COMMENT '상태 (ACTIVE, HIDDEN, DELETED)',
+                       category VARCHAR(50) COMMENT '카테고리',
+                       sub_category VARCHAR(50) COMMENT '서브 카테고리',
+                       priority INT NOT NULL DEFAULT 0 COMMENT '우선순위',
+                       is_pinned BOOLEAN NOT NULL DEFAULT FALSE COMMENT '상단 고정 여부',
+                       parent_board_id BIGINT COMMENT '부모 게시글 ID (답글인 경우)',
+                       reply_depth INT NOT NULL DEFAULT 0 COMMENT '답글 깊이',
+                       reply_order INT NOT NULL DEFAULT 0 COMMENT '답글 순서',
+                       tags VARCHAR(500) COMMENT '태그 (콤마로 구분)',
+                       meta_description TEXT COMMENT '메타 설명',
+                       meta_keywords VARCHAR(500) COMMENT '메타 키워드',
+                       created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '생성일시',
+                       updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '수정일시',
+                       is_deleted BOOLEAN NOT NULL DEFAULT FALSE COMMENT '삭제 여부',
+                       FOREIGN KEY (member_id) REFERENCES member(member_id),
+                       FOREIGN KEY (parent_board_id) REFERENCES board(board_id)
 ) COMMENT='정보 게시판';
 
 -- ================================================
@@ -207,15 +207,18 @@ CREATE INDEX idx_board_category ON board(category);
 -- 기본 데이터 삽입 (테스트용)
 -- ================================================
 
--- 관리자 계정 및 기본 회원 계정 생성
+-- 관리자 계정 및 기본 회원 계정 생성 (BCrypt 암호화된 비밀번호 사용)
+-- admin123 -> $2a$10$8W.9zKMf5oV.QJQp5kz9r.M4bz5vSdF1/HlWEn2k8FLf.I1LHhT0C
+-- user123 -> $2a$10$JZl9IEf4cFd6YGF2kF1TUel.ZvL8UHL9KJ7zKz4Vr2Rf6v5I8xKoS  
+-- facility123 -> $2a$10$nQo1E8yY1lPwH2f9KrL5ju4z8E9w.QdL3KfP6I7v2Rf8T1xKz4JyG
 INSERT INTO member (user_id, password, name, email, phone, role, address, is_active, login_fail_count, created_at, updated_at, is_deleted) VALUES
-('admin', 'admin123', '관리자', 'admin@carelink.com', '02-1234-5678', 'ADMIN', '서울시 종로구 세종대로 1', TRUE, 0, NOW(), NOW(), FALSE),
-('user01', 'user123', '김철수', 'kim.cs@example.com', '010-1111-2222', 'USER', '서울시 강남구 테헤란로 123', TRUE, 0, NOW(), NOW(), FALSE),
-('user02', 'user123', '이영희', 'lee.yh@example.com', '010-2222-3333', 'USER', '부산시 해운대구 센텀중앙로 79', TRUE, 0, NOW(), NOW(), FALSE),
-('user03', 'user123', '박민수', 'park.ms@example.com', '010-3333-4444', 'USER', '대구시 중구 동성로 1', TRUE, 0, NOW(), NOW(), FALSE),
-('user04', 'user123', '최지은', 'choi.je@example.com', '010-4444-5555', 'USER', '인천시 남동구 구월동 1234', TRUE, 0, NOW(), NOW(), FALSE),
-('facility01', 'facility123', '서울요양원장', 'seoul.admin@example.com', '02-5555-6666', 'FACILITY', '서울시 서초구 서초대로 123', TRUE, 0, NOW(), NOW(), FALSE),
-('facility02', 'facility123', '부산실버타운장', 'busan.admin@example.com', '051-7777-8888', 'FACILITY', '부산시 부산진구 서면로 456', TRUE, 0, NOW(), NOW(), FALSE);
+('admin', '$2a$10$8W.9zKMf5oV.QJQp5kz9r.M4bz5vSdF1/HlWEn2k8FLf.I1LHhT0C', '관리자', 'admin@carelink.com', '02-1234-5678', 'ADMIN', '서울시 종로구 세종대로 1', TRUE, 0, NOW(), NOW(), FALSE),
+('user01', '$2a$10$JZl9IEf4cFd6YGF2kF1TUel.ZvL8UHL9KJ7zKz4Vr2Rf6v5I8xKoS', '김철수', 'kim.cs@example.com', '010-1111-2222', 'USER', '서울시 강남구 테헤란로 123', TRUE, 0, NOW(), NOW(), FALSE),
+('user02', '$2a$10$JZl9IEf4cFd6YGF2kF1TUel.ZvL8UHL9KJ7zKz4Vr2Rf6v5I8xKoS', '이영희', 'lee.yh@example.com', '010-2222-3333', 'USER', '부산시 해운대구 센텀중앙로 79', TRUE, 0, NOW(), NOW(), FALSE),
+('user03', '$2a$10$JZl9IEf4cFd6YGF2kF1TUel.ZvL8UHL9KJ7zKz4Vr2Rf6v5I8xKoS', '박민수', 'park.ms@example.com', '010-3333-4444', 'USER', '대구시 중구 동성로 1', TRUE, 0, NOW(), NOW(), FALSE),
+('user04', '$2a$10$JZl9IEf4cFd6YGF2kF1TUel.ZvL8UHL9KJ7zKz4Vr2Rf6v5I8xKoS', '최지은', 'choi.je@example.com', '010-4444-5555', 'USER', '인천시 남동구 구월동 1234', TRUE, 0, NOW(), NOW(), FALSE),
+('facility01', '$2a$10$nQo1E8yY1lPwH2f9KrL5ju4z8E9w.QdL3KfP6I7v2Rf8T1xKz4JyG', '서울요양원장', 'seoul.admin@example.com', '02-5555-6666', 'FACILITY', '서울시 서초구 서초대로 123', TRUE, 0, NOW(), NOW(), FALSE),
+('facility02', '$2a$10$nQo1E8yY1lPwH2f9KrL5ju4z8E9w.QdL3KfP6I7v2Rf8T1xKz4JyG', '부산실버타운장', 'busan.admin@example.com', '051-7777-8888', 'FACILITY', '부산시 부산진구 서면로 456', TRUE, 0, NOW(), NOW(), FALSE);
 
 -- 시설 데이터
 INSERT INTO facility (facility_name, facility_type, address, detail_address, phone, latitude, longitude, description, capacity, current_occupancy, operating_hours, features, average_rating, review_count, registered_member_id, is_approved, approval_status, created_at, updated_at, is_deleted) VALUES
@@ -231,9 +234,9 @@ INSERT INTO job_posting (title, content, job_type, work_type, position, recruit_
 ('[부산 바다뷰 실버타운] 간호사 모집', '실버타운에서 근무할 간호사를 모집합니다. 노인 간호 경험자 우대', 'RECRUIT', 'FULL_TIME', '간호사', 2, 'MONTHLY', 3500000, 4000000, '야간근무수당 별도', '부산시 해운대구', '2교대 (09:00-21:00, 21:00-09:00)', '1년 이상', '간호대학 졸업', '간호사 면허증 필수', '4대보험, 퇴직금, 야간수당, 주말수당', '2024-01-20', '2024-02-20', '이팀장', '051-3333-4444', 'hr@busan-silver.com', 'ACTIVE', 7, 2, 3, TRUE, NOW(), NOW(), FALSE),
 ('[경력직 요양보호사] 좋은 근무환경 찾습니다', '10년 경력의 요양보호사입니다. 야간근무 가능하며 성실히 근무하겠습니다.', 'SEARCH', 'FULL_TIME', '요양보호사', 1, 'MONTHLY', 2500000, 3000000, '야간수당 포함 희망', '서울/경기 지역', '3교대 가능', '10년', '고등학교 졸업', '요양보호사 1급 자격증', '4대보험, 퇴직금', '2024-01-10', '2024-03-10', '홍길동', '010-1234-5678', 'hong@example.com', 'ACTIVE', 2, NULL, 0, FALSE, NOW(), NOW(), FALSE),
 ('대전 데이케어센터 사회복지사 모집', '데이케어센터에서 근무할 사회복지사를 모집합니다.', 'RECRUIT', 'FULL_TIME', '사회복지사', 1, 'MONTHLY', 2600000, 2800000, '기본급 + 수당', '대전시 유성구', '09:00-18:00 (월-토)', '신입 가능', '사회복지학과 졸업', '사회복지사 2급 이상', '4대보험, 퇴직금, 교육비 지원', '2024-01-25', '2024-02-25', '박실장', '042-5555-6666', 'welfare@daejeon.com', 'ACTIVE', 6, 3, 2, FALSE, NOW(), NOW(), FALSE),
-('물리치료사 파트타임 구직합니다', '물리치료 경력 5년으로 파트타임으로 근무하고 싶습니다.', 'SEARCH', 'PART_TIME', '물리치료사', 1, 'HOURLY', 25000, 30000, '시간당 희망', '수도권 지역', '주 3일 이내', '5년', '물리치료학과 졸업', '물리치료사 면허증', '4대보험', '2024-01-12', '2024-02-12', '김물리', '010-9999-8888', 'pt.kim@example.com', 'ACTIVE', 3, NULL, 0, FALSE, NOW(), NOW(), FALSE); 
+('물리치료사 파트타임 구직합니다', '물리치료 경력 5년으로 파트타임으로 근무하고 싶습니다.', 'SEARCH', 'PART_TIME', '물리치료사', 1, 'HOURLY', 25000, 30000, '시간당 희망', '수도권 지역', '주 3일 이내', '5년', '물리치료학과 졸업', '물리치료사 면허증', '4대보험', '2024-01-12', '2024-02-12', '김물리', '010-9999-8888', 'pt.kim@example.com', 'ACTIVE', 3, NULL, 0, FALSE, NOW(), NOW(), FALSE);
 
--- 리뷰 데이터 
+-- 리뷰 데이터
 INSERT INTO review (facility_id, member_id, title, content, rating, service_rating, facility_rating, staff_rating, price_rating, like_count, dislike_count, view_count, is_visible, status, parent_review_id, reply_count, reply_depth, created_at, updated_at, is_deleted) VALUES
 (1, 2, '서울 행복요양원 이용 후기', '어머니를 모시고 있는데 시설도 깨끗하고 직원분들이 정말 친절합니다. 특히 간병서비스가 24시간 제공되어 안심이 됩니다. 추천합니다!', 5, 5, 4, 5, 4, 8, 0, 45, TRUE, 'ACTIVE', NULL, 0, 0, NOW(), NOW(), FALSE),
 (1, 3, '만족스러운 요양원', '아버지가 편안하게 지내고 계세요. 물리치료 프로그램도 잘 되어 있고 식사도 맛있다고 하십니다.', 4, 4, 4, 4, 4, 5, 0, 32, TRUE, 'ACTIVE', NULL, 0, 0, NOW(), NOW(), FALSE),
@@ -265,14 +268,31 @@ INSERT INTO board (board_type, title, content, member_id, view_count, like_count
 SELECT '라이트케어 데이터베이스 초기화가 완료되었습니다!' as message;
 SELECT CONCAT('회원: ', COUNT(*), '명') as member_count FROM member WHERE is_deleted = FALSE;
 SELECT CONCAT('시설: ', COUNT(*), '개') as facility_count FROM facility WHERE is_deleted = FALSE;
-SELECT CONCAT('구인구직: ', COUNT(*), '건') as job_count FROM job_posting WHERE is_deleted = FALSE;  
+SELECT CONCAT('구인구직: ', COUNT(*), '건') as job_count FROM job_posting WHERE is_deleted = FALSE;
+SELECT CONCAT('리뷰: ', COUNT(*), '건') as review_count FROM review WHERE is_deleted = FALSE;
+SELECT CONCAT('게시글: ', COUNT(*), '건') as board_count FROM board WHERE is_deleted = FALSE;                                                                                                                                                                                                                                                                                                              ('QNA', '식사 메뉴는 어떻게 제공되나요?', '요양원의 식사 메뉴 구성과 특별식 제공 여부가 궁금합니다.', 5, 58, 4, 3, FALSE, FALSE, TRUE, 'ACTIVE', 'QNA', '식사', 0, FALSE, NULL, 0, 0, '식사,메뉴,급식', '식사 메뉴 문의', '식사,메뉴,급식,요양원', NOW(), NOW(), FALSE);
+
+-- 데이터 삽입 완료 메시지
+SELECT '라이트케어 데이터베이스 초기화가 완료되었습니다!' as message;
+SELECT CONCAT('회원: ', COUNT(*), '명') as member_count FROM member WHERE is_deleted = FALSE;
+SELECT CONCAT('시설: ', COUNT(*), '개') as facility_count FROM facility WHERE is_deleted = FALSE;
+SELECT CONCAT('구인구직: ', COUNT(*), '건') as job_count FROM job_posting WHERE is_deleted = FALSE;
+SELECT CONCAT('리뷰: ', COUNT(*), '건') as review_count FROM review WHERE is_deleted = FALSE;
+SELECT CONCAT('게시글: ', COUNT(*), '건') as board_count FROM board WHERE is_deleted = FALSE;                                                                                                                                                                                                                                                                                                              ('QNA', '식사 메뉴는 어떻게 제공되나요?', '요양원의 식사 메뉴 구성과 특별식 제공 여부가 궁금합니다.', 5, 58, 4, 3, FALSE, FALSE, TRUE, 'ACTIVE', 'QNA', '식사', 0, FALSE, NULL, 0, 0, '식사,메뉴,급식', '식사 메뉴 문의', '식사,메뉴,급식,요양원', NOW(), NOW(), FALSE);
+
+-- 데이터 삽입 완료 메시지
+SELECT '라이트케어 데이터베이스 초기화가 완료되었습니다!' as message;
+SELECT CONCAT('회원: ', COUNT(*), '명') as member_count FROM member WHERE is_deleted = FALSE;
+SELECT CONCAT('시설: ', COUNT(*), '개') as facility_count FROM facility WHERE is_deleted = FALSE;
+SELECT CONCAT('구인구직: ', COUNT(*), '건') as job_count FROM job_posting WHERE is_deleted = FALSE;
 SELECT CONCAT('리뷰: ', COUNT(*), '건') as review_count FROM review WHERE is_deleted = FALSE;
 SELECT CONCAT('게시글: ', COUNT(*), '건') as board_count FROM board WHERE is_deleted = FALSE;
+select * from board;
+select * from review;
+use carelink;
 
--- 마지막 샘플 데이터 조회
-SELECT '=== 초기 데이터 확인 ===' as status;
-SELECT * FROM member WHERE is_deleted = FALSE ORDER BY created_at DESC LIMIT 5;
-SELECT * FROM facility WHERE is_deleted = FALSE ORDER BY created_at DESC LIMIT 3;
-SELECT * FROM job_posting WHERE is_deleted = FALSE ORDER BY created_at DESC LIMIT 3;
-SELECT * FROM review WHERE is_deleted = FALSE ORDER BY created_at DESC LIMIT 3;
-SELECT * FROM board WHERE is_deleted = FALSE ORDER BY created_at DESC LIMIT 3;
+DELETE FROM board
+WHERE board_id = 11;
+
+
+

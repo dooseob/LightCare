@@ -22,6 +22,35 @@
                     </div>
 
                     <form th:action="@{/member/join}" method="post" id="joinForm" th:object="${memberDTO}">
+                        <!-- 회원 유형 선택 -->
+                        <div class="mb-4">
+                            <label class="form-label">
+                                <i class="fas fa-users me-1"></i>회원 유형 <span class="text-danger">*</span>
+                            </label>
+                            <div class="row">
+                                <div class="col-6">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="radio" name="role" id="roleUser" value="USER" th:field="*{role}" checked>
+                                        <label class="form-check-label" for="roleUser">
+                                            <i class="fas fa-user-friends me-1"></i>
+                                            <strong>일반회원</strong><br>
+                                            <small class="text-muted">구직자, 가족</small>
+                                        </label>
+                                    </div>
+                                </div>
+                                <div class="col-6">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="radio" name="role" id="roleFacility" value="FACILITY" th:field="*{role}">
+                                        <label class="form-check-label" for="roleFacility">
+                                            <i class="fas fa-building me-1"></i>
+                                            <strong>시설회원</strong><br>
+                                            <small class="text-muted">요양원, 병원 운영자</small>
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
                         <div class="mb-3">
                             <label for="userId" class="form-label">
                                 <i class="fas fa-user me-1"></i>아이디 <span class="text-danger">*</span>
@@ -102,14 +131,99 @@
                             <div class="invalid-feedback" th:if="${#fields.hasErrors('phone')}" th:text="${#fields.errors('phone')[0]}"></div>
                         </div>
 
-                        <div class="mb-4"> <label for="address" class="form-label">
-                            <i class="fas fa-map-marker-alt me-1"></i>주소
-                        </label>
+                        <div class="mb-3">
+                            <label for="address" class="form-label">
+                                <i class="fas fa-map-marker-alt me-1"></i>주소
+                            </label>
                             <input type="text"
                                    class="form-control"
                                    id="address"
                                    th:field="*{address}" placeholder="주소를 입력하세요 (선택 사항)">
                             <div class="invalid-feedback" th:if="${#fields.hasErrors('address')}" th:text="${#fields.errors('address')[0]}"></div>
+                        </div>
+
+                        <!-- 시설회원 추가 정보 -->
+                        <div id="facilityFields" style="display: none;">
+                            <hr class="my-4">
+                            <h5 class="text-primary mb-3">
+                                <i class="fas fa-building me-2"></i>시설 정보
+                            </h5>
+                            
+                            <div class="mb-3">
+                                <label for="facilityName" class="form-label">
+                                    <i class="fas fa-home me-1"></i>시설명 <span class="text-danger">*</span>
+                                </label>
+                                <input type="text" class="form-control" id="facilityName" th:field="*{facilityName}" 
+                                       placeholder="시설명을 입력하세요">
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="facilityType" class="form-label">
+                                    <i class="fas fa-list me-1"></i>시설 유형 <span class="text-danger">*</span>
+                                </label>
+                                <select class="form-select" id="facilityType" th:field="*{facilityType}">
+                                    <option value="">시설 유형을 선택하세요</option>
+                                    <option value="NURSING_HOME">요양원</option>
+                                    <option value="HOSPITAL">요양병원</option>
+                                    <option value="DAY_CARE">주간보호센터</option>
+                                </select>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="detailAddress" class="form-label">
+                                    <i class="fas fa-map-marker-alt me-1"></i>상세 주소
+                                </label>
+                                <input type="text" class="form-control" id="detailAddress" th:field="*{detailAddress}"
+                                       placeholder="상세 주소를 입력하세요">
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="facilityPhone" class="form-label">
+                                    <i class="fas fa-phone me-1"></i>시설 전화번호 <span class="text-danger">*</span>
+                                </label>
+                                <input type="tel" class="form-control" id="facilityPhone" th:field="*{facilityPhone}"
+                                       placeholder="시설 전화번호를 입력하세요">
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="capacity" class="form-label">
+                                    <i class="fas fa-users me-1"></i>수용 인원
+                                </label>
+                                <input type="number" class="form-control" id="capacity" th:field="*{capacity}"
+                                       placeholder="수용 가능 인원을 입력하세요" min="1">
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="operatingHours" class="form-label">
+                                    <i class="fas fa-clock me-1"></i>운영 시간
+                                </label>
+                                <input type="text" class="form-control" id="operatingHours" th:field="*{operatingHours}"
+                                       placeholder="예: 24시간 운영, 09:00-18:00">
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="description" class="form-label">
+                                    <i class="fas fa-file-text me-1"></i>시설 소개
+                                </label>
+                                <textarea class="form-control" id="description" th:field="*{description}" rows="3"
+                                          placeholder="시설에 대한 간단한 소개를 입력하세요"></textarea>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="features" class="form-label">
+                                    <i class="fas fa-star me-1"></i>시설 특징
+                                </label>
+                                <textarea class="form-control" id="features" th:field="*{features}" rows="2"
+                                          placeholder="시설의 특징이나 장점을 입력하세요"></textarea>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="homepage" class="form-label">
+                                    <i class="fas fa-globe me-1"></i>홈페이지 URL
+                                </label>
+                                <input type="url" class="form-control" id="homepage" th:field="*{homepage}"
+                                       placeholder="https://www.example.com">
+                            </div>
                         </div>
 
                         <div class="d-grid mb-3">
@@ -207,6 +321,20 @@
         passwordInput.on('keyup', checkPasswordMatch);
         passwordConfirmInput.on('keyup', checkPasswordMatch);
 
+        // 회원 유형에 따른 시설 정보 필드 표시/숨김
+        $('input[name="role"]').change(function() {
+            if ($(this).val() === 'FACILITY') {
+                $('#facilityFields').show();
+                // 시설회원 필수 필드 required 속성 추가
+                $('#facilityName, #facilityType, #facilityPhone').attr('required', true);
+            } else {
+                $('#facilityFields').hide();
+                // 일반회원일 때 시설 필드 required 속성 제거
+                $('#facilityName, #facilityType, #facilityPhone').removeAttr('required');
+            }
+            updateSubmitButtonState();
+        });
+
         // 아이디 중복 체크 (Ajax)
         const userIdInput = $('#userId');
         const userIdFeedback = $('#userIdFeedback');
@@ -256,9 +384,18 @@
         function updateSubmitButtonState() {
             const isPasswordMatch = (passwordInput.val() === passwordConfirmInput.val() && passwordInput.val() !== '');
             const isNameValid = ($('#name').val() !== ''); // 이름 필드도 필수 조건에 추가
+            
+            // 시설회원인 경우 추가 필드 체크
+            let isFacilityFieldsValid = true;
+            if ($('input[name="role"]:checked').val() === 'FACILITY') {
+                const facilityName = $('#facilityName').val();
+                const facilityType = $('#facilityType').val();
+                const facilityPhone = $('#facilityPhone').val();
+                isFacilityFieldsValid = facilityName !== '' && facilityType !== '' && facilityPhone !== '';
+            }
 
             // 모든 필수 필드가 채워지고, 아이디 사용 가능하며, 비밀번호가 일치하는지 확인
-            if (isUserIdAvailable && isPasswordMatch && isNameValid) {
+            if (isUserIdAvailable && isPasswordMatch && isNameValid && isFacilityFieldsValid) {
                 joinSubmitButton.prop('disabled', false);
             } else {
                 joinSubmitButton.prop('disabled', true);
@@ -266,7 +403,7 @@
         }
 
         // 초기 로드 시 및 모든 입력 필드 변경 시 버튼 상태 업데이트
-        $('input').on('keyup blur', updateSubmitButtonState);
+        $('input, select, textarea').on('keyup blur change', updateSubmitButtonState);
         updateSubmitButtonState(); // 페이지 로드 시 초기 상태 설정
 
         // 폼 제출 전 최종 유효성 검사 (서버 측 유효성 검사가 있으므로, 클라이언트 측에서 추가로 검사할 내용이 있다면 여기에 추가)

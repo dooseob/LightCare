@@ -52,8 +52,11 @@ public class MemberController {
 
         // DTO 유효성 검증 실패 시
         if (bindingResult.hasErrors()) {
+            log.warn("로그인 폼 유효성 검사 실패: {}", bindingResult.getAllErrors());
             return "member/login"; // 에러가 있으면 로그인 폼으로 다시 이동
         }
+
+        log.info("로그인 시도: userId={}, 비밀번호 길이={}", loginDTO.getUserId(), loginDTO.getPassword().length());
 
         try {
             // MemberService를 통해 로그인 시도
@@ -63,18 +66,19 @@ public class MemberController {
                 // 로그인 성공 시 세션에 회원 정보 저장
                 session.setAttribute(Constants.SESSION_MEMBER, loginMember);
                 session.setAttribute("memberId", loginMember.getMemberId());
-                log.info("로그인 성공: {}", loginMember.getUserId());
+                log.info("컨트롤러 로그인 성공: userId={}, role={}", loginMember.getUserId(), loginMember.getRole());
 
                 redirectAttributes.addFlashAttribute("message", "로그인되었습니다.");
                 return "redirect:/"; // 홈 페이지로 리다이렉트
             } else {
                 // 로그인 실패 시 에러 메시지 추가
+                log.warn("컨트롤러 로그인 실패: userId={}", loginDTO.getUserId());
                 redirectAttributes.addFlashAttribute("error", "아이디 또는 비밀번호가 잘못되었습니다.");
                 return "redirect:/member/login"; // 로그인 페이지로 리다이렉트
             }
 
         } catch (Exception e) {
-            log.error("로그인 처리 중 오류 발생", e);
+            log.error("로그인 처리 중 오류 발생: userId={}", loginDTO.getUserId(), e);
             redirectAttributes.addFlashAttribute("error", "로그인 처리 중 오류가 발생했습니다.");
             return "redirect:/member/login";
         }
@@ -161,6 +165,60 @@ public class MemberController {
             result.put("error", "중복 체크 중 오류가 발생했습니다.");
         }
 
+        return result;
+    }
+
+    /**
+     * 디버깅용 비밀번호 테스트 엔드포인트
+     */
+    @GetMapping("/debug/password-test")
+    @ResponseBody
+    public Map<String, Object> debugPasswordTest(@RequestParam(defaultValue = "admin") String userId,
+                                                 @RequestParam(defaultValue = "admin123") String password) {
+        Map<String, Object> result = new HashMap<>();
+        
+        try {
+            // 1. 사용자 정보 조회
+            MemberDTO member = memberService.getMemberByUserId(userId);
+            if (member == null) {
+                result.put("error", "사용자를 찾을 수 없습니다: " + userId);
+                return result;
+            }
+            
+            // 2. 기본 정보 표시
+            result.put("userId", member.getUserId());
+            result.put("dbPasswordHash", member.getPassword());
+            result.put("dbPasswordLength", member.getPassword().length());
+            result.put("inputPassword", password);
+            result.put("inputPasswordLength", password.length());
+            
+            // 3. BCrypt 해시 형식 검증
+            boolean isValidBcryptFormat = member.getPassword().startsWith("$2a$") || 
+                                        member.getPassword().startsWith("$2b$") || 
+                                        member.getPassword().startsWith("$2y$");
+            result.put("isValidBcryptFormat", isValidBcryptFormat);
+            
+            // 4. 직접 비밀번호 매칭 테스트
+            LoginDTO loginDTO = new LoginDTO();
+            loginDTO.setUserId(userId);
+            loginDTO.setPassword(password);
+            
+            MemberDTO loginResult = memberService.login(loginDTO);
+            result.put("loginSuccess", loginResult != null);
+            
+            // 5. 회원 상태 정보
+            result.put("isActive", member.getIsActive());
+            result.put("isDeleted", member.getIsDeleted());
+            result.put("loginFailCount", member.getLoginFailCount());
+            result.put("role", member.getRole());
+            
+            log.info("디버깅 테스트 결과: {}", result);
+            
+        } catch (Exception e) {
+            log.error("디버깅 테스트 중 오류 발생", e);
+            result.put("error", "테스트 중 오류 발생: " + e.getMessage());
+        }
+        
         return result;
     }
 

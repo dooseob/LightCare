@@ -36,10 +36,9 @@ public class MemberDTO extends BaseDTO {
     @Size(max = 50, message = "이름은 50자를 초과할 수 없습니다.") // 예시: 이름 길이 제한 추가
     private String name;          // 이름
 
-    @NotBlank(message = "이메일은 필수입니다.")
     @Email(message = "올바른 이메일 형식이 아닙니다.")
     @Size(max = 100, message = "이메일은 100자를 초과할 수 없습니다.") // 예시: 이메일 길이 제한 추가
-    private String email;         // 이메일
+    private String email;         // 이메일 (선택사항)
 
     // 휴대폰 번호 패턴 수정: 빈 문자열("")도 허용하도록 ^$| 를 추가합니다.
     @Pattern(regexp = "^$|^01(?:0|1|[6-9])-(?:\\d{3}|\\d{4})-\\d{4}$",
@@ -50,6 +49,17 @@ public class MemberDTO extends BaseDTO {
     private String address;       // 주소 (DDL에 따라 VARCHAR 길이 제한 추가 고려)
 
     private String profileImage;  // 프로필 이미지 경로 (DB에 저장될 URL)
+    
+    // 시설회원 추가 정보 (facility 테이블에 저장될 정보)
+    private String facilityName;     // 시설명
+    private String facilityType;     // 시설 유형 (NURSING_HOME, HOSPITAL, DAY_CARE)
+    private String detailAddress;    // 상세 주소
+    private String facilityPhone;    // 시설 전화번호
+    private String description;      // 시설 설명
+    private String homepage;         // 홈페이지 URL
+    private Integer capacity;        // 수용 인원
+    private String operatingHours;   // 운영 시간
+    private String features;         // 시설 특징
 
     // DB 테이블의 is_active 컬럼과 매핑
     private Boolean isActive;     // 계정 활성화 여부 (Boolean으로 변경하여 null 허용, 기본값은 DB에서 설정)
