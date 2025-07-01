@@ -1,4 +1,4 @@
-# 빌드 결과물
+# 빌드 결과물 (Build Artifacts)
 /build/
 /target/
 AppData/
@@ -9,15 +9,15 @@ Application Data/
 *.zip
 *.tar.gz
 *.class
-bin/ # Eclipse build output
-out/ # IntelliJ build output
+bin/ # Eclipse 빌드 출력 폴더
+out/ # IntelliJ 빌드 출력 폴더
 
-# Gradle
+# Gradle 관련 파일 및 폴더
 .gradle/
-!gradle-wrapper.jar
-!gradle-wrapper.properties
+!gradle-wrapper.jar      # Gradle Wrapper 파일은 포함 (보통 git에 포함됨)
+!gradle-wrapper.properties # Gradle Wrapper 설정 파일 포함
 
-# IDE 및 환경 설정 파일
+# IDE (통합 개발 환경) 관련 파일 및 폴더
 # IntelliJ IDEA
 .idea/
 *.iml
@@ -35,19 +35,21 @@ node_modules/
 # VS Code
 .vscode/
 
-# 운영체제 파일
-.DS_Store
-Thumbs.db
+# 운영체제 관련 임시 파일
+.DS_Store # macOS
+Thumbs.db # Windows
 
 # 로그 파일
 *.log
-logs/
-*.lock # 락 파일 포함 (예: Gradle lock 파일)
+logs/ # logs 디렉토리 전체
+*.lock # 락 파일 포함 (예: Gradle lock, DB lock 파일 등)
+
+# 기타 임시 파일
+*.out
+*.bak
+*.swp
 *.tmp
 .DS_Store
-
-# 기타
-*.out
 
 # 브라우저 캐시 무시
 **/Edge Wallet/
