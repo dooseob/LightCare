@@ -13,6 +13,14 @@
     <!-- 메인 콘텐츠 -->
     <main class="flex-grow-1">
         <div class="container mt-4">
+            <!-- 브레드크럼 -->
+            <nav aria-label="breadcrumb" class="mb-4">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="/">홈</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">구인구직</li>
+                </ol>
+            </nav>
+            
             <!-- 페이지 타이틀 -->
             <div class="row mb-4">
                 <div class="col-md-8">
@@ -20,9 +28,27 @@
                     <p class="text-muted">요양원, 요양병원 등 다양한 일자리 정보를 확인하세요.</p>
                 </div>
                 <div class="col-md-4 text-end">
-                    <a href="/job/write" class="btn btn-primary">
-                        <i class="fas fa-plus me-1"></i> 구인등록
+                    <!-- 시설회원(FACILITY) 또는 관리자(ADMIN)만 구인등록 가능 -->
+                    <a th:if="${session.loginMember != null and (session.loginMember.role == 'FACILITY' or session.loginMember.role == 'ADMIN')}" 
+                       href="/job/write" class="btn btn-success me-2">
+                        <i class="fas fa-plus me-1"></i>구인등록
                     </a>
+                    
+                    <!-- 일반사용자(USER)는 구직등록만 가능 -->
+                    <a th:if="${session.loginMember != null and session.loginMember.role == 'USER'}" 
+                       href="/job/write" class="btn btn-info">
+                        <i class="fas fa-plus me-1"></i>구직등록
+                    </a>
+                    
+                    <!-- 비로그인 사용자에게는 로그인 안내 -->
+                    <div th:if="${session.loginMember == null}" class="btn-group">
+                        <a href="/member/login" class="btn btn-outline-success">
+                            <i class="fas fa-sign-in-alt me-1"></i>로그인 후 구인등록
+                        </a>
+                        <a href="/member/login" class="btn btn-outline-info">
+                            <i class="fas fa-sign-in-alt me-1"></i>로그인 후 구직등록
+                        </a>
+                    </div>
                 </div>
             </div>
 
@@ -37,67 +63,107 @@
                             <form id="searchForm" method="get" th:action="@{/job}">
                                 <!-- 키워드 검색 -->
                                 <div class="mb-3">
-                                    <label for="keyword" class="form-label">키워드</label>
-                                    <input type="text" class="form-control" id="keyword" 
-                                           name="keyword" th:value="${keyword}"
-                                           placeholder="회사명, 직무 등">
+                                    <label for="keyword" class="form-label fw-bold">키워드 검색</label>
+                                    <div class="input-group">
+                                        <input type="text" class="form-control" id="keyword" 
+                                               name="keyword" th:value="${keyword}"
+                                               placeholder="직무, 회사명, 지역 등">
+                                        <button type="submit" class="btn btn-outline-secondary">
+                                            <i class="fas fa-search"></i>
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <!-- 구인/구직 구분 -->
+                                <div class="mb-3">
+                                    <label class="form-label fw-bold">구인/구직 구분</label>
+                                    <div class="btn-group w-100" role="group">
+                                        <input type="radio" class="btn-check" name="type" id="type_all" value="" th:checked="${type == null or type == ''}">
+                                        <label class="btn btn-outline-primary" for="type_all">전체</label>
+                                        
+                                        <input type="radio" class="btn-check" name="type" id="type_recruit" value="recruit" th:checked="${type == 'recruit'}">
+                                        <label class="btn btn-outline-primary" for="type_recruit">구인</label>
+                                        
+                                        <input type="radio" class="btn-check" name="type" id="type_search" value="search" th:checked="${type == 'search'}">
+                                        <label class="btn btn-outline-primary" for="type_search">구직</label>
+                                    </div>
                                 </div>
 
                                 <!-- 직종 선택 -->
                                 <div class="mb-3">
-                                    <label for="jobType" class="form-label">직종</label>
-                                    <select class="form-select" id="jobType" name="jobType">
+                                    <label for="position" class="form-label fw-bold">직종</label>
+                                    <select class="form-select" id="position" name="position">
                                         <option value="">전체</option>
-                                        <option value="nurse" th:selected="${jobType == 'nurse'}">간병인</option>
-                                        <option value="caregiver" th:selected="${jobType == 'caregiver'}">요양보호사</option>
-                                        <option value="social_worker" th:selected="${jobType == 'social_worker'}">사회복지사</option>
-                                        <option value="physical_therapist" th:selected="${jobType == 'physical_therapist'}">물리치료사</option>
-                                        <option value="office" th:selected="${jobType == 'office'}">사무직</option>
-                                        <option value="cook" th:selected="${jobType == 'cook'}">조리원</option>
-                                        <option value="driver" th:selected="${jobType == 'driver'}">운전원</option>
-                                        <option value="etc" th:selected="${jobType == 'etc'}">기타</option>
+                                        <option value="간병인" th:selected="${position == '간병인'}">간병인</option>
+                                        <option value="요양보호사" th:selected="${position == '요양보호사'}">요양보호사</option>
+                                        <option value="사회복지사" th:selected="${position == '사회복지사'}">사회복지사</option>
+                                        <option value="물리치료사" th:selected="${position == '물리치료사'}">물리치료사</option>
+                                        <option value="사무직" th:selected="${position == '사무직'}">사무직</option>
+                                        <option value="조리원" th:selected="${position == '조리원'}">조리원</option>
+                                        <option value="운전원" th:selected="${position == '운전원'}">운전원</option>
+                                        <option value="간호사" th:selected="${position == '간호사'}">간호사</option>
+                                        <option value="영양사" th:selected="${position == '영양사'}">영양사</option>
+                                        <option value="기탄" th:selected="${position == '기타'}">기타</option>
                                     </select>
                                 </div>
 
                                 <!-- 지역 선택 -->
                                 <div class="mb-3">
-                                    <label for="region" class="form-label">지역</label>
+                                    <label for="region" class="form-label fw-bold">근무지역</label>
                                     <select class="form-select" id="region" name="region">
-                                        <option value="">전체</option>
-                                        <option value="서울" th:selected="${region == '서울'}">서울</option>
-                                        <option value="부산" th:selected="${region == '부산'}">부산</option>
-                                        <option value="대구" th:selected="${region == '대구'}">대구</option>
-                                        <option value="인천" th:selected="${region == '인천'}">인천</option>
-                                        <option value="광주" th:selected="${region == '광주'}">광주</option>
-                                        <option value="대전" th:selected="${region == '대전'}">대전</option>
-                                        <option value="울산" th:selected="${region == '울산'}">울산</option>
-                                        <option value="경기" th:selected="${region == '경기'}">경기</option>
-                                        <option value="강원" th:selected="${region == '강원'}">강원</option>
-                                        <option value="충북" th:selected="${region == '충북'}">충북</option>
-                                        <option value="충남" th:selected="${region == '충남'}">충남</option>
-                                        <option value="전북" th:selected="${region == '전북'}">전북</option>
-                                        <option value="전남" th:selected="${region == '전남'}">전남</option>
-                                        <option value="경북" th:selected="${region == '경북'}">경북</option>
-                                        <option value="경남" th:selected="${region == '경남'}">경남</option>
-                                        <option value="제주" th:selected="${region == '제주'}">제주</option>
+                                        <option value="">전국</option>
+                                        <option value="서울" th:selected="${region == '서울'}">서울특별시</option>
+                                        <option value="부산" th:selected="${region == '부산'}">부산광역시</option>
+                                        <option value="대구" th:selected="${region == '대구'}">대구광역시</option>
+                                        <option value="인천" th:selected="${region == '인천'}">인천광역시</option>
+                                        <option value="광주" th:selected="${region == '광주'}">광주광역시</option>
+                                        <option value="대전" th:selected="${region == '대전'}">대전광역시</option>
+                                        <option value="울산" th:selected="${region == '울산'}">울산광역시</option>
+                                        <option value="세종" th:selected="${region == '세종'}">세종특별자치시</option>
+                                        <option value="경기" th:selected="${region == '경기'}">경기도</option>
+                                        <option value="강원" th:selected="${region == '강원'}">강원도</option>
+                                        <option value="충북" th:selected="${region == '충북'}">충청북도</option>
+                                        <option value="충남" th:selected="${region == '충남'}">충청남도</option>
+                                        <option value="전북" th:selected="${region == '전북'}">전라북도</option>
+                                        <option value="전남" th:selected="${region == '전남'}">전라남도</option>
+                                        <option value="경북" th:selected="${region == '경북'}">경상북도</option>
+                                        <option value="경남" th:selected="${region == '경남'}">경상남도</option>
+                                        <option value="제주" th:selected="${region == '제주'}">제주특별자치도</option>
                                     </select>
                                 </div>
 
                                 <!-- 고용형태 -->
                                 <div class="mb-3">
-                                    <label for="employmentType" class="form-label">고용형태</label>
-                                    <select class="form-select" id="employmentType" name="employmentType">
+                                    <label for="workType" class="form-label fw-bold">고용형태</label>
+                                    <select class="form-select" id="workType" name="workType">
                                         <option value="">전체</option>
-                                        <option value="full_time" th:selected="${employmentType == 'full_time'}">정규직</option>
-                                        <option value="part_time" th:selected="${employmentType == 'part_time'}">계약직</option>
-                                        <option value="temp" th:selected="${employmentType == 'temp'}">임시직</option>
-                                        <option value="freelance" th:selected="${employmentType == 'freelance'}">프리랜서</option>
+                                        <option value="FULL_TIME" th:selected="${workType == 'FULL_TIME'}">정규직</option>
+                                        <option value="PART_TIME" th:selected="${workType == 'PART_TIME'}">파트타임</option>
+                                        <option value="TEMPORARY" th:selected="${workType == 'TEMPORARY'}">임시직</option>
                                     </select>
                                 </div>
 
-                                <button type="submit" class="btn btn-success w-100">
-                                    <i class="fas fa-search me-1"></i> 검색
-                                </button>
+                                <!-- 경력 -->
+                                <div class="mb-3">
+                                    <label for="experience" class="form-label fw-bold">경력</label>
+                                    <select class="form-select" id="experience" name="experience">
+                                        <option value="">무관</option>
+                                        <option value="신입" th:selected="${experience == '신입'}">신입</option>
+                                        <option value="1년 이상" th:selected="${experience == '1년 이상'}">1년 이상</option>
+                                        <option value="3년 이상" th:selected="${experience == '3년 이상'}">3년 이상</option>
+                                        <option value="5년 이상" th:selected="${experience == '5년 이상'}">5년 이상</option>
+                                        <option value="10년 이상" th:selected="${experience == '10년 이상'}">10년 이상</option>
+                                    </select>
+                                </div>
+
+                                <div class="d-grid gap-2">
+                                    <button type="submit" class="btn btn-success">
+                                        <i class="fas fa-search me-1"></i>검색
+                                    </button>
+                                    <button type="button" class="btn btn-outline-secondary" onclick="resetFilters()">
+                                        <i class="fas fa-undo me-1"></i>초기화
+                                    </button>
+                                </div>
                             </form>
                         </div>
                     </div>
@@ -121,17 +187,47 @@
 
                 <!-- 구인구직 목록 -->
                 <div class="col-md-9">
-                    <!-- 정렬 및 결과 수 -->
-                    <div class="d-flex justify-content-between align-items-center mb-3">
-                        <div>
-                            <span class="text-muted">전체 <strong th:text="${jobList != null ? #lists.size(jobList) : 0}">0</strong>건</span>
+                    <!-- 결과 요약 및 정렬 -->
+                    <div class="row align-items-center mb-4">
+                        <div class="col-md-6">
+                            <div class="d-flex align-items-center gap-3">
+                                <h5 class="mb-0">
+                                    <i class="fas fa-list me-2 text-success"></i>채용정보
+                                </h5>
+                                <span class="badge bg-success fs-6" th:text="${jobList != null ? #lists.size(jobList) : 0} + '건'">
+                                    0건
+                                </span>
+                            </div>
+                            <small class="text-muted">
+                                전체 <strong th:text="${totalCount ?: 0}">0</strong>건 중 
+                                <strong th:text="${jobList != null ? #lists.size(jobList) : 0}">0</strong>건 표시
+                            </small>
                         </div>
-                        <div>
-                            <select class="form-select form-select-sm" style="width: auto;">
-                                <option>최신순</option>
-                                <option>급여순</option>
-                                <option>조회순</option>
-                            </select>
+                        <div class="col-md-6">
+                            <div class="row">
+                                <div class="col-auto">
+                                    <label for="sortOrder" class="form-label small mb-0">정렬기준</label>
+                                    <select class="form-select form-select-sm" id="sortOrder" name="sortOrder" onchange="changeSortOrder(this.value)">
+                                        <option value="latest" th:selected="${sortOrder == 'latest' or sortOrder == null}">최신순</option>
+                                        <option value="viewCount" th:selected="${sortOrder == 'viewCount'}">조회순</option>
+                                        <option value="salary" th:selected="${sortOrder == 'salary'}">급여순</option>
+                                        <option value="deadline" th:selected="${sortOrder == 'deadline'}">마감임박순</option>
+                                    </select>
+                                </div>
+                                <div class="col-auto">
+                                    <label for="viewType" class="form-label small mb-0">보기방식</label>
+                                    <div class="btn-group btn-group-sm" role="group">
+                                        <input type="radio" class="btn-check" name="viewType" id="listView" value="list" checked>
+                                        <label class="btn btn-outline-secondary" for="listView">
+                                            <i class="fas fa-list"></i>
+                                        </label>
+                                        <input type="radio" class="btn-check" name="viewType" id="cardView" value="card">
+                                        <label class="btn btn-outline-secondary" for="cardView">
+                                            <i class="fas fa-th"></i>
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
 
@@ -145,30 +241,57 @@
                                         <div class="col-md-8">
                                             <div class="d-flex justify-content-between align-items-start mb-2">
                                                 <h5 class="card-title mb-0" th:text="${job.title}">구인 제목</h5>
-                                                <span class="badge bg-success" th:text="${job.workType}">정규직</span>
+                                                <div class="d-flex gap-1">
+                                                    <span class="badge bg-primary" th:if="${job.jobType == 'RECRUIT'}">구인</span>
+                                                    <span class="badge bg-success" th:if="${job.jobType == 'SEARCH'}">구직</span>
+                                                    <span class="badge bg-secondary" th:if="${job.workType == 'FULL_TIME'}">정규직</span>
+                                                    <span class="badge bg-info" th:if="${job.workType == 'PART_TIME'}">파트타임</span>
+                                                    <span class="badge bg-warning" th:if="${job.workType == 'TEMPORARY'}">임시직</span>
+                                                    <span class="badge bg-danger" th:if="${job.priority > 0}">긴급</span>
+                                                </div>
                                             </div>
-                                            <h6 class="text-primary mb-2" th:text="${job.facilityName}">회사명</h6>
-                                            <p class="card-text text-muted mb-2">
-                                                <i class="fas fa-map-marker-alt me-1"></i> <span th:text="${job.workLocation}">지역</span> |
-                                                <i class="fas fa-clock me-1"></i> <span th:text="${job.workHours}">근무시간</span> |
-                                                <i class="fas fa-won-sign me-1"></i> <span th:text="${job.salaryDescription}">급여</span>
-                                            </p>
-                                            <p class="card-text" th:text="${#strings.abbreviate(job.content, 100)}">구인 내용...</p>
+                                            <h6 class="text-primary mb-2" th:text="${job.facilityName ?: '개인 사업자'}">회사명</h6>
+                                            <div class="job-info mb-2">
+                                                <span class="text-muted me-3" th:if="${job.workLocation}">
+                                                    <i class="fas fa-map-marker-alt me-1"></i><span th:text="${job.workLocation}">지역</span>
+                                                </span>
+                                                <span class="text-muted me-3" th:if="${job.workHours}">
+                                                    <i class="fas fa-clock me-1"></i><span th:text="${job.workHours}">근무시간</span>
+                                                </span>
+                                                <span class="text-muted me-3" th:if="${job.salaryDescription}">
+                                                    <i class="fas fa-won-sign me-1"></i><span th:text="${job.salaryDescription}">급여</span>
+                                                </span>
+                                                <span class="text-muted" th:if="${job.experience}">
+                                                    <i class="fas fa-user-graduate me-1"></i><span th:text="${job.experience}">경력</span>
+                                                </span>
+                                            </div>
+                                            <p class="card-text mb-2" th:text="${#strings.abbreviate(job.content, 120)}">구인 내용...</p>
                                             <div class="d-flex flex-wrap gap-1">
-                                                <span class="badge bg-light text-dark" th:text="${job.position}">직종</span>
+                                                <span class="badge bg-light text-dark" th:if="${job.position}" th:text="${job.position}">직종</span>
+                                                <span class="badge bg-light text-dark" th:if="${job.education}" th:text="${job.education}">학력</span>
                                             </div>
                                         </div>
                                         <div class="col-md-4 text-end">
-                                            <p class="text-muted small mb-2">
-                                                <i class="fas fa-eye me-1"></i> <span th:text="${job.viewCount}">0</span>회 | 
-                                                <i class="fas fa-calendar me-1"></i> <span th:text="${#temporals.format(job.createdAt, 'MM-dd')}">날짜</span>
-                                            </p>
+                                            <div class="job-meta mb-3">
+                                                <small class="text-muted d-block">
+                                                    <i class="fas fa-eye me-1"></i>조회 <span th:text="${job.viewCount ?: 0}">0</span>회
+                                                </small>
+                                                <small class="text-muted d-block">
+                                                    <i class="fas fa-calendar me-1"></i><span th:text="${#temporals.format(job.createdAt, 'yyyy-MM-dd')}">날짜</span>
+                                                </small>
+                                                <small class="text-muted d-block" th:if="${job.endDate}">
+                                                    <i class="fas fa-clock me-1"></i>마감: <span th:text="${#temporals.format(job.endDate, 'MM-dd')}">마감일</span>
+                                                </small>
+                                            </div>
                                             <div class="d-grid gap-2">
                                                 <a th:href="@{/job/detail/{id}(id=${job.jobId})}" class="btn btn-outline-success btn-sm">
-                                                    상세보기
+                                                    <i class="fas fa-eye me-1"></i>상세보기
                                                 </a>
-                                                <button class="btn btn-success btn-sm">
-                                                    <i class="fas fa-paper-plane me-1"></i> 지원하기
+                                                <button class="btn btn-success btn-sm" th:if="${job.jobType == 'RECRUIT'}">
+                                                    <i class="fas fa-paper-plane me-1"></i>지원하기
+                                                </button>
+                                                <button class="btn btn-primary btn-sm" th:if="${job.jobType == 'SEARCH'}">
+                                                    <i class="fas fa-phone me-1"></i>연락하기
                                                 </button>
                                             </div>
                                         </div>
@@ -180,11 +303,40 @@
                         <!-- 구인구직이 없는 경우 -->
                         <div th:if="${#lists.isEmpty(jobList)}" class="text-center text-muted py-5">
                             <i class="fas fa-briefcase fa-3x mb-3"></i>
-                            <h5>등록된 구인정보가 없습니다</h5>
-                            <p>첫 번째 구인정보를 등록해보세요!</p>
-                            <a href="/job/write" class="btn btn-success">
-                                <i class="fas fa-plus me-1"></i> 구인등록하기
-                            </a>
+                            <h5>등록된 채용정보가 없습니다</h5>
+                            <p>첫 번째 채용정보를 등록해보세요!</p>
+                            
+                            <div class="btn-group mt-3" role="group">
+                                <!-- 시설회원(FACILITY) 또는 관리자(ADMIN)만 구인등록 가능 -->
+                                <a th:if="${session.loginMember != null and (session.loginMember.role == 'FACILITY' or session.loginMember.role == 'ADMIN')}" 
+                                   href="/job/write" class="btn btn-success">
+                                    <i class="fas fa-plus me-1"></i>구인등록하기
+                                </a>
+                                
+                                <!-- 일반사용자(USER)는 구직등록만 가능 -->
+                                <a th:if="${session.loginMember != null and session.loginMember.role == 'USER'}" 
+                                   href="/job/write" class="btn btn-info">
+                                    <i class="fas fa-plus me-1"></i>구직등록하기
+                                </a>
+                            </div>
+                            
+                            <!-- 비로그인 사용자 -->
+                            <div th:if="${session.loginMember == null}" class="mt-3">
+                                <div class="btn-group" role="group">
+                                    <a href="/member/login" class="btn btn-outline-success">
+                                        <i class="fas fa-sign-in-alt me-1"></i>로그인 후 구인등록
+                                    </a>
+                                    <a href="/member/login" class="btn btn-outline-info">
+                                        <i class="fas fa-sign-in-alt me-1"></i>로그인 후 구직등록
+                                    </a>
+                                </div>
+                                <div class="alert alert-light mt-3">
+                                    <i class="fas fa-info-circle me-2"></i>
+                                    <strong>채용 시스템 안내:</strong><br>
+                                    • <span class="text-success">시설회원</span>: 구인공고 등록 및 구직자 채용<br>
+                                    • <span class="text-info">일반사용자</span>: 구직공고 등록 및 구인공고 지원
+                                </div>
+                            </div>
                         </div>
                     </div>
 
@@ -231,4 +383,4 @@
     <!-- JavaScript -->
     <div th:replace="~{layout/footer :: scripts}"></div>
 </body>
-</html> 
+    <script>\n        // 검색 필터 초기화\n        function resetFilters() {\n            document.getElementById('keyword').value = '';\n            document.querySelectorAll('input[name=\"type\"]')[0].checked = true;\n            document.getElementById('position').value = '';\n            document.getElementById('region').value = '';\n            document.getElementById('workType').value = '';\n            document.getElementById('experience').value = '';\n            document.getElementById('searchForm').submit();\n        }\n        \n        // 정렬 순서 변경\n        function changeSortOrder(value) {\n            const url = new URL(window.location);\n            url.searchParams.set('sortOrder', value);\n            window.location.href = url.toString();\n        }\n        \n        // 인기 검색어 클릭\n        document.addEventListener('DOMContentLoaded', function() {\n            const popularKeywords = document.querySelectorAll('.badge.bg-light');\n            popularKeywords.forEach(function(keyword) {\n                keyword.style.cursor = 'pointer';\n                keyword.addEventListener('click', function() {\n                    document.getElementById('keyword').value = this.textContent;\n                    document.getElementById('searchForm').submit();\n                });\n            });\n            \n            // 엔터키로 검색\n            document.getElementById('keyword').addEventListener('keypress', function(e) {\n                if (e.key === 'Enter') {\n                    e.preventDefault();\n                    document.getElementById('searchForm').submit();\n                }\n            });\n        });\n    </script>\n    \n    <style>\n        /* 구인구직 카드 스타일 */\n        .job-info {\n            font-size: 0.9rem;\n        }\n        \n        .job-meta {\n            font-size: 0.8rem;\n        }\n        \n        .badge.bg-light {\n            cursor: pointer;\n            transition: all 0.2s;\n        }\n        \n        .badge.bg-light:hover {\n            background-color: #e9ecef !important;\n            transform: translateY(-1px);\n        }\n        \n        .card:hover {\n            box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15) !important;\n            transform: translateY(-2px);\n            transition: all 0.3s;\n        }\n        \n        .btn-group .btn-check:checked + .btn {\n            background-color: var(--bs-primary);\n            border-color: var(--bs-primary);\n            color: white;\n        }\n    </style>\n</html> 

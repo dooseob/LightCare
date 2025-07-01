@@ -1,50 +1,142 @@
 <!DOCTYPE html>
-<html lang="ko">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>구인등록 - 라이트케어</title>
-    <link href="/css/common.css" rel="stylesheet">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+<html xmlns:th="http://www.thymeleaf.org" lang="ko">
+<head th:replace="~{layout/header :: header}">
+    <title>구인구직 등록 - CareLink</title>
 </head>
-<body>
-    <div th:replace="~{layout/header :: header}"></div>
+<body class="d-flex flex-column min-vh-100 pt-5">
+    <!-- 네비게이션 바 -->
+    <nav th:replace="~{layout/header :: navbar}"></nav>
+    
+    <!-- 메시지 표시 -->
+    <div th:replace="~{layout/header :: messages}"></div>
 
-    <div class="container mt-4">
-        <h2><i class="fas fa-plus"></i> 구인 등록</h2>
+    <!-- 메인 콘텐츠 -->
+    <main class="flex-grow-1">
+        <div class="container mt-4">
+            <!-- 브레드크럼 -->
+            <nav aria-label="breadcrumb" class="mb-4">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="/">홈</a></li>
+                    <li class="breadcrumb-item"><a href="/job">구인구직</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">
+                        <span th:if="${session.loginMember != null and session.loginMember.role == 'FACILITY'}">구인 등록</span>
+                        <span th:if="${session.loginMember != null and session.loginMember.role == 'USER'}">구직 등록</span>
+                        <span th:if="${session.loginMember != null and session.loginMember.role == 'ADMIN'}">구인구직 등록</span>
+                    </li>
+                </ol>
+            </nav>
+        
+        <div class="d-flex align-items-center mb-4">
+            <h2 class="me-3">
+                <i class="fas fa-plus me-2"></i>
+                <span th:if="${session.loginMember != null and session.loginMember.role == 'FACILITY'}" class="text-success">구인 등록</span>
+                <span th:if="${session.loginMember != null and session.loginMember.role == 'USER'}" class="text-info">구직 등록</span>
+                <span th:if="${session.loginMember != null and session.loginMember.role == 'ADMIN'}" class="text-primary">구인구직 등록</span>
+            </h2>
+            
+            <!-- 관리자의 경우 구인/구직 선택 가능 -->
+            <div th:if="${session.loginMember != null and session.loginMember.role == 'ADMIN'}" class="btn-group" role="group">
+                <input type="radio" class="btn-check" name="postingType" id="postingTypeRecruit" value="RECRUIT" checked>
+                <label class="btn btn-outline-success" for="postingTypeRecruit">구인글</label>
+                
+                <input type="radio" class="btn-check" name="postingType" id="postingTypeSearch" value="SEARCH">
+                <label class="btn btn-outline-info" for="postingTypeSearch">구직글</label>
+            </div>
+        </div>
         
         <form th:action="@{/job/write}" method="post" th:object="${jobDTO}">
+            <!-- 숨겨진 jobType 필드 (역할에 따라 자동 설정) -->
+            <input type="hidden" th:field="*{jobType}" id="hiddenJobType" 
+                   th:value="${session.loginMember.role == 'FACILITY' ? 'RECRUIT' : (session.loginMember.role == 'USER' ? 'SEARCH' : 'RECRUIT')}">
+            
             <div class="row">
                 <div class="col-md-8">
                     <div class="card">
                         <div class="card-body">
                             <div class="mb-3">
                                 <label class="form-label">제목 *</label>
-                                <input type="text" class="form-control" th:field="*{title}" required>
+                                <input type="text" class="form-control" th:field="*{title}" required
+                                       th:placeholder="${session.loginMember.role == 'FACILITY' ? '구인공고 제목을 입력하세요' : (session.loginMember.role == 'USER' ? '구직공고 제목을 입력하세요' : '제목을 입력하세요')}">
                             </div>
                             
                             <div class="row">
-                                <div class="col-md-6 mb-3">
-                                    <label class="form-label">회사명 *</label>
-                                    <input type="text" class="form-control" th:field="*{facilityName}" required>
+                                <!-- 구인글(시설회원): 회사명 입력 -->
+                                <div class="col-md-6 mb-3" id="facilityNameField" 
+                                     th:style="${session.loginMember.role == 'USER' ? 'display: none;' : ''}">
+                                    <label class="form-label">
+                                        <span class="facility-mode">회사명 *</span>
+                                        <span class="search-mode" style="display: none;">희망 근무지 *</span>
+                                    </label>
+                                    <input type="text" class="form-control" th:field="*{facilityName}" 
+                                           placeholder="회사명을 입력하세요" id="facilityNameInput">
                                 </div>
+                                
+                                <!-- 구직글(일반사용자): 희망 근무지 입력 -->
+                                <div class="col-md-6 mb-3" id="workLocationField"
+                                     th:style="${session.loginMember.role == 'FACILITY' ? 'display: none;' : ''}">
+                                    <label class="form-label">희망 근무지 *</label>
+                                    <input type="text" class="form-control" th:field="*{workLocation}" 
+                                           placeholder="희망 근무지를 입력하세요">
+                                </div>
+                                
                                 <div class="col-md-6 mb-3">
                                     <label class="form-label">직종 *</label>
-                                    <select class="form-select" th:field="*{jobType}" required>
+                                    <select class="form-select" th:field="*{position}" required>
                                         <option value="">선택해주세요</option>
-                                        <option value="nurse">간병인</option>
-                                        <option value="caregiver">요양보호사</option>
-                                        <option value="social_worker">사회복지사</option>
-                                        <option value="office">사무직</option>
+                                        <option value="간병인">간병인</option>
+                                        <option value="요양보호사">요양보호사</option>
+                                        <option value="사회복지사">사회복지사</option>
+                                        <option value="물리치료사">물리치료사</option>
+                                        <option value="간호사">간호사</option>
+                                        <option value="영양사">영양사</option>
+                                        <option value="사무직">사무직</option>
+                                        <option value="조리원">조리원</option>
+                                        <option value="운전원">운전원</option>
+                                        <option value="기타">기타</option>
                                     </select>
                                 </div>
                             </div>
                             
                             <div class="mb-3">
-                                <label class="form-label">업무 내용 *</label>
+                                <label class="form-label">
+                                    <span class="facility-mode">업무 내용 *</span>
+                                    <span class="search-mode" style="display: none;">자기소개 및 경력사항 *</span>
+                                </label>
                                 <textarea class="form-control" rows="10" th:field="*{content}" required
-                                          placeholder="업무 내용을 상세히 입력해주세요"></textarea>
+                                          id="contentTextarea"></textarea>
+                            </div>
+                            
+                            <!-- 구직글 전용 필드들 -->
+                            <div id="jobSeekerFields" th:style="${session.loginMember.role == 'FACILITY' ? 'display: none;' : ''}">
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label">경력</label>
+                                        <select class="form-select" th:field="*{experience}">
+                                            <option value="">선택해주세요</option>
+                                            <option value="신입">신입</option>
+                                            <option value="1년 이상">1년 이상</option>
+                                            <option value="3년 이상">3년 이상</option>
+                                            <option value="5년 이상">5년 이상</option>
+                                            <option value="10년 이상">10년 이상</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label">학력</label>
+                                        <select class="form-select" th:field="*{education}">
+                                            <option value="">선택해주세요</option>
+                                            <option value="중학교 졸업">중학교 졸업</option>
+                                            <option value="고등학교 졸업">고등학교 졸업</option>
+                                            <option value="전문대학 졸업">전문대학 졸업</option>
+                                            <option value="대학교 졸업">대학교 졸업</option>
+                                            <option value="대학원 졸업">대학원 졸업</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">보유 자격증</label>
+                                    <textarea class="form-control" rows="3" th:field="*{qualifications}"
+                                              placeholder="보유하신 자격증을 입력해주세요 (예: 요양보호사 1급, 간병인 자격증 등)"></textarea>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -53,45 +145,231 @@
                 <div class="col-md-4">
                     <div class="card">
                         <div class="card-body">
-
-                            <div class="mb-3">
-                                <label class="form-label">급여 *</label>
-                                <input type="number" class="form-control" th:field="*{salaryDescription}" required>
+                            <!-- 구인글: 급여 정보 -->
+                            <div id="recruitFields" th:style="${session.loginMember.role == 'USER' ? 'display: none;' : ''}">
+                                <div class="mb-3">
+                                    <label class="form-label">급여 유형 *</label>
+                                    <select class="form-select" th:field="*{salaryType}">
+                                        <option value="">선택해주세요</option>
+                                        <option value="HOURLY">시급</option>
+                                        <option value="MONTHLY">월급</option>
+                                        <option value="ANNUAL">연봉</option>
+                                    </select>
+                                </div>
+                                
+                                <div class="row">
+                                    <div class="col-6 mb-3">
+                                        <label class="form-label">최소 급여</label>
+                                        <input type="number" class="form-control" th:field="*{salaryMin}" 
+                                               placeholder="최소 급여">
+                                    </div>
+                                    <div class="col-6 mb-3">
+                                        <label class="form-label">최대 급여</label>
+                                        <input type="number" class="form-control" th:field="*{salaryMax}" 
+                                               placeholder="최대 급여">
+                                    </div>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label class="form-label">급여 설명</label>
+                                    <input type="text" class="form-control" th:field="*{salaryDescription}" 
+                                           placeholder="예: 시급 10,000원, 야간수당 별도">
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label class="form-label">모집인원</label>
+                                    <input type="number" class="form-control" th:field="*{recruitCount}" 
+                                           placeholder="모집인원" min="1" value="1">
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label class="form-label">근무시간</label>
+                                    <input type="text" class="form-control" th:field="*{workHours}" 
+                                           placeholder="예: 09:00~18:00, 주 5일">
+                                </div>
+                            </div>
+                            
+                            <!-- 구직글: 희망 조건 -->
+                            <div id="searchFields" th:style="${session.loginMember.role == 'FACILITY' ? 'display: none;' : ''}">
+                                <div class="mb-3">
+                                    <label class="form-label">희망 급여 유형</label>
+                                    <select class="form-select" th:field="*{salaryType}">
+                                        <option value="">상관없음</option>
+                                        <option value="HOURLY">시급</option>
+                                        <option value="MONTHLY">월급</option>
+                                        <option value="ANNUAL">연봉</option>
+                                    </select>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label class="form-label">희망 급여</label>
+                                    <input type="text" class="form-control" th:field="*{salaryDescription}" 
+                                           placeholder="예: 시급 12,000원 이상">
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label class="form-label">희망 근무시간</label>
+                                    <input type="text" class="form-control" th:field="*{workHours}" 
+                                           placeholder="예: 주간근무 선호, 야간 가능">
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label class="form-label">연락처 *</label>
+                                    <input type="text" class="form-control" th:field="*{contactPhone}" 
+                                           placeholder="연락 가능한 전화번호" required>
+                                </div>
                             </div>
                             
                             <div class="mb-3">
                                 <label class="form-label">고용형태 *</label>
                                 <select class="form-select" th:field="*{workType}" required>
                                     <option value="">선택해주세요</option>
-                                    <option value="full_time">정규직</option>
-                                    <option value="part_time">계약직</option>
-                                    <option value="temp">임시직</option>
+                                    <option value="FULL_TIME">정규직</option>
+                                    <option value="PART_TIME">파트타임</option>
+                                    <option value="TEMPORARY">임시직</option>
                                 </select>
                             </div>
 
-                            <div class="form-group">
-                                <label for="status">게시글 상태</label>
-                                <select class="form-control" id="status" th:field="*{status}" required>
+                            <div class="mb-3">
+                                <label for="status" class="form-label">게시글 상태 *</label>
+                                <select class="form-select" id="status" th:field="*{status}" required>
                                     <option value="">상태 선택</option>
                                     <option value="ACTIVE">활성</option>
                                     <option value="CLOSED">마감</option>
                                     <option value="DRAFT">임시저장</option>
                                 </select>
-                                <div class="invalid-feedback" th:errors="*{status}"></div>
                             </div>
 
-                            <div class="d-grid">
+                            <div class="d-grid gap-2">
                                 <button type="submit" class="btn btn-primary">
-                                    <i class="fas fa-save"></i> 등록하기
+                                    <i class="fas fa-save me-1"></i>
+                                    <span class="facility-mode">구인공고 등록</span>
+                                    <span class="search-mode" style="display: none;">구직공고 등록</span>
                                 </button>
+                                <a href="/job" class="btn btn-secondary">
+                                    <i class="fas fa-arrow-left me-1"></i>취소
+                                </a>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
         </form>
-    </div>
+        </div>
+    </main>
 
-    <div th:replace="~{layout/footer :: footer}"></div>
+    <!-- 푸터 -->
+    <footer th:replace="~{layout/footer :: footer}"></footer>
+    
+    <!-- JavaScript -->
+    <div th:replace="~{layout/footer :: scripts}"></div>
+    
+    <!-- 구인구직 작성 페이지 전용 JavaScript -->
+    <script src="/js/job-edit.js"></script>
+    
+    <script>
+        // 페이지 로드 시 초기 설정
+        document.addEventListener('DOMContentLoaded', function() {
+            const userRole = '[[${session.loginMember?.role}]]';
+            
+            // 초기 상태 설정
+            if (userRole === 'USER') {
+                switchToSearchMode();
+            } else if (userRole === 'FACILITY') {
+                switchToRecruitMode();
+            }
+            
+            // 관리자의 경우 라디오 버튼 이벤트 리스너 추가
+            if (userRole === 'ADMIN') {
+                const recruitRadio = document.getElementById('postingTypeRecruit');
+                const searchRadio = document.getElementById('postingTypeSearch');
+                
+                if (recruitRadio && searchRadio) {
+                    recruitRadio.addEventListener('change', function() {
+                        if (this.checked) {
+                            switchToRecruitMode();
+                        }
+                    });
+                    
+                    searchRadio.addEventListener('change', function() {
+                        if (this.checked) {
+                            switchToSearchMode();
+                        }
+                    });
+                }
+            }
+            
+            // 플레이스홀더 설정
+            updatePlaceholders();
+        });
+        
+        // 구인 모드로 전환
+        function switchToRecruitMode() {
+            // 숨겨진 jobType 필드 업데이트
+            document.getElementById('hiddenJobType').value = 'RECRUIT';
+            
+            // 필드 표시/숨김
+            document.getElementById('facilityNameField').style.display = 'block';
+            document.getElementById('workLocationField').style.display = 'none';
+            document.getElementById('jobSeekerFields').style.display = 'none';
+            document.getElementById('recruitFields').style.display = 'block';
+            document.getElementById('searchFields').style.display = 'none';
+            
+            // 라벨 표시
+            document.querySelectorAll('.facility-mode').forEach(el => el.style.display = 'inline');
+            document.querySelectorAll('.search-mode').forEach(el => el.style.display = 'none');
+            
+            // 필수 필드 설정
+            const facilityNameInput = document.getElementById('facilityNameInput');
+            if (facilityNameInput) {
+                facilityNameInput.required = true;
+            }
+            
+            const contactPhoneInput = document.querySelector('[name="contactPhone"]');
+            if (contactPhoneInput) {
+                contactPhoneInput.required = false;
+            }
+        }
+        
+        // 구직 모드로 전환
+        function switchToSearchMode() {
+            // 숨겨진 jobType 필드 업데이트
+            document.getElementById('hiddenJobType').value = 'SEARCH';
+            
+            // 필드 표시/숨김
+            document.getElementById('facilityNameField').style.display = 'none';
+            document.getElementById('workLocationField').style.display = 'block';
+            document.getElementById('jobSeekerFields').style.display = 'block';
+            document.getElementById('recruitFields').style.display = 'none';
+            document.getElementById('searchFields').style.display = 'block';
+            
+            // 라벨 표시
+            document.querySelectorAll('.facility-mode').forEach(el => el.style.display = 'none');
+            document.querySelectorAll('.search-mode').forEach(el => el.style.display = 'inline');
+            
+            // 필수 필드 설정
+            const facilityNameInput = document.getElementById('facilityNameInput');
+            if (facilityNameInput) {
+                facilityNameInput.required = false;
+            }
+            
+            const contactPhoneInput = document.querySelector('[name="contactPhone"]');
+            if (contactPhoneInput) {
+                contactPhoneInput.required = true;
+            }
+        }
+        
+        // 플레이스홀더 업데이트
+        function updatePlaceholders() {
+            const currentMode = document.getElementById('hiddenJobType').value;
+            const contentTextarea = document.getElementById('contentTextarea');
+            
+            if (currentMode === 'RECRUIT') {
+                contentTextarea.placeholder = '• 담당업무\n• 자격요건\n• 우대사항\n• 근무조건\n• 복리후생 등을 상세히 입력해주세요';
+            } else {
+                contentTextarea.placeholder = '• 경력사항\n• 자기소개\n• 보유 기술/자격증\n• 희망 근무조건\n• 특이사항 등을 상세히 입력해주세요';
+            }
+        }
+    </script>
 </body>
 </html> 

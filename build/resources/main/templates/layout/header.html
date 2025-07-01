@@ -60,8 +60,13 @@
                         <ul class="dropdown-menu">
                             <li><a class="dropdown-item" href="/job?type=recruit">구인 정보</a></li>
                             <li><a class="dropdown-item" href="/job?type=search">구직 정보</a></li>
-                            <li><hr class="dropdown-divider"></li>
-                            <li><a class="dropdown-item" href="/job/write">채용공고 작성</a></li>
+                            <!-- 시설회원 또는 관리자만 채용공고 작성 메뉴 표시 -->
+                            <li th:if="${session.loginMember != null and (session.loginMember.role == 'FACILITY' or session.loginMember.role == 'ADMIN')}"><hr class="dropdown-divider"></li>
+                            <li th:if="${session.loginMember != null and (session.loginMember.role == 'FACILITY' or session.loginMember.role == 'ADMIN')}">
+                                <a class="dropdown-item" href="/job/write">
+                                    <i class="fas fa-plus me-1"></i>채용공고 작성
+                                </a>
+                            </li>
                         </ul>
                     </li>
                     

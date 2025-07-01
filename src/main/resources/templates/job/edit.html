@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="ko">
+<head th:replace="~{layout/header :: header}">
+    <title>구인공고 수정 - CareLink</title>
+</head>
+<body class="d-flex flex-column min-vh-100 pt-5">
+    <!-- 네비게이션 바 -->
+    <nav th:replace="~{layout/header :: navbar}"></nav>
+    
+    <!-- 메시지 표시 -->
+    <div th:replace="~{layout/header :: messages}"></div>
+
+    <!-- 메인 콘텐츠 -->
+    <main class="flex-grow-1">
+        <div class="container mt-4">
+            <!-- 브레드크럼 -->
+            <nav aria-label="breadcrumb" class="mb-4">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="/">홈</a></li>
+                    <li class="breadcrumb-item"><a href="/job">구인구직</a></li>
+                    <li class="breadcrumb-item"><a th:href="@{/job/detail/{id}(id=${jobDTO.jobId})}">상세보기</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">수정</li>
+                </ol>
+            </nav>
+            
+            <h2><i class="fas fa-edit text-primary me-2"></i> 구인공고 수정</h2>
+            
+            <form th:action="@{/job/edit/{id}(id=${jobDTO.jobId})}" method="post" th:object="${jobDTO}">
+                <div class="row">
+                    <div class="col-md-8">
+                        <div class="card">
+                            <div class="card-body">
+                                <div class="mb-3">
+                                    <label class="form-label">제목 *</label>
+                                    <input type="text" class="form-control" th:field="*{title}" required>
+                                </div>
+                                
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label">회사명 *</label>
+                                        <input type="text" class="form-control" th:field="*{facilityName}" required>
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label">직종 *</label>
+                                        <select class="form-select" th:field="*{jobType}" required>
+                                            <option value="">선택해주세요</option>
+                                            <option value="nurse">간병인</option>
+                                            <option value="caregiver">요양보호사</option>
+                                            <option value="social_worker">사회복지사</option>
+                                            <option value="office">사무직</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label class="form-label">업무 내용 *</label>
+                                    <textarea class="form-control" rows="10" th:field="*{content}" required
+                                              placeholder="업무 내용을 상세히 입력해주세요"></textarea>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-4">
+                        <div class="card">
+                            <div class="card-body">
+                                <div class="mb-3">
+                                    <label class="form-label">급여 *</label>
+                                    <input type="number" class="form-control" th:field="*{salaryDescription}" required>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label class="form-label">고용형태 *</label>
+                                    <select class="form-select" th:field="*{workType}" required>
+                                        <option value="">선택해주세요</option>
+                                        <option value="full_time">정규직</option>
+                                        <option value="part_time">계약직</option>
+                                        <option value="temp">임시직</option>
+                                    </select>
+                                </div>
+
+                                <div class="form-group mb-3">
+                                    <label for="status">게시글 상태</label>
+                                    <select class="form-control" id="status" th:field="*{status}" required>
+                                        <option value="">상태 선택</option>
+                                        <option value="ACTIVE">활성</option>
+                                        <option value="CLOSED">마감</option>
+                                        <option value="DRAFT">임시저장</option>
+                                    </select>
+                                </div>
+
+                                <div class="d-grid gap-2">
+                                    <button type="submit" class="btn btn-primary">
+                                        <i class="fas fa-save me-1"></i> 수정 완료
+                                    </button>
+                                    <a th:href="@{/job/detail/{id}(id=${jobDTO.jobId})}" class="btn btn-secondary">
+                                        <i class="fas fa-arrow-left me-1"></i> 취소
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </main>
+
+    <!-- 푸터 -->
+    <footer th:replace="~{layout/footer :: footer}"></footer>
+    
+    <!-- JavaScript -->
+    <div th:replace="~{layout/footer :: scripts}"></div>
+    
+    <!-- 구인구직 수정 페이지 전용 JavaScript -->
+    <script src="/js/job-edit.js"></script>
+</body>
+</html>

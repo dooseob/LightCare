@@ -13,6 +13,14 @@
     <!-- 메인 콘텐츠 -->
     <main class="flex-grow-1 py-5">
         <div class="container">
+            <!-- 브레드크럼 -->
+            <nav aria-label="breadcrumb" class="mb-4">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="/">홈</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">로그인</li>
+                </ol>
+            </nav>
+            
             <div class="row justify-content-center">
                 <div class="col-md-6 col-lg-4">
                     <!-- 로그인 카드 -->
@@ -126,9 +134,9 @@
                                     </div>
                                     <div class="col-6">
                                         <small>
-                                            <strong>사용자3</strong><br>
-                                            ID: user03<br>
-                                            PW: user123
+                                            <strong>시설관리자</strong><br>
+                                            ID: facility01<br>
+                                            PW: facility123
                                         </small>
                                     </div>
                                 </div>
@@ -181,9 +189,9 @@
                 } else if (text.includes('user02')) {
                     $('#userId').val('user02');
                     $('#password').val('user123');
-                } else if (text.includes('user03')) {
-                    $('#userId').val('user03');
-                    $('#password').val('user123');
+                } else if (text.includes('facility01')) {
+                    $('#userId').val('facility01');
+                    $('#password').val('facility123');
                 }
             });
         });

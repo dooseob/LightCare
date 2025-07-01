@@ -9,6 +9,14 @@
 <div th:replace="~{layout/header :: messages}"></div>
 
 <div class="container mt-4">
+    <!-- 브레드크럼 -->
+    <nav aria-label="breadcrumb" class="mb-4">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="/">홈</a></li>
+            <li class="breadcrumb-item"><a href="/facility/search">시설 찾기</a></li>
+            <li class="breadcrumb-item active" aria-current="page">시설 상세</li>
+        </ol>
+    </nav>
     <div class="card mb-4">
         <div class="card-body">
             <div class="row">
@@ -222,6 +230,9 @@
 <div th:replace="~{layout/footer :: footer}"></div>
 <div th:replace="~{layout/footer :: scripts}"></div>
 
+<!-- 카카오맵 API -->
+<script type="text/javascript" src="//dapi.kakao.com/v2/maps/sdk.js?appkey=3c4987cb946a721903add5fc474941a3&libraries=services,clusterer,drawing"></script>
+
 <script th:inline="javascript">
     /*<![CDATA[*/
     let map;
@@ -237,33 +248,54 @@
         phone: /*[[${facility.phone}]]*/ ''
     };
 
-    // 카카오맵 API가 로드되면 실행될 콜백 함수
-    kakao.maps.load(function() {
+    $(document).ready(function() {
         // 지도 초기화
-        initKakaoMap('facilityMap');
+        const mapContainer = document.getElementById('facilityMap');
+        let mapCenter = new kakao.maps.LatLng(37.566826, 126.9786567); // 기본값: 서울 시청
+        
+        // 시설 위치가 있다면 해당 위치를 중심으로 설정
+        if (facilityData.latitude && facilityData.longitude) {
+            mapCenter = new kakao.maps.LatLng(facilityData.latitude, facilityData.longitude);
+        }
+        
+        const mapOption = {
+            center: mapCenter,
+            level: 3 // 상세 페이지이므로 더 확대해서 보여준
+        };
+        map = new kakao.maps.Map(mapContainer, mapOption);
         
         // 시설 위치에 마커 추가
         if (facilityData.latitude && facilityData.longitude) {
-            const content = `
-                <div style="padding:5px;font-size:12px;">
-                    <strong>${facilityData.name}</strong><br>
-                    주소: ${facilityData.address}<br>
-                    전화: ${facilityData.phone}
+            const position = new kakao.maps.LatLng(facilityData.latitude, facilityData.longitude);
+            
+            // 마커 생성
+            marker = new kakao.maps.Marker({
+                position: position,
+                map: map
+            });
+            
+            // 인포윈도우 생성
+            const infoWindowContent = `
+                <div class="p-2" style="width:250px;">
+                    <h6 class="mb-1">${facilityData.name}</h6>
+                    <p class="mb-1 small">${facilityData.address}</p>
+                    <p class="mb-0 small">
+                        <i class="fas fa-phone me-1"></i>${facilityData.phone}
+                    </p>
                 </div>
             `;
             
-            const marker = addMarker(
-                facilityData.latitude,
-                facilityData.longitude,
-                facilityData.name,
-                content
-            );
+            infowindow = new kakao.maps.InfoWindow({
+                content: infoWindowContent
+            });
             
-            // 마커 위치로 지도 중심 이동
-            if (marker && map) {
-                const position = new kakao.maps.LatLng(facilityData.latitude, facilityData.longitude);
-                map.setCenter(position);
-            }
+            // 마커 클릭 이벤트
+            kakao.maps.event.addListener(marker, 'click', function() {
+                infowindow.open(map, marker);
+            });
+            
+            // 초기에 인포윈도우 열기
+            infowindow.open(map, marker);
         }
     });
 
@@ -282,10 +314,15 @@
 
     // 지도에서 보기 버튼 클릭 이벤트 핸들러
     function showOnMap() {
-        if (map) {
+        if (map && facilityData.latitude && facilityData.longitude) {
             const position = new kakao.maps.LatLng(facilityData.latitude, facilityData.longitude);
             map.setCenter(position);
-            map.setLevel(3); // 지도 확대 레벨 설정
+            map.setLevel(2); // 더 확대해서 보여준
+            
+            // 인포윈도우 다시 열기
+            if (infowindow && marker) {
+                infowindow.open(map, marker);
+            }
         }
     }
 
