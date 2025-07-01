@@ -54,10 +54,15 @@ public class FacilityController {
         log.info("시설 검색 페이지 접속 - facilityName: {}, region: {}, facilityType: {}, gradeRating: {}",
                 facilityName, region, facilityType, gradeRating);
 
+        // 빈 문자열을 null로 변환
+        facilityName = (facilityName != null && facilityName.trim().isEmpty()) ? null : facilityName;
+        region = (region != null && region.trim().isEmpty()) ? null : region;
+        facilityType = (facilityType != null && facilityType.trim().isEmpty()) ? null : facilityType;
+
         FacilityDTO searchCondition = new FacilityDTO();
-        searchCondition.setFacilityName(facilityName);
-        searchCondition.setAddress(region);
+        searchCondition.setFacilityName(facilityName != null ? facilityName.trim() : null);
         searchCondition.setFacilityType(facilityType);
+        searchCondition.setAddress(region); // 지역 검색용
 
         // gradeRating 기능은 현재 데이터베이스 스키마에 없으므로 비활성화
         // try {

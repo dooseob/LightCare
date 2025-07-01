@@ -26,7 +26,13 @@ public class FacilityService {
      * 시설 검색 서비스
      */
     public List<FacilityDTO> searchFacilities(FacilityDTO searchDTO) {
-        return facilityMapper.searchFacilities(searchDTO);
+        log.info("시설 검색 서비스 호출 - facilityName: {}, address: {}, facilityType: {}", 
+                searchDTO.getFacilityName(), searchDTO.getAddress(), searchDTO.getFacilityType());
+        
+        List<FacilityDTO> results = facilityMapper.searchFacilities(searchDTO);
+        log.info("시설 검색 결과 - 총 {}개 시설 발견", results.size());
+        
+        return results;
     }
 
     /**

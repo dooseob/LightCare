@@ -41,8 +41,8 @@
             <if test="facilityType != null and facilityType != ''">
                 AND f.facility_type = #{facilityType}
             </if>
-            <if test="region != null and region != ''">
-                AND f.address LIKE CONCAT(#{region}, '%')
+            <if test="address != null and address != ''">
+                AND f.address LIKE CONCAT(#{address}, '%')
             </if>
 
             <if test="swLat != null and swLng != null and neLat != null and neLng != null">

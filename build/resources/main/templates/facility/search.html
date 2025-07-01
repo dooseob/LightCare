@@ -160,8 +160,15 @@
 
     $(document).ready(function() {
         const mapContainer = document.getElementById('map');
+        let mapCenter = new kakao.maps.LatLng(37.566826, 126.9786567); // 기본값: 서울 시청
+        
+        // 시설 목록이 있다면 첫 번째 시설을 기본 중심으로 설정
+        if (facilities.length > 0) {
+            mapCenter = new kakao.maps.LatLng(facilities[0].latitude, facilities[0].longitude);
+        }
+        
         const mapOption = {
-            center: new kakao.maps.LatLng(37.566826, 126.9786567), // 서울 시청
+            center: mapCenter,
             level: 8
         };
         const map = new kakao.maps.Map(mapContainer, mapOption);
@@ -187,60 +194,96 @@
             }
         );
 
-        // 시설 목록 항목 클릭 시 상세보기 페이지로 이동
+        let currentMarker = null;
+        let currentInfoWindow = null;
+
+        // 시설 목록 항목 클릭 시 지도 중심 이동 및 마커 표시
         $('.facility-item').click(function(e) {
             // 상세보기 버튼을 직접 클릭한 경우는 기본 동작 유지
             if ($(e.target).closest('.btn').length > 0) {
                 return;
             }
             
-            // 시설 ID를 추출하여 상세보기 페이지로 이동
-            const facilityId = $(this).find('a[href*="/facility/detail/"]').attr('href').split('/').pop();
-            if (facilityId) {
-                window.location.href = '/facility/detail/' + facilityId;
+            const lat = $(this).data('lat');
+            const lng = $(this).data('lng');
+            if (lat && lng) {
+                const position = new kakao.maps.LatLng(lat, lng);
+                map.setCenter(position);
+                map.setLevel(3); // 확대하여 해당 시설 위치 상세히 보기
+                
+                // 기존 마커 제거
+                if (currentMarker) {
+                    currentMarker.setMap(null);
+                }
+                if (currentInfoWindow) {
+                    currentInfoWindow.close();
+                }
+                
+                // 클릭된 시설 정보 찾기
+                const facilityData = facilities.find(f => 
+                    parseFloat(f.latitude) === lat && parseFloat(f.longitude) === lng
+                );
+                
+                if (facilityData) {
+                    // 새 마커 생성
+                    currentMarker = new kakao.maps.Marker({
+                        position: position,
+                        map: map
+                    });
+                    
+                    // 새 인포윈도우 생성
+                    currentInfoWindow = new kakao.maps.InfoWindow({
+                        content: `
+                            <div class="p-2" style="width:250px;">
+                                <h6 class="mb-1">${facilityData.facilityName}</h6>
+                                <p class="mb-1 small">${facilityData.address}</p>
+                                <p class="mb-0 small">
+                                    평점: ${facilityData.averageRating}/5.0
+                                </p>
+                                <a href="/facility/detail/${facilityData.facilityId}"
+                                   class="btn btn-sm btn-info mt-2 w-100">상세보기</a>
+                            </div>
+                        `
+                    });
+                    
+                    // 마커 클릭 이벤트
+                    kakao.maps.event.addListener(currentMarker, 'click', function() {
+                        currentInfoWindow.open(map, currentMarker);
+                    });
+                    
+                    // 인포윈도우 자동 열기
+                    currentInfoWindow.open(map, currentMarker);
+                }
             }
         });
 
+        // 페이지 로드 시 첫 번째 시설에 마커 표시
         if (facilities.length > 0) {
-            const bounds = new kakao.maps.LatLngBounds();
-            facilities.forEach(facility => {
-                const position = new kakao.maps.LatLng(facility.latitude, facility.longitude);
-                const marker = new kakao.maps.Marker({
-                    position: position,
-                    map: map
-                });
-                marker.facilityId = facility.facilityId;
-
-                // 인포윈도우 생성
-                const infowindow = new kakao.maps.InfoWindow({
-                    content: `
-                        <div class="p-2" style="width:250px;">
-                            <h6 class="mb-1">${facility.facilityName}</h6>
-                            <p class="mb-1 small">${facility.address}</p>
-                            <p class="mb-0 small">
-                                평점: ${facility.averageRating}/5.0
-                            </p>
-                            <a href="/facility/detail/${facility.facilityId}"
-                               class="btn btn-sm btn-info mt-2 w-100">상세보기</a>
-                        </div>
-                    `
-                });
-
-                // 마커 클릭 이벤트
-                kakao.maps.event.addListener(marker, 'click', function() {
-                    infowindows.forEach(iw => iw.close());
-                    infowindow.open(map, marker);
-                });
-
-                markers.push(marker);
-                infowindows.push(infowindow);
-                bounds.extend(position);
+            const firstFacility = facilities[0];
+            const position = new kakao.maps.LatLng(firstFacility.latitude, firstFacility.longitude);
+            
+            currentMarker = new kakao.maps.Marker({
+                position: position,
+                map: map
             });
-
-            // 모든 마커가 보이도록 지도 범위 조정
-            if (facilities.length > 0) {
-                map.setBounds(bounds);
-            }
+            
+            currentInfoWindow = new kakao.maps.InfoWindow({
+                content: `
+                    <div class="p-2" style="width:250px;">
+                        <h6 class="mb-1">${firstFacility.facilityName}</h6>
+                        <p class="mb-1 small">${firstFacility.address}</p>
+                        <p class="mb-0 small">
+                            평점: ${firstFacility.averageRating}/5.0
+                        </p>
+                        <a href="/facility/detail/${firstFacility.facilityId}"
+                           class="btn btn-sm btn-info mt-2 w-100">상세보기</a>
+                    </div>
+                `
+            });
+            
+            kakao.maps.event.addListener(currentMarker, 'click', function() {
+                currentInfoWindow.open(map, currentMarker);
+            });
         }
     });
     /*]]>*/
