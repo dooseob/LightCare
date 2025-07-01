@@ -10,9 +10,12 @@ bin/ # Eclipse build output
 out/ # IntelliJ build output
 
 # Gradle
-.gradle/
+.gradle
+**/build/
+!src/**/build/
+gradle-app.setting
 !gradle-wrapper.jar
-!gradle-wrapper.properties
+.gradletasknamecache
 
 # IDE 및 환경 설정 파일
 # IntelliJ IDEA
