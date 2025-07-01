@@ -1,12 +1,33 @@
+# 빌드 결과물 (Build Artifacts)
+/build/
+/target/
+*.jar
+*.war
+*.zip
+*.tar.gz
+*.class
+bin/ # Eclipse 빌드 출력 폴더
+out/ # IntelliJ 빌드 출력 폴더
+
 # Gradle 관련 파일 및 폴더
 .gradle/
-build/
+!gradle-wrapper.jar      # Gradle Wrapper 파일은 포함 (보통 git에 포함됨)
+!gradle-wrapper.properties # Gradle Wrapper 설정 파일 포함
 
-# IDE (통합 개발 환경) 관련 파일 및 폴더 (예: IntelliJ IDEA)
+# IDE (통합 개발 환경) 관련 파일 및 폴더
+# IntelliJ IDEA
 .idea/
 *.iml
 *.ipr
 *.iws
+
+# Eclipse
+.classpath
+.project
+.settings/
+
+# VS Code
+.vscode/
 
 # 운영체제 관련 임시 파일
 .DS_Store # macOS
@@ -14,3 +35,10 @@ Thumbs.db # Windows
 
 # 로그 파일
 *.log
+logs/ # logs 디렉토리 전체
+*.lock # 락 파일 포함 (예: Gradle lock, DB lock 파일 등)
+
+# 기타 임시 파일
+*.out
+*.bak
+*.swp
