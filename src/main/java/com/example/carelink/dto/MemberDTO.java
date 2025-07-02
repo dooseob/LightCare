@@ -1,6 +1,7 @@
 package com.example.carelink.dto;
 
 import com.example.carelink.common.BaseDTO;
+import com.example.carelink.validation.groups.OnFacilityJoin;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import org.springframework.web.multipart.MultipartFile; // MultipartFile import 유지
@@ -36,9 +37,10 @@ public class MemberDTO extends BaseDTO {
     @Size(max = 50, message = "이름은 50자를 초과할 수 없습니다.") // 예시: 이름 길이 제한 추가
     private String name;          // 이름
 
+    @NotBlank(message = "이메일은 필수 입력 항목입니다.")
     @Email(message = "올바른 이메일 형식이 아닙니다.")
     @Size(max = 100, message = "이메일은 100자를 초과할 수 없습니다.") // 예시: 이메일 길이 제한 추가
-    private String email;         // 이메일 (선택사항)
+    private String email;         // 이메일 (필수사항)
 
     // 휴대폰 번호 패턴 수정: 빈 문자열("")도 허용하도록 ^$| 를 추가합니다.
     @Pattern(regexp = "^$|^01(?:0|1|[6-9])-(?:\\d{3}|\\d{4})-\\d{4}$",
@@ -46,6 +48,9 @@ public class MemberDTO extends BaseDTO {
     private String phone;
 
     private String role;          // 회원 역할 (USER, FACILITY, ADMIN)
+
+    // 시설회원 가입 시에만 address가 필수임을 지정 (OnFacilityJoin 그룹에 속할 때만 검사)
+    @NotBlank(message = "시설 주소는 필수 입력 항목입니다.", groups = OnFacilityJoin.class)
     private String address;       // 주소 (DDL에 따라 VARCHAR 길이 제한 추가 고려)
 
     private String profileImage;  // 프로필 이미지 경로 (DB에 저장될 URL)

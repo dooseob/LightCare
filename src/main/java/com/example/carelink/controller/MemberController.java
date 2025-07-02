@@ -4,21 +4,28 @@ import com.example.carelink.dto.LoginDTO;
 import com.example.carelink.dto.MemberDTO;
 import com.example.carelink.service.MemberService;
 import com.example.carelink.common.Constants;
+import com.example.carelink.validation.groups.OnFacilityJoin;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile; // MultipartFile 유지
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import javax.servlet.http.HttpSession; // 세션 관리를 위해 필요
+import javax.validation.ConstraintViolation;
 import javax.validation.Valid; // @Valid 어노테이션을 위해 필요
 // import java.security.Principal; // Principal 제거
+import javax.validation.Validator;
+
 import java.util.HashMap;
 import java.util.List; // List 유지
 import java.util.Map;
+import java.util.Set;
 
 /**
  * 회원 관리 컨트롤러
@@ -31,6 +38,9 @@ import java.util.Map;
 public class MemberController {
 
     private final MemberService memberService;
+
+    @Autowired
+    private Validator validator;
 
     /**
      * 로그인 페이지 표시
@@ -105,24 +115,39 @@ public class MemberController {
         return "member/join";
     }
 
-    /**
-     * 회원가입 처리
-     */
     @PostMapping("/join")
-    public String join(@Valid @ModelAttribute MemberDTO memberDTO,
-                       BindingResult bindingResult,
-                       RedirectAttributes redirectAttributes) {
+    public String join(
+            // @Validated에서 OnFacilityJoin 그룹을 제거합니다.
+            // 이제 Default 그룹에 속한 유효성만 자동 검사됩니다 (ex: email, role 등)
+            @Validated(value = {javax.validation.groups.Default.class})
+            @ModelAttribute MemberDTO memberDTO,
+            BindingResult bindingResult,
+            RedirectAttributes redirectAttributes,
+            Model model) {
 
-        // DTO 유효성 검증 실패 시
-        if (bindingResult.hasErrors()) {
-            log.warn("회원가입 유효성 검사 실패: {}", bindingResult.getAllErrors());
-            return "member/join"; // 에러가 있으면 회원가입 폼으로 다시 이동
-        }
-
-        // 비밀번호와 비밀번호 확인 일치 여부 검사
+        // 1. 비밀번호 확인 검사 (기존과 동일)
         if (!memberDTO.getPassword().equals(memberDTO.getPasswordConfirm())) {
             bindingResult.rejectValue("passwordConfirm", "password.mismatch", "비밀번호 확인이 일치하지 않습니다.");
             log.warn("회원가입 실패: 비밀번호 확인 불일치");
+            model.addAttribute("memberDTO", memberDTO);
+            return "member/join";
+        }
+
+        // 2. 시설 회원일 경우에만 address 필드에 대한 추가 유효성 검사 수행
+        // 일반 회원('USER')일 때는 이 블록이 실행되지 않으므로 address 검사가 일어나지 않습니다.
+        if ("FACILITY".equalsIgnoreCase(memberDTO.getRole())) {
+            // Validator를 사용하여 MemberDTO에 대해 OnFacilityJoin 그룹에 속하는 제약 조건만 수동으로 검사
+            Set<ConstraintViolation<MemberDTO>> violations = validator.validate(memberDTO, OnFacilityJoin.class);
+            for (ConstraintViolation<MemberDTO> violation : violations) {
+                // 발생한 위반 사항을 bindingResult에 추가
+                bindingResult.rejectValue(violation.getPropertyPath().toString(), "", violation.getMessage());
+            }
+        }
+
+        // 3. 최종 유효성 검사 결과 확인 (기본 유효성 + 수동 추가된 유효성)
+        if (bindingResult.hasErrors()) {
+            log.warn("회원가입 유효성 검사 실패: {}", bindingResult.getAllErrors());
+            model.addAttribute("memberDTO", memberDTO);
             return "member/join";
         }
 
@@ -144,6 +169,7 @@ public class MemberController {
             redirectAttributes.addFlashAttribute("error", "회원가입 처리 중 오류가 발생했습니다.");
             return "member/join";
         }
+
     }
 
     /**

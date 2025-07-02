@@ -117,12 +117,12 @@
 
                         <div class="mb-3">
                             <label for="email" class="form-label">
-                                <i class="fas fa-envelope me-1"></i>이메일
+                                <i class="fas fa-envelope me-1"></i>이메일 <span class="text-danger">*</span>
                             </label>
                             <input type="email"
                                    class="form-control"
                                    id="email"
-                                   th:field="*{email}" placeholder="이메일을 입력하세요 (선택 사항)">
+                                   th:field="*{email}" placeholder="이메일을 입력하세요">
                             <div class="invalid-feedback" th:if="${#fields.hasErrors('email')}" th:text="${#fields.errors('email')[0]}"></div>
                         </div>
 
@@ -142,11 +142,13 @@
                         <div class="mb-3">
                             <label for="address" class="form-label">
                                 <i class="fas fa-map-marker-alt me-1"></i>주소
+                                <span id="address-required-asterisk" class="text-danger" style="display: none;">*</span>
                             </label>
                             <input type="text"
                                    class="form-control"
                                    id="address"
-                                   th:field="*{address}" placeholder="주소를 입력하세요 (선택 사항)">
+                                   th:field="*{address}"
+                                   placeholder="주소를 입력하세요 (선택 사항)">
                             <div class="invalid-feedback" th:if="${#fields.hasErrors('address')}" th:text="${#fields.errors('address')[0]}"></div>
                         </div>
 
@@ -443,6 +445,29 @@
             return true;
         });
     });
+
+    document.addEventListener('DOMContentLoaded', function() {
+        const userRoleRadio = document.getElementById('roleUser');
+        const facilityRoleRadio = document.getElementById('roleFacility');
+        const addressAsterisk = document.getElementById('address-required-asterisk');
+        const addressInput = document.getElementById('address');
+
+        function updateAddressField() {
+            if (facilityRoleRadio.checked) {
+                addressAsterisk.style.display = 'inline';
+                addressInput.placeholder = '시설의 정확한 주소를 입력해주세요. (필수)';
+            } else {
+                addressAsterisk.style.display = 'none';
+                addressInput.placeholder = '주소를 입력하세요 (선택 사항)';
+            }
+        }
+
+        userRoleRadio.addEventListener('change', updateAddressField);
+        facilityRoleRadio.addEventListener('change', updateAddressField);
+
+        updateAddressField();
+    });
+
 </script>
 </body>
 </html>
