@@ -181,7 +181,7 @@
                             </div>
 
                             <!-- 지원 자격 -->
-                            <div class="mb-4" th:if="${job.experience or job.education or job.qualifications}">
+                            <div th:if="${not #strings.isEmpty(job.experience) or not #strings.isEmpty(job.education) or not #strings.isEmpty(job.qualifications)}">
                                 <h6><i class="fas fa-user-graduate me-2"></i>지원 자격</h6>
                                 <div class="row">
                                     <div class="col-md-4" th:if="${job.experience}">
@@ -206,14 +206,14 @@
                             <div class="mb-4">
                                 <h6><i class="fas fa-file-alt me-2"></i>상세 내용</h6>
                                 <div class="content-area border rounded p-3" style="min-height: 200px; line-height: 1.8; background-color: #f8f9fa;">
-                                    <div th:utext="${#strings.replace(job.content, T(java.lang.System).lineSeparator(), '&lt;br&gt;')}">
+                                    <div th:utext="${formattedJobContent}"></div>
                                         구인구직 상세 내용이 여기에 표시됩니다.
                                     </div>
                                 </div>
                             </div>
 
                             <!-- 모집 기간 -->
-                            <div class="mb-4" th:if="${job.startDate or job.endDate}">
+                            <div class="mb-4" th:if="${job.startDate != null or job.endDate != null}">
                                 <h6><i class="fas fa-calendar-alt me-2"></i>모집 기간</h6>
                                 <div class="alert alert-info">
                                     <span th:if="${job.startDate}">
@@ -226,17 +226,19 @@
                             </div>
 
                             <!-- 연락처 정보 -->
-                            <div class="mb-4" th:if="${job.contactName or job.contactPhone or job.contactEmail}">
+                            <div class="mb-4" th:if="${(job.contactName != null and !#strings.isEmpty(job.contactName)) or
+                             (job.contactPhone != null and !#strings.isEmpty(job.contactPhone)) or
+                             (job.contactEmail != null and !#strings.isEmpty(job.contactEmail))}">
                                 <h6><i class="fas fa-phone me-2"></i>연락처 정보</h6>
                                 <div class="card bg-light">
                                     <div class="card-body">
-                                        <div th:if="${job.contactName}">
+                                        <div th:if="${job.contactName != null and !#strings.isEmpty(job.contactName)}">
                                             <strong>담당자:</strong> <span th:text="${job.contactName}">담당자</span>
                                         </div>
-                                        <div th:if="${job.contactPhone}">
+                                        <div th:if="${job.contactPhone != null and !#strings.isEmpty(job.contactPhone)}">
                                             <strong>연락처:</strong> <span th:text="${job.contactPhone}">연락처</span>
                                         </div>
-                                        <div th:if="${job.contactEmail}">
+                                        <div th:if="${job.contactEmail != null and !#strings.isEmpty(job.contactEmail)}">
                                             <strong>이메일:</strong> <span th:text="${job.contactEmail}">이메일</span>
                                         </div>
                                     </div>
@@ -372,7 +374,7 @@
                 <!-- 사이드바 -->
                 <div class="col-lg-4">
                     <!-- 시설 정보 (구인글이고 시설 정보가 있는 경우) -->
-                    <div class="card mb-4" th:if="${job.jobType == 'RECRUIT' and job.facilityName}">
+                    <div th:if="${job.jobType == 'RECRUIT' and (job.facilityName != null and !#strings.isEmpty(job.facilityName))}"> </div>
                         <div class="card-header bg-primary text-white">
                             <h6 class="mb-0">
                                 <i class="fas fa-building me-2"></i>시설 정보
@@ -485,7 +487,39 @@
             display: flex;
             align-items: center;
             justify-content: center;
-        }\n        \n        /* 구인구직 상세 페이지 추가 스타일 */\n        .bg-gradient-primary {\n            background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);\n        }\n        \n        .icon-box {\n            width: 40px;\n            height: 40px;\n            border-radius: 8px;\n            display: flex;\n            align-items: center;\n            justify-content: center;\n            font-size: 18px;\n        }\n        \n        .info-item {\n            transition: all 0.3s ease;\n        }\n        \n        .info-item:hover {\n            transform: translateX(5px);\n        }\n        \n        .content-area {\n            transition: all 0.3s ease;\n        }\n        \n        .content-area:hover {\n            border-color: #007bff;\n        }
+        }
+
+        /* 구인구직 상세 페이지 추가 스타일 */
+        .bg-gradient-primary {
+            background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
+        }
+
+        .icon-box {
+            width: 40px;
+            height: 40px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+        }
+
+        .info-item {
+            transition: all 0.3s ease;
+        }
+
+        .info-item:hover {
+            transform: translateX(5px);
+        }
+
+        .content-area {
+            transition: all 0.3s ease;
+        }
+
+        .content-area:hover {
+            border-color: #007bff;
+        }
     </style>
+
 </body>
 </html> 

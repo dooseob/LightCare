@@ -104,10 +104,11 @@ public class JobController {
         return "redirect:/job";
 
     }
-    
-    /**
+
+    /*
+    *//**
      * 구인구직 상세보기
-     */
+     *//*
     @GetMapping("/detail/{id}")
     public String detailPage(@PathVariable Long id, Model model, HttpSession session) {
         try {
@@ -116,23 +117,57 @@ public class JobController {
                 session.setAttribute("errorMessage", "해당 구인공고를 찾을 수 없습니다.");
                 return "redirect:/job";
             }
-            
+
             // 조회수 증가 (작성자 제외)
             MemberDTO loggedInMember = (MemberDTO) session.getAttribute(Constants.SESSION_MEMBER);
             if (loggedInMember == null || !job.getMemberId().equals(loggedInMember.getMemberId())) {
                 // TODO: jobService.increaseViewCount(id); 를 구현해야 함
                 // jobService.increaseViewCount(id);
             }
-            
+
             model.addAttribute("job", job);
             return "job/detail";
-            
+
         } catch (Exception e) {
             session.setAttribute("errorMessage", "구인공고 조회 중 오류가 발생했습니다.");
             return "redirect:/job";
         }
     }
-    
+    */
+
+    @GetMapping("/detail/{id}")
+    public String detailPage(@PathVariable Long id, Model model, HttpSession session) {
+        try {
+            JobDTO job = jobService.getJobById(id);
+
+            if (job == null) {
+                session.setAttribute("errorMessage", "해당 구인공고를 찾을 수 없습니다.");
+                return "redirect:/job";
+            }
+
+            String formattedContent = "";
+            if (job.getContent() != null) {
+                formattedContent = job.getContent().replace(System.lineSeparator(), "<br>");
+                formattedContent = formattedContent.replace("\n", "<br>");
+            }
+            model.addAttribute("formattedJobContent", formattedContent);
+
+            MemberDTO loggedInMember = (MemberDTO) session.getAttribute(Constants.SESSION_MEMBER);
+            if (loggedInMember == null || !job.getMemberId().equals(loggedInMember.getMemberId())) {
+                // jobService.increaseViewCount(id);
+            }
+
+            model.addAttribute("job", job);
+
+            return "job/detail";
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            session.setAttribute("errorMessage", "구인공고 조회 중 오류가 발생했습니다.");
+            return "redirect:/job";
+        }
+    }
+
     /**
      * 구인구직 수정 페이지 (작성자만 접근 가능)
      */
