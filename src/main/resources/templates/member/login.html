@@ -36,7 +36,7 @@
                             </div>
                             
                             <!-- 로그인 폼 -->
-                            <form th:action="@{/member/login}" th:object="${loginDTO}" method="post">
+                            <form th:action="@{/member/login}" th:object="${loginDTO}" method="post" novalidate>
                                 <!-- 사용자 ID -->
                                 <div class="mb-3">
                                     <label for="userId" class="form-label">
@@ -193,6 +193,11 @@
                     $('#userId').val('facility01');
                     $('#password').val('facility123');
                 }
+            });
+            
+            // 로그인 폼에서는 유효성 검사 스타일 제거
+            $('#userId, #password').on('input blur', function() {
+                $(this).removeClass('is-valid is-invalid');
             });
         });
     </script>

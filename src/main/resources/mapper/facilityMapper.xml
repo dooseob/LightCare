@@ -21,6 +21,7 @@
         <result property="features" column="features"/>
         <result property="averageRating" column="average_rating"/>
         <result property="reviewCount" column="review_count"/>
+        <result property="gradeRating" column="grade_rating"/>
         <result property="registeredMemberId" column="registered_member_id"/>
         <result property="registeredMemberName" column="registered_member_name"/>
 
@@ -71,6 +72,7 @@
             f.features,
             f.average_rating,
             f.review_count,
+            f.grade_rating,
             f.registered_member_id,
             m.name as registered_member_name,
             f.is_deleted,

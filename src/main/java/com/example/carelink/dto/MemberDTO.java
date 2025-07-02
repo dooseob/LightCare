@@ -53,6 +53,7 @@ public class MemberDTO extends BaseDTO {
     // 시설회원 추가 정보 (facility 테이블에 저장될 정보)
     private String facilityName;     // 시설명
     private String facilityType;     // 시설 유형 (NURSING_HOME, HOSPITAL, DAY_CARE)
+    private String facilityAddress;  // 시설 주소 (카카오 주소 검색으로 입력)
     private String detailAddress;    // 상세 주소
     private String facilityPhone;    // 시설 전화번호
     private String description;      // 시설 설명
@@ -60,6 +61,8 @@ public class MemberDTO extends BaseDTO {
     private Integer capacity;        // 수용 인원
     private String operatingHours;   // 운영 시간
     private String features;         // 시설 특징
+    private Double latitude;         // 위도 (카카오 주소 검색으로 자동 설정)
+    private Double longitude;        // 경도 (카카오 주소 검색으로 자동 설정)
 
     // DB 테이블의 is_active 컬럼과 매핑
     private Boolean isActive;     // 계정 활성화 여부 (Boolean으로 변경하여 null 허용, 기본값은 DB에서 설정)

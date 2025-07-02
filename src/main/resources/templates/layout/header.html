@@ -121,7 +121,7 @@
     </nav>
     
     <!-- 메시지 표시 영역 -->
-    <div th:fragment="messages" class="container mt-3">
+    <div th:fragment="messages" class="container" style="margin-top: 80px; position: relative; z-index: 1040;">
         <!-- 성공 메시지 -->
         <div class="alert alert-success alert-dismissible fade show" role="alert" th:if="${message}">
             <i class="fas fa-check-circle me-2"></i>

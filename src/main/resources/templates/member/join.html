@@ -32,29 +32,29 @@
                     <form th:action="@{/member/join}" method="post" id="joinForm" th:object="${memberDTO}">
                         <!-- 회원 유형 선택 -->
                         <div class="mb-4">
-                            <label class="form-label">
+                            <label class="form-label mb-3">
                                 <i class="fas fa-users me-1"></i>회원 유형 <span class="text-danger">*</span>
                             </label>
-                            <div class="row">
+                            <div class="row g-3">
                                 <div class="col-6">
-                                    <div class="form-check">
-                                        <input class="form-check-input" type="radio" name="role" id="roleUser" value="USER" th:field="*{role}" checked>
-                                        <label class="form-check-label" for="roleUser">
-                                            <i class="fas fa-user-friends me-1"></i>
-                                            <strong>일반회원</strong><br>
-                                            <small class="text-muted">구직자, 가족</small>
-                                        </label>
-                                    </div>
+                                    <input type="radio" class="btn-check" name="role" id="roleUser" value="USER" th:field="*{role}" checked>
+                                    <label class="btn btn-outline-primary h-100 w-100 user-type-card" for="roleUser">
+                                        <div class="d-flex flex-column align-items-center justify-content-center h-100 p-3">
+                                            <i class="fas fa-user-friends fa-2x mb-2 text-primary"></i>
+                                            <h6 class="mb-1 fw-bold">일반회원</h6>
+                                            <small class="text-muted text-center">구직자, 가족<br>요양 서비스를 찾는 분</small>
+                                        </div>
+                                    </label>
                                 </div>
                                 <div class="col-6">
-                                    <div class="form-check">
-                                        <input class="form-check-input" type="radio" name="role" id="roleFacility" value="FACILITY" th:field="*{role}">
-                                        <label class="form-check-label" for="roleFacility">
-                                            <i class="fas fa-building me-1"></i>
-                                            <strong>시설회원</strong><br>
-                                            <small class="text-muted">요양원, 병원 운영자</small>
-                                        </label>
-                                    </div>
+                                    <input type="radio" class="btn-check" name="role" id="roleFacility" value="FACILITY" th:field="*{role}">
+                                    <label class="btn btn-outline-success h-100 w-100 user-type-card" for="roleFacility">
+                                        <div class="d-flex flex-column align-items-center justify-content-center h-100 p-3">
+                                            <i class="fas fa-building fa-2x mb-2 text-success"></i>
+                                            <h6 class="mb-1 fw-bold">시설회원</h6>
+                                            <small class="text-muted text-center">요양원, 병원 운영자<br>인력을 채용하는 시설</small>
+                                        </div>
+                                    </label>
                                 </div>
                             </div>
                         </div>
@@ -79,13 +79,14 @@
                                 <input type="password"
                                        class="form-control"
                                        id="password"
-                                       th:field="*{password}" placeholder="비밀번호를 입력하세요 (8-20자 영문, 숫자, 특수문자)"
+                                       th:field="*{password}" placeholder="비밀번호를 입력하세요"
                                        required>
                                 <button class="btn btn-outline-secondary" type="button" id="togglePassword">
                                     <i class="fas fa-eye"></i>
                                 </button>
-                                <div class="invalid-feedback" th:if="${#fields.hasErrors('password')}" th:text="${#fields.errors('password')[0]}"></div>
                             </div>
+                            <small class="form-text text-muted">8-20자의 영문, 숫자, 특수문자를 1개 이상 포함해야 합니다.</small>
+                            <div class="invalid-feedback" th:if="${#fields.hasErrors('password')}" th:text="${#fields.errors('password')[0]}"></div>
                         </div>
 
                         <div class="mb-3">
@@ -133,20 +134,27 @@
                             <input type="tel"
                                    class="form-control"
                                    id="phone"
-                                   th:field="*{phone}" placeholder="휴대폰 번호를 입력하세요 (예: 010-1234-5678)"
+                                   th:field="*{phone}" placeholder="숫자만 입력하세요 (자동으로 하이픈 추가됨)"
                                    pattern="^01(?:0|1|[6-9])-(?:\d{3}|\d{4})-\d{4}$">
-                            <small class="form-text text-muted">예: 010-1234-5678</small>
+                            <small class="form-text text-muted">숫자만 입력하면 자동으로 010-1234-5678 형태로 변환됩니다</small>
                             <div class="invalid-feedback" th:if="${#fields.hasErrors('phone')}" th:text="${#fields.errors('phone')[0]}"></div>
                         </div>
 
                         <div class="mb-3">
                             <label for="address" class="form-label">
-                                <i class="fas fa-map-marker-alt me-1"></i>주소
+                                <i class="fas fa-map-marker-alt me-1"></i>주소 (선택사항)
                             </label>
-                            <input type="text"
-                                   class="form-control"
-                                   id="address"
-                                   th:field="*{address}" placeholder="주소를 입력하세요 (선택 사항)">
+                            <div class="input-group">
+                                <input type="text"
+                                       class="form-control"
+                                       id="address"
+                                       th:field="*{address}" 
+                                       placeholder="주소 검색 버튼을 클릭하세요"
+                                       readonly>
+                                <button type="button" class="btn btn-outline-primary" onclick="openAddressSearch('address')">
+                                    <i class="fas fa-search me-1"></i>주소 검색
+                                </button>
+                            </div>
                             <div class="invalid-feedback" th:if="${#fields.hasErrors('address')}" th:text="${#fields.errors('address')[0]}"></div>
                         </div>
 
@@ -178,11 +186,30 @@
                             </div>
 
                             <div class="mb-3">
-                                <label for="detailAddress" class="form-label">
-                                    <i class="fas fa-map-marker-alt me-1"></i>상세 주소
+                                <label for="facilityAddress" class="form-label">
+                                    <i class="fas fa-map-marker-alt me-1"></i>시설 주소 <span class="text-danger">*</span>
                                 </label>
+                                <div class="input-group mb-2">
+                                    <input type="text" class="form-control" id="facilityAddress" th:field="*{facilityAddress}"
+                                           placeholder="주소 검색 버튼을 클릭하세요" readonly required>
+                                    <button type="button" class="btn btn-outline-primary" onclick="searchFacilityAddress()">
+                                        <i class="fas fa-search me-1"></i>주소 검색
+                                    </button>
+                                </div>
                                 <input type="text" class="form-control" id="detailAddress" th:field="*{detailAddress}"
-                                       placeholder="상세 주소를 입력하세요">
+                                       placeholder="상세 주소를 입력하세요 (예: 101호, 2층)">
+                                <!-- 위도/경도 히든 필드 -->
+                                <input type="hidden" id="latitude" th:field="*{latitude}">
+                                <input type="hidden" id="longitude" th:field="*{longitude}">
+                            </div>
+                            
+                            <!-- 위치 미리보기 지도 -->
+                            <div class="mb-3" id="mapPreviewContainer" style="display: none;">
+                                <label class="form-label">
+                                    <i class="fas fa-map me-1"></i>위치 미리보기
+                                </label>
+                                <div id="previewMap" style="width:100%; height:200px; border-radius: 8px; border: 1px solid #dee2e6;"></div>
+                                <small class="form-text text-muted">선택된 주소의 위치가 지도에 표시됩니다.</small>
                             </div>
 
                             <div class="mb-3">
@@ -190,7 +217,9 @@
                                     <i class="fas fa-phone me-1"></i>시설 전화번호 <span class="text-danger">*</span>
                                 </label>
                                 <input type="tel" class="form-control" id="facilityPhone" th:field="*{facilityPhone}"
-                                       placeholder="시설 전화번호를 입력하세요">
+                                       placeholder="숫자만 입력하세요 (자동으로 하이픈 추가됨)"
+                                       pattern="^0(?:2|3[1-3]|4[1-4]|5[1-5]|6[1-4])-(?:\d{3,4})-\d{4}$|^01(?:0|1|[6-9])-(?:\d{3}|\d{4})-\d{4}$">
+                                <small class="form-text text-muted">일반 전화번호(02-1234-5678) 또는 휴대폰 번호 모두 가능합니다</small>
                             </div>
 
                             <div class="mb-3">
@@ -263,6 +292,67 @@
 
 <div th:replace="~{layout/footer :: scripts}"></div>
 
+<!-- 카카오 주소 검색 API -->
+<script src="//t1.daumcdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js"></script>
+<!-- 카카오맵 API (좌표 변환용) -->
+<script type="text/javascript" src="//dapi.kakao.com/v2/maps/sdk.js?appkey=3c4987cb946a721903add5fc474941a3&libraries=services"></script>
+<!-- 카카오맵 유틸리티 -->
+<script src="/js/kakaomap.js"></script>
+
+<style>
+.user-type-card {
+    min-height: 120px;
+    transition: all 0.3s ease;
+    border-width: 2px !important;
+    background-color: #fff;
+}
+
+.user-type-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+.btn-check:checked + .user-type-card.btn-outline-primary {
+    background-color: #0d6efd;
+    border-color: #0d6efd;
+    color: white;
+}
+
+.btn-check:checked + .user-type-card.btn-outline-primary .text-primary {
+    color: white !important;
+}
+
+.btn-check:checked + .user-type-card.btn-outline-primary .text-muted {
+    color: rgba(255,255,255,0.8) !important;
+}
+
+.btn-check:checked + .user-type-card.btn-outline-success {
+    background-color: #198754;
+    border-color: #198754;
+    color: white;
+}
+
+.btn-check:checked + .user-type-card.btn-outline-success .text-success {
+    color: white !important;
+}
+
+.btn-check:checked + .user-type-card.btn-outline-success .text-muted {
+    color: rgba(255,255,255,0.8) !important;
+}
+
+.user-type-card i {
+    transition: all 0.3s ease;
+}
+
+.user-type-card:hover i {
+    transform: scale(1.1);
+}
+
+.btn-check:focus + .user-type-card {
+    box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+}
+</style>
+
 <script th:inline="javascript">
     $(document).ready(function() {
         // Thymeleaf에서 전달된 에러 메시지 처리
@@ -306,39 +396,70 @@
             }
         });
 
-        // 비밀번호 일치 여부 실시간 확인 및 유효성 피드백
+        // 비밀번호 유효성 검사 및 일치 여부 실시간 확인
         const passwordInput = $('#password');
         const passwordConfirmInput = $('#passwordConfirm');
         const passwordMismatchFeedback = $('#passwordMismatchFeedback');
+        
+        // 비밀번호 유효성 검사 정규식 (8-20자의 영문, 숫자, 특수문자 1개 이상)
+        const passwordPattern = /^(?=.*[A-Za-z])(?=.*\d)(?=.*[@$!%*#?&])[A-Za-z\d@$!%*#?&]{8,20}$/;
+        
+        function validatePassword() {
+            const password = passwordInput.val();
+            
+            if (password === '') {
+                passwordInput.removeClass('is-invalid').removeClass('is-valid');
+                return false;
+            }
+            
+            if (passwordPattern.test(password)) {
+                passwordInput.removeClass('is-invalid').addClass('is-valid');
+                return true;
+            } else {
+                passwordInput.removeClass('is-valid').addClass('is-invalid');
+                return false;
+            }
+        }
 
         function checkPasswordMatch() {
+            const isPasswordValid = validatePassword();
+            
             if (passwordConfirmInput.val() === '') { // 확인란이 비어있으면 오류 메시지 숨김
                 passwordMismatchFeedback.hide();
                 passwordConfirmInput.removeClass('is-invalid').removeClass('is-valid');
                 return;
             }
+            
             if (passwordInput.val() !== passwordConfirmInput.val()) {
                 passwordMismatchFeedback.text('비밀번호가 일치하지 않습니다.').show();
                 passwordConfirmInput.addClass('is-invalid').removeClass('is-valid');
-            } else {
+            } else if (isPasswordValid) {
                 passwordMismatchFeedback.hide();
                 passwordConfirmInput.removeClass('is-invalid').addClass('is-valid');
+            } else {
+                passwordMismatchFeedback.hide();
+                passwordConfirmInput.removeClass('is-invalid').removeClass('is-valid');
             }
         }
 
-        passwordInput.on('keyup', checkPasswordMatch);
-        passwordConfirmInput.on('keyup', checkPasswordMatch);
+        passwordInput.on('keyup blur', function() {
+            validatePassword();
+            checkPasswordMatch();
+        });
+        passwordConfirmInput.on('keyup blur', checkPasswordMatch);
 
         // 회원 유형에 따른 시설 정보 필드 표시/숨김
         $('input[name="role"]').change(function() {
             if ($(this).val() === 'FACILITY') {
                 $('#facilityFields').show();
                 // 시설회원 필수 필드 required 속성 추가
-                $('#facilityName, #facilityType, #facilityPhone').attr('required', true);
+                $('#facilityName, #facilityType, #facilityPhone, #facilityAddress').attr('required', true);
             } else {
                 $('#facilityFields').hide();
                 // 일반회원일 때 시설 필드 required 속성 제거
-                $('#facilityName, #facilityType, #facilityPhone').removeAttr('required');
+                $('#facilityName, #facilityType, #facilityPhone, #facilityAddress').removeAttr('required');
+                // 지도 미리보기 숨기기
+                $('#mapPreviewContainer').hide();
             }
             updateSubmitButtonState();
         });
@@ -390,8 +511,10 @@
 
         // 폼 제출 버튼 활성화/비활성화 함수
         function updateSubmitButtonState() {
-            const isPasswordMatch = (passwordInput.val() === passwordConfirmInput.val() && passwordInput.val() !== '');
-            const isNameValid = ($('#name').val() !== ''); // 이름 필드도 필수 조건에 추가
+            const password = passwordInput.val();
+            const isPasswordValid = passwordPattern.test(password);
+            const isPasswordMatch = (password === passwordConfirmInput.val() && password !== '');
+            const isNameValid = ($('#name').val() !== '');
             
             // 시설회원인 경우 추가 필드 체크
             let isFacilityFieldsValid = true;
@@ -399,25 +522,95 @@
                 const facilityName = $('#facilityName').val();
                 const facilityType = $('#facilityType').val();
                 const facilityPhone = $('#facilityPhone').val();
-                isFacilityFieldsValid = facilityName !== '' && facilityType !== '' && facilityPhone !== '';
+                const facilityAddress = $('#facilityAddress').val();
+                const latitude = $('#latitude').val();
+                const longitude = $('#longitude').val();
+                isFacilityFieldsValid = facilityName !== '' && facilityType !== '' && facilityPhone !== '' && 
+                                       facilityAddress !== '' && latitude !== '' && longitude !== '';
             }
 
-            // 모든 필수 필드가 채워지고, 아이디 사용 가능하며, 비밀번호가 일치하는지 확인
-            if (isUserIdAvailable && isPasswordMatch && isNameValid && isFacilityFieldsValid) {
+            // 모든 필수 필드가 채워지고, 아이디 사용 가능하며, 비밀번호가 유효하고 일치하는지 확인
+            if (isUserIdAvailable && isPasswordValid && isPasswordMatch && isNameValid && isFacilityFieldsValid) {
                 joinSubmitButton.prop('disabled', false);
             } else {
                 joinSubmitButton.prop('disabled', true);
             }
         }
 
+        // 휴대폰 번호 자동 포맷팅 함수 (010-1234-5678)
+        function formatMobileNumber(phoneNumber) {
+            // 숫자만 추출
+            const numbers = phoneNumber.replace(/[^\d]/g, '');
+            
+            // 길이에 따라 포맷팅
+            if (numbers.length <= 3) {
+                return numbers;
+            } else if (numbers.length <= 7) {
+                return numbers.slice(0, 3) + '-' + numbers.slice(3);
+            } else {
+                return numbers.slice(0, 3) + '-' + numbers.slice(3, 7) + '-' + numbers.slice(7, 11);
+            }
+        }
+
+        // 시설 전화번호 자동 포맷팅 함수 (일반전화 + 휴대폰 지원)
+        function formatFacilityPhone(phoneNumber) {
+            // 숫자만 추출
+            const numbers = phoneNumber.replace(/[^\d]/g, '');
+            
+            // 휴대폰 번호인 경우 (01로 시작)
+            if (numbers.startsWith('01')) {
+                if (numbers.length <= 3) {
+                    return numbers;
+                } else if (numbers.length <= 7) {
+                    return numbers.slice(0, 3) + '-' + numbers.slice(3);
+                } else {
+                    return numbers.slice(0, 3) + '-' + numbers.slice(3, 7) + '-' + numbers.slice(7, 11);
+                }
+            }
+            // 일반 전화번호인 경우
+            else {
+                if (numbers.length <= 2) {
+                    return numbers;
+                } else if (numbers.length <= 3) {
+                    return numbers.slice(0, 2) + '-' + numbers.slice(2);
+                } else if (numbers.length <= 6) {
+                    return numbers.slice(0, 2) + '-' + numbers.slice(2);
+                } else if (numbers.length <= 7) {
+                    return numbers.slice(0, 2) + '-' + numbers.slice(2, 5) + '-' + numbers.slice(5);
+                } else {
+                    return numbers.slice(0, 2) + '-' + numbers.slice(2, 6) + '-' + numbers.slice(6, 10);
+                }
+            }
+        }
+
+        // 휴대폰 번호 입력 시 자동 포맷팅 적용
+        $('#phone').on('input', function() {
+            const formattedPhone = formatMobileNumber($(this).val());
+            $(this).val(formattedPhone);
+        });
+
+        // 시설 전화번호 입력 시 자동 포맷팅 적용
+        $('#facilityPhone').on('input', function() {
+            const formattedPhone = formatFacilityPhone($(this).val());
+            $(this).val(formattedPhone);
+        });
+
         // 초기 로드 시 및 모든 입력 필드 변경 시 버튼 상태 업데이트
         $('input, select, textarea').on('keyup blur change', updateSubmitButtonState);
         updateSubmitButtonState(); // 페이지 로드 시 초기 상태 설정
 
-        // 폼 제출 전 최종 유효성 검사 (서버 측 유효성 검사가 있으므로, 클라이언트 측에서 추가로 검사할 내용이 있다면 여기에 추가)
+        // 폼 제출 전 최종 유효성 검사
         $('#joinForm').submit(function(event) {
+            // 비밀번호 유효성 검사
+            const password = passwordInput.val();
+            if (!passwordPattern.test(password)) {
+                passwordInput.addClass('is-invalid');
+                event.preventDefault();
+                return false;
+            }
+
             // 비밀번호 불일치 시 제출 방지
-            if (passwordInput.val() !== passwordConfirmInput.val()) {
+            if (password !== passwordConfirmInput.val()) {
                 passwordMismatchFeedback.text('비밀번호 확인이 일치하지 않습니다.').show();
                 passwordConfirmInput.addClass('is-invalid');
                 event.preventDefault();
