@@ -154,3 +154,175 @@ function searchWithFilters(filters) {
     // ...
 }
 */
+
+// ===============================
+// 주소 검색 관련 함수들
+// ===============================
+
+/**
+ * 카카오 우편번호 서비스를 이용한 주소 검색 팝업을 띄우는 함수
+ * @param {string} addressInputId - 주소를 입력받을 input 요소의 ID
+ * @param {string} detailAddressInputId - 상세주소를 입력받을 input 요소의 ID (선택사항)
+ * @param {function} callback - 주소 선택 완료 후 실행될 콜백 함수 (선택사항)
+ */
+function openAddressSearch(addressInputId, detailAddressInputId = null, callback = null) {
+    new daum.Postcode({
+        oncomplete: function(data) {
+            // 팝업에서 검색결과 항목을 클릭했을때 실행할 코드를 작성하는 부분.
+            
+            // 각 주소의 노출 규칙에 따라 주소를 조합한다.
+            let addr = ''; // 주소 변수
+            let extraAddr = ''; // 참고항목 변수
+
+            // 사용자가 선택한 주소 타입에 따라 해당 주소 값을 가져온다.
+            if (data.userSelectedType === 'R') { // 사용자가 도로명 주소를 선택했을 경우
+                addr = data.roadAddress;
+            } else { // 사용자가 지번 주소를 선택했을 경우(J)
+                addr = data.jibunAddress;
+            }
+
+            // 사용자가 선택한 주소가 도로명 타입일때 참고항목을 조합한다.
+            if(data.userSelectedType === 'R'){
+                // 법정동명이 있을 경우 추가한다. (법정리는 제외)
+                // 법정동의 경우 마지막 문자가 "동/로/가"로 끝난다.
+                if(data.bname !== '' && /[동|로|가]$/g.test(data.bname)){
+                    extraAddr += data.bname;
+                }
+                // 건물명이 있고, 공동주택일 경우 추가한다.
+                if(data.buildingName !== '' && data.apartment === 'Y'){
+                    extraAddr += (extraAddr !== '' ? ', ' + data.buildingName : data.buildingName);
+                }
+                // 표시할 참고항목이 있을 경우, 괄호까지 추가한 최종 문자열을 만든다.
+                if(extraAddr !== ''){
+                    extraAddr = ' (' + extraAddr + ')';
+                }
+            }
+
+            // 우편번호와 주소 정보를 해당 필드에 넣는다.
+            const addressInput = document.getElementById(addressInputId);
+            if (addressInput) {
+                addressInput.value = addr + extraAddr;
+            }
+
+            // 상세주소 입력란이 있으면 포커스를 이동한다.
+            if (detailAddressInputId) {
+                const detailAddressInput = document.getElementById(detailAddressInputId);
+                if (detailAddressInput) {
+                    detailAddressInput.focus();
+                }
+            }
+
+            // 주소로부터 위도/경도를 가져와서 콜백 함수 실행
+            if (callback && typeof callback === 'function') {
+                getCoordinatesFromAddress(addr, callback);
+            }
+
+            console.log('주소 검색 완료:', {
+                zonecode: data.zonecode,
+                address: addr + extraAddr,
+                roadAddress: data.roadAddress,
+                jibunAddress: data.jibunAddress
+            });
+        }
+    }).open();
+}
+
+/**
+ * 주소를 이용해서 위도/경도를 가져오는 함수
+ * @param {string} address - 검색할 주소
+ * @param {function} callback - 좌표를 받을 콜백 함수 (latitude, longitude를 매개변수로 받음)
+ */
+function getCoordinatesFromAddress(address, callback) {
+    // 주소-좌표 변환 객체를 생성합니다
+    const geocoder = new kakao.maps.services.Geocoder();
+
+    // 주소로 좌표를 검색합니다
+    geocoder.addressSearch(address, function(result, status) {
+        // 정상적으로 검색이 완료됐으면
+        if (status === kakao.maps.services.Status.OK) {
+            const coords = new kakao.maps.LatLng(result[0].y, result[0].x);
+            
+            console.log('주소로부터 좌표 변환 성공:', {
+                address: address,
+                latitude: result[0].y,
+                longitude: result[0].x
+            });
+
+            // 콜백 함수에 위도/경도 전달
+            if (callback && typeof callback === 'function') {
+                callback(parseFloat(result[0].y), parseFloat(result[0].x));
+            }
+        } else {
+            console.error('주소로부터 좌표 변환 실패:', status);
+            alert('주소로부터 좌표를 가져올 수 없습니다.');
+        }
+    });
+}
+
+/**
+ * 회원가입 페이지에서 시설 주소 검색에 사용되는 함수
+ * 주소 선택 시 자동으로 위도/경도를 히든 필드에 설정
+ */
+function searchFacilityAddress() {
+    openAddressSearch('facilityAddress', 'detailAddress', function(latitude, longitude) {
+        // 위도/경도를 히든 필드에 설정
+        const latitudeInput = document.getElementById('latitude');
+        const longitudeInput = document.getElementById('longitude');
+        
+        if (latitudeInput) {
+            latitudeInput.value = latitude;
+        }
+        if (longitudeInput) {
+            longitudeInput.value = longitude;
+        }
+        
+        console.log('시설 위치 좌표 설정:', { latitude, longitude });
+        
+        // 미리보기 지도 컨테이너 표시
+        const mapPreviewContainer = document.getElementById('mapPreviewContainer');
+        if (mapPreviewContainer) {
+            mapPreviewContainer.style.display = 'block';
+        }
+        
+        // 미리보기 지도가 있다면 해당 위치로 이동
+        updatePreviewMap(latitude, longitude);
+    });
+}
+
+/**
+ * 주소 검색 결과를 미리보기 지도에 표시하는 함수
+ * @param {number} latitude - 위도
+ * @param {number} longitude - 경도
+ */
+function updatePreviewMap(latitude, longitude) {
+    const previewMapContainer = document.getElementById('previewMap');
+    if (!previewMapContainer) return;
+
+    // 미리보기 지도 생성 또는 업데이트
+    const coords = new kakao.maps.LatLng(latitude, longitude);
+    
+    if (!window.previewMap) {
+        // 지도가 없으면 새로 생성
+        const mapOption = {
+            center: coords,
+            level: 3
+        };
+        window.previewMap = new kakao.maps.Map(previewMapContainer, mapOption);
+    } else {
+        // 기존 지도가 있으면 중심 이동
+        window.previewMap.setCenter(coords);
+    }
+
+    // 기존 마커 제거
+    if (window.previewMarker) {
+        window.previewMarker.setMap(null);
+    }
+
+    // 새 마커 추가
+    window.previewMarker = new kakao.maps.Marker({
+        position: coords,
+        map: window.previewMap
+    });
+
+    console.log('미리보기 지도 업데이트 완료');
+}

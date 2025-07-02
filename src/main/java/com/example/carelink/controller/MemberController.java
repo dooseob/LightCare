@@ -122,6 +122,7 @@ public class MemberController {
             @Validated(value = {javax.validation.groups.Default.class})
             @ModelAttribute MemberDTO memberDTO,
             BindingResult bindingResult,
+            HttpSession session,
             RedirectAttributes redirectAttributes,
             Model model) {
 
@@ -156,8 +157,26 @@ public class MemberController {
             memberService.join(memberDTO);
             log.info("회원가입 성공: {}", memberDTO.getUserId());
 
-            redirectAttributes.addFlashAttribute("message", "회원가입이 완료되었습니다. 로그인해주세요.");
-            return "redirect:/member/login"; // 회원가입 성공 시 로그인 페이지로 리다이렉트
+            // 회원가입 후 자동 로그인 처리
+            LoginDTO loginDTO = new LoginDTO();
+            loginDTO.setUserId(memberDTO.getUserId());
+            loginDTO.setPassword(memberDTO.getPassword());
+            
+            MemberDTO loginMember = memberService.login(loginDTO);
+            if (loginMember != null) {
+                // 자동 로그인 성공 시 세션에 회원 정보 저장
+                session.setAttribute(Constants.SESSION_MEMBER, loginMember);
+                session.setAttribute("memberId", loginMember.getMemberId());
+                log.info("회원가입 후 자동 로그인 성공: userId={}", loginMember.getUserId());
+                
+                redirectAttributes.addFlashAttribute("message", "회원가입이 완료되었습니다. 환영합니다!");
+                return "redirect:/"; // 홈 페이지로 리다이렉트
+            } else {
+                // 자동 로그인 실패 시 로그인 페이지로
+                log.warn("회원가입은 성공했으나 자동 로그인 실패: {}", memberDTO.getUserId());
+                redirectAttributes.addFlashAttribute("message", "회원가입이 완료되었습니다. 로그인해주세요.");
+                return "redirect:/member/login";
+            }
 
         } catch (IllegalArgumentException e) {
             // 서비스 계층에서 발생한 아이디 중복 등의 비즈니스 로직 예외 처리

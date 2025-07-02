@@ -182,10 +182,11 @@
                                     등록된 게시글이 없습니다.
                                 </td>
                             </tr>
-                            <tr th:each="board : ${boardList}">
+                            <tr th:each="board, iterStat : ${boardList}">
                                 <td class="text-center">
                                     <span th:if="${board.isNotice != null and board.isNotice}" class="badge bg-danger">공지</span>
-                                    <span th:unless="${board.isNotice != null and board.isNotice}" th:text="${board.boardId}">1</span>
+                                    <span th:unless="${board.isNotice != null and board.isNotice}" 
+                                          th:text="${pageInfo.totalCount - ((pageInfo.currentPage - 1) * pageInfo.pageSize + iterStat.index)}">1</span>
                                 </td>
                                 <td class="text-center">
                                     <span th:if="${board.category == 'NOTICE'}" class="badge bg-danger">공지</span>
