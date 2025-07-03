@@ -3,13 +3,13 @@
 <head th:replace="~{layout/header :: header}">
     <title>마이페이지 - CareLink</title>
 </head>
-<body class="d-flex flex-column min-vh-100">
+<body class="d-flex flex-column min-vh-100 pt-5">
 <nav th:replace="~{layout/header :: navbar}"></nav>
 
 <div th:replace="~{layout/header :: messages}"></div>
 
-<main class="flex-grow-1 py-5">
-    <div class="container">
+<main class="flex-grow-1">
+    <div class="container mt-4">
         <!-- 브레드크럼 -->
         <nav aria-label="breadcrumb" class="mb-4">
             <ol class="breadcrumb">
@@ -32,6 +32,8 @@
 
                         <form th:action="@{/member/myinfo/update}" th:object="${memberDTO}" method="post" id="mypageForm" enctype="multipart/form-data">
                             <input type="hidden" th:field="*{memberId}">
+                            <input type="hidden" th:field="*{userId}">
+                            <input type="hidden" th:field="*{password}">
 
                             <div class="mb-3">
                                 <label for="userId" class="form-label">
@@ -39,8 +41,8 @@
                                 </label>
                                 <input type="text"
                                        class="form-control"
-                                       id="userId"
-                                       th:field="*{userId}"
+                                       id="userIdDisplay"
+                                       th:value="*{userId}"
                                        readonly disabled >
                             </div>
 
@@ -136,9 +138,9 @@
                             <a th:href="@{/member/mypage/change-password}" class="btn btn-outline-secondary me-2">
                                 <i class="fas fa-key me-1"></i> 비밀번호 변경
                             </a>
-                            <button type="button" class="btn btn-outline-danger" data-bs-toggle="modal" data-bs-target="#confirmDeleteModal">
+                            <a th:href="@{/member/mypage/delete}" class="btn btn-outline-danger">
                                 <i class="fas fa-user-minus me-1"></i> 회원 탈퇴
-                            </button>
+                            </a>
                         </div>
 
                     </div>
@@ -148,43 +150,12 @@
     </div>
 </main>
 
-<div class="modal fade" id="confirmDeleteModal" tabindex="-1" aria-labelledby="confirmDeleteModalLabel" aria-hidden="true">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="confirmDeleteModalLabel">회원 탈퇴 확인</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body">
-                정말로 회원 탈퇴를 하시겠습니까? 모든 정보가 삭제되며 되돌릴 수 없습니다.
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">취소</button>
-                <a th:href="@{/member/mypage/delete}" class="btn btn-danger">탈퇴</a>
-            </div>
-        </div>
-    </div>
-</div>
 
 <footer th:replace="~{layout/footer :: footer}"></footer>
 
 <div th:replace="~{layout/footer :: scripts}"></div>
 
-<script>
-    $(document).ready(function() {
-        // 프로필 이미지 미리보기 기능
-        $('#profileImageFile').change(function() { // ID 변경
-            const input = this;
-            if (input.files && input.files[0]) {
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    $('#currentProfileImage').attr('src', e.target.result); // 기존 이미지 요소 ID 사용
-                    console.log('Image selected for preview:', e.target.result);
-                };
-                reader.readAsDataURL(input.files[0]);
-            }
-        });
-    });
-</script>
+<!-- 내정보수정 전용 JavaScript -->
+<script src="/js/myinfo.js"></script>
 </body>
 </html>
