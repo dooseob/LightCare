@@ -2,9 +2,15 @@ package com.example.carelink.service;
 
 import com.example.carelink.dao.MemberMapper;
 import com.example.carelink.dao.FacilityMapper;
+import com.example.carelink.dao.BoardMapper;
+import com.example.carelink.dao.ReviewMapper;
+import com.example.carelink.dao.JobMapper;
 import com.example.carelink.dto.LoginDTO;
 import com.example.carelink.dto.MemberDTO;
 import com.example.carelink.dto.FacilityDTO;
+import com.example.carelink.dto.BoardDTO;
+import com.example.carelink.dto.ReviewDTO;
+import com.example.carelink.dto.JobDTO;
 import com.example.carelink.common.Constants;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -21,6 +27,7 @@ import java.nio.file.Paths; // 파일 처리 관련 클래스 유지
 import java.util.List; // List 유지 (페이징, 역할별 조회)
 import java.util.Map; // Map 인터페이스
 import java.util.HashMap; // HashMap 클래스
+import java.util.ArrayList; // ArrayList 클래스
 import java.util.UUID; // UUID 유지 (파일 이름 생성)
 
 /**
@@ -35,6 +42,9 @@ public class MemberService {
 
     private final MemberMapper memberMapper;
     private final FacilityMapper facilityMapper;
+    private final BoardMapper boardMapper;
+    private final ReviewMapper reviewMapper;
+    private final JobMapper jobMapper;
     private final PasswordEncoder passwordEncoder; // 비밀번호 암호화를 위해 주입
 
     // @Value 설정과 관련 변수 유지 (프로필 이미지 업로드 기능이 DTO에 있으므로)
@@ -347,9 +357,13 @@ public class MemberService {
         Map<String, Integer> counts = new HashMap<>();
         try {
             // 각 매퍼에서 콘텐츠 개수 조회
-            int boardCount = 0; // boardMapper.getCountByMemberId(memberId);
-            int reviewCount = 0; // reviewMapper.getCountByMemberId(memberId); 
-            int jobCount = 0; // jobMapper.getCountByMemberId(memberId);
+            List<BoardDTO> boards = boardMapper.findBoardsByMemberId(memberId);
+            List<ReviewDTO> reviews = reviewMapper.findReviewsByMemberId(memberId);
+            List<JobDTO> jobs = jobMapper.findJobsByMemberId(memberId);
+            
+            int boardCount = boards != null ? boards.size() : 0;
+            int reviewCount = reviews != null ? reviews.size() : 0;
+            int jobCount = jobs != null ? jobs.size() : 0;
             
             counts.put("board", boardCount);
             counts.put("review", reviewCount);
@@ -367,6 +381,158 @@ public class MemberService {
             counts.put("job", 0);
             counts.put("total", 0);
             return counts;
+        }
+    }
+    
+    /**
+     * 내가 쓴 글 조회 (유형별 필터링 및 페이징)
+     */
+    @Transactional(readOnly = true)
+    public Map<String, Object> getMyPosts(Long memberId, String type, int page, int pageSize, int offset) {
+        Map<String, Object> result = new HashMap<>();
+        List<Map<String, Object>> posts = new ArrayList<>();
+        
+        try {
+            // 콘텐츠 타입별 개수 조회
+            Map<String, Integer> contentCounts = getUserContentCounts(memberId);
+            result.put("contentCounts", contentCounts);
+            
+            if ("board".equals(type)) {
+                // 게시글만 조회
+                List<BoardDTO> boards = boardMapper.findBoardsByMemberId(memberId);
+                for (BoardDTO board : boards) {
+                    Map<String, Object> post = new HashMap<>();
+                    post.put("id", board.getBoardId());
+                    post.put("title", board.getTitle());
+                    post.put("content", board.getContent());
+                    post.put("createdAt", board.getCreatedAt());
+                    post.put("viewCount", board.getViewCount() != null ? board.getViewCount() : 0);
+                    post.put("likeCount", board.getLikeCount() != null ? board.getLikeCount() : 0);
+                    post.put("rating", null); // 게시글에는 평점 없음
+                    post.put("salary", null); // 게시글에는 급여 없음
+                    post.put("type", "board");
+                    post.put("category", board.getBoardType());
+                    post.put("url", "/board/detail/" + board.getBoardId());
+                    posts.add(post);
+                }
+            } else if ("review".equals(type)) {
+                // 리뷰만 조회
+                List<ReviewDTO> reviews = reviewMapper.findReviewsByMemberId(memberId);
+                for (ReviewDTO review : reviews) {
+                    Map<String, Object> post = new HashMap<>();
+                    post.put("id", review.getReviewId());
+                    post.put("title", review.getTitle());
+                    post.put("content", review.getContent());
+                    post.put("createdAt", review.getCreatedAt());
+                    post.put("viewCount", null); // 리뷰에는 조회수 없음
+                    post.put("likeCount", review.getLikeCount() != null ? review.getLikeCount() : 0);
+                    post.put("rating", review.getRating());
+                    post.put("salary", null); // 리뷰에는 급여 없음
+                    post.put("type", "review");
+                    post.put("category", "리뷰");
+                    post.put("url", "/review/detail/" + review.getReviewId());
+                    posts.add(post);
+                }
+            } else if ("job".equals(type)) {
+                // 구인구직만 조회
+                List<JobDTO> jobs = jobMapper.findJobsByMemberId(memberId);
+                for (JobDTO job : jobs) {
+                    Map<String, Object> post = new HashMap<>();
+                    post.put("id", job.getJobId());
+                    post.put("title", job.getTitle());
+                    post.put("content", job.getContent());
+                    post.put("createdAt", job.getCreatedAt());
+                    post.put("viewCount", job.getViewCount() != null ? job.getViewCount() : 0);
+                    post.put("likeCount", null); // 구인구직에는 추천 없음
+                    post.put("rating", null); // 구인구직에는 평점 없음
+                    post.put("salary", job.getSalaryDescription());
+                    post.put("type", "job");
+                    post.put("category", job.getJobType());
+                    post.put("url", "/job/detail/" + job.getJobId());
+                    posts.add(post);
+                }
+            } else {
+                // 전체 조회
+                List<BoardDTO> boards = boardMapper.findBoardsByMemberId(memberId);
+                List<ReviewDTO> reviews = reviewMapper.findReviewsByMemberId(memberId);
+                List<JobDTO> jobs = jobMapper.findJobsByMemberId(memberId);
+                
+                // 게시글 추가
+                for (BoardDTO board : boards) {
+                    Map<String, Object> post = new HashMap<>();
+                    post.put("id", board.getBoardId());
+                    post.put("title", board.getTitle());
+                    post.put("content", board.getContent());
+                    post.put("createdAt", board.getCreatedAt());
+                    post.put("viewCount", board.getViewCount() != null ? board.getViewCount() : 0);
+                    post.put("likeCount", board.getLikeCount() != null ? board.getLikeCount() : 0);
+                    post.put("rating", null); // 게시글에는 평점 없음
+                    post.put("salary", null); // 게시글에는 급여 없음
+                    post.put("type", "board");
+                    post.put("category", board.getBoardType());
+                    post.put("url", "/board/detail/" + board.getBoardId());
+                    posts.add(post);
+                }
+                
+                // 리뷰 추가
+                for (ReviewDTO review : reviews) {
+                    Map<String, Object> post = new HashMap<>();
+                    post.put("id", review.getReviewId());
+                    post.put("title", review.getTitle());
+                    post.put("content", review.getContent());
+                    post.put("createdAt", review.getCreatedAt());
+                    post.put("viewCount", null); // 리뷰에는 조회수 없음
+                    post.put("likeCount", review.getLikeCount() != null ? review.getLikeCount() : 0);
+                    post.put("rating", review.getRating());
+                    post.put("salary", null); // 리뷰에는 급여 없음
+                    post.put("type", "review");
+                    post.put("category", "리뷰");
+                    post.put("url", "/review/detail/" + review.getReviewId());
+                    posts.add(post);
+                }
+                
+                // 구인구직 추가
+                for (JobDTO job : jobs) {
+                    Map<String, Object> post = new HashMap<>();
+                    post.put("id", job.getJobId());
+                    post.put("title", job.getTitle());
+                    post.put("content", job.getContent());
+                    post.put("createdAt", job.getCreatedAt());
+                    post.put("viewCount", job.getViewCount() != null ? job.getViewCount() : 0);
+                    post.put("likeCount", null); // 구인구직에는 추천 없음
+                    post.put("rating", null); // 구인구직에는 평점 없음
+                    post.put("salary", job.getSalaryDescription());
+                    post.put("type", "job");
+                    post.put("category", job.getJobType());
+                    post.put("url", "/job/detail/" + job.getJobId());
+                    posts.add(post);
+                }
+            }
+            
+            // 날짜 순으로 정렬 (최신순)
+            posts.sort((a, b) -> ((java.time.LocalDateTime) b.get("createdAt")).compareTo((java.time.LocalDateTime) a.get("createdAt")));
+            
+            // 페이징 처리
+            int totalCount = posts.size();
+            int startIndex = Math.min(offset, totalCount);
+            int endIndex = Math.min(offset + pageSize, totalCount);
+            
+            List<Map<String, Object>> pagedPosts = posts.subList(startIndex, endIndex);
+            
+            result.put("posts", pagedPosts);
+            result.put("totalCount", totalCount);
+            
+            log.info("내가 쓴 글 조회 완료: memberId={}, type={}, 총{}\uac1c, 현재페이지 {}\uac1c", 
+                    memberId, type, totalCount, pagedPosts.size());
+            
+            return result;
+            
+        } catch (Exception e) {
+            log.error("내가 쓴 글 조회 중 오류: memberId={}, type={}", memberId, type, e);
+            result.put("posts", new ArrayList<>());
+            result.put("totalCount", 0);
+            result.put("contentCounts", Map.of("board", 0, "review", 0, "job", 0, "total", 0));
+            return result;
         }
     }
     

@@ -67,6 +67,10 @@ public interface JobMapper {
     /**
      * 특정 구인구직 공고의 지원자 수 (applyCount)를 1 증가시킵니다.
      */
-    void incrementApplyCount(@Param("jobId") Long jobId); // <-- 이 줄을 추가합니다!
-
+    void incrementApplyCount(@Param("jobId") Long jobId);
+    
+    /**
+     * 특정 회원이 작성한 구인구직 게시글 목록 조회
+     */
+    List<JobDTO> findJobsByMemberId(@Param("memberId") Long memberId);
 } 

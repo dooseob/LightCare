@@ -628,4 +628,53 @@ public class MemberController {
         }
         return "redirect:/member/admin/members"; // 변경 후 회원 목록 페이지로 리다이렉트
     }
+    
+    /**
+     * 내가 쓴 글 페이지 표시
+     */
+    @GetMapping("/mypost")
+    public String myPosts(@RequestParam(defaultValue = "all") String type,
+                         @RequestParam(defaultValue = "1") int page,
+                         @RequestParam(defaultValue = "10") int pageSize,
+                         HttpSession session, Model model, RedirectAttributes redirectAttributes) {
+        
+        MemberDTO loginMember = (MemberDTO) session.getAttribute(Constants.SESSION_MEMBER);
+        if (loginMember == null) {
+            redirectAttributes.addFlashAttribute("error", "로그인이 필요합니다.");
+            return "redirect:/member/login";
+        }
+        
+        try {
+            Long memberId = loginMember.getMemberId();
+            log.info("내가 쓴 글 페이지 요청: memberId={}, type={}, page={}", memberId, type, page);
+            
+            // 페이징 설정
+            int offset = (page - 1) * pageSize;
+            
+            // 작성한 콘텐츠 조회
+            Map<String, Object> result = memberService.getMyPosts(memberId, type, page, pageSize, offset);
+            
+            // 모델에 데이터 추가
+            model.addAttribute("member", loginMember);
+            model.addAttribute("posts", result.get("posts"));
+            model.addAttribute("totalCount", result.get("totalCount"));
+            model.addAttribute("currentType", type);
+            model.addAttribute("currentPage", page);
+            model.addAttribute("pageSize", pageSize);
+            model.addAttribute("totalPages", (int) Math.ceil((double) (Integer) result.get("totalCount") / pageSize));
+            
+            // 콘텐츠 타입별 개수
+            Map<String, Integer> contentCounts = (Map<String, Integer>) result.get("contentCounts");
+            model.addAttribute("contentCounts", contentCounts);
+            
+            log.info("내가 쓴 글 조회 완료: 총 {}개", result.get("totalCount"));
+            
+            return "member/myPosts";
+            
+        } catch (Exception e) {
+            log.error("내가 쓴 글 페이지 로드 중 오류: memberId={}", loginMember.getMemberId(), e);
+            redirectAttributes.addFlashAttribute("error", "내가 쓴 글을 불러오는 중 오류가 발생했습니다.");
+            return "redirect:/member/myinfo/edit";
+        }
+    }
 }
