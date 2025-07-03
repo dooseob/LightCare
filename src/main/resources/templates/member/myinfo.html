@@ -76,7 +76,7 @@
 
                             <div class="mb-3">
                                 <label for="phone" class="form-label">
-                                    <i class="fas fa-phone me-1"></i>휴대폰 번호
+                                    <i class="fas fa-mobile-alt me-1"></i>휴대폰 번호
                                 </label>
                                 <input type="tel"
                                        class="form-control"
@@ -101,14 +101,162 @@
                             </div>
 
                             <div class="mb-3">
-                                <label for="profileImageFile" class="form-label"> <i class="fas fa-image me-1"></i>프로필 이미지
+                                <label class="form-label">
+                                    <i class="fas fa-image me-1"></i>프로필 이미지 <span class="text-muted">(구직 신청 시 사용)</span>
                                 </label>
-                                <input type="file"
-                                       class="form-control"
-                                       id="profileImageFile"       name="profileImageFile"    accept="image/*">
-                                <div th:if="${memberDTO.profileImage}" class="mt-2">
-                                    <p class="text-muted mb-1">현재 프로필 이미지:</p>
-                                    <img th:src="${memberDTO.profileImage}" alt="프로필 이미지" class="img-thumbnail" style="max-width: 150px; height: auto;" id="currentProfileImage"> </div>
+                                <div class="text-center p-3 border border-2 border-dashed rounded">
+                                    <!-- 현재 등록된 프로필 이미지 -->
+                                    <div th:if="${memberDTO.profileImage}" class="current-profile-image mb-3">
+                                        <p class="text-success mb-2">
+                                            <i class="fas fa-check-circle me-1"></i>현재 등록된 프로필 이미지:
+                                        </p>
+                                        <img th:src="@{/profile_images/{image}(image=${memberDTO.profileImage})}" 
+                                             class="img-thumbnail" 
+                                             style="width: 90px; height: 120px; object-fit: cover;"
+                                             alt="현재 프로필 이미지">
+                                        <p class="small text-muted mt-1">증명사진 비율 (3:4)</p>
+                                    </div>
+                                    
+                                    <!-- 이미지 등록/수정 버튼 -->
+                                    <div>
+                                        <a href="/member/myinfo/crop-image" class="btn btn-primary">
+                                            <i class="fas fa-crop me-1"></i>
+                                            <span th:text="${memberDTO.profileImage} ? '프로필 이미지 수정' : '프로필 이미지 등록'">프로필 이미지 등록</span>
+                                        </a>
+                                        <p class="small text-muted mt-2">
+                                            <i class="fas fa-info-circle me-1"></i>
+                                            권장: 증명사진 비율 (3:4), 최대 5MB, JPG/PNG 형식
+                                        </p>
+                                    </div>
+                                </div>
+                                
+                                <!-- 간단한 가이드라인 -->
+                                <div class="mt-2">
+                                    <small class="text-muted">
+                                        <i class="fas fa-info-circle me-1"></i>
+                                        <strong>권장:</strong> 증명사진 비율 (3:4), 최대 5MB, JPG/PNG 형식
+                                        <span class="ms-2 text-primary">|</span>
+                                        <strong class="text-primary">고급 크롭 버튼</strong>으로 정확한 비율 조절 가능
+                                    </small>
+                                </div>
+
+                                <!-- 현재 프로필 이미지 표시 -->
+                                <div th:if="${memberDTO.profileImage}" class="mt-3">
+                                    <p class="text-muted mb-2">
+                                        <i class="fas fa-check-circle text-success me-1"></i>현재 등록된 프로필 이미지:
+                                    </p>
+                                    <div class="d-flex align-items-center">
+                                        <img th:src="@{${memberDTO.profileImage}}" 
+                                             alt="프로필 이미지" 
+                                             class="img-thumbnail me-3" 
+                                             style="width: 90px; height: 120px; object-fit: cover; border: 2px solid #dee2e6; border-radius: 8px;" 
+                                             id="currentProfileImage" 
+                                             onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+                                        <div class="alert alert-warning mb-0" style="display: none;">
+                                            <i class="fas fa-exclamation-triangle me-1"></i>
+                                            이미지를 불러올 수 없습니다.
+                                        </div>
+                                        <div class="ms-2">
+                                            <small class="text-muted">
+                                                증명사진 비율 (3:4)<br>
+                                                구직 신청 시 사용됩니다
+                                            </small>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- 이미지 크롭 모달 -->
+                                <div class="modal fade" id="cropModal" tabindex="-1" aria-labelledby="cropModalLabel" aria-hidden="true">
+                                    <div class="modal-dialog modal-lg">
+                                        <div class="modal-content">
+                                            <div class="modal-header">
+                                                <h5 class="modal-title" id="cropModalLabel">
+                                                    <i class="fas fa-crop me-2"></i>프로필 이미지 크롭
+                                                </h5>
+                                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                            </div>
+                                            <div class="modal-body">
+                                                <div class="mb-3">
+                                                    <div class="alert alert-info">
+                                                        <i class="fas fa-info-circle me-1"></i>
+                                                        <strong>크롭 가이드:</strong> 반명함 비율(3.5:2.2)에 맞춰 원하는 영역을 선택하세요.
+                                                    </div>
+                                                    <div class="row text-center">
+                                                        <div class="col-md-6">
+                                                            <h6 class="text-primary mb-2">
+                                                                <i class="fas fa-mouse-pointer me-1"></i>크롭 영역 조절
+                                                            </h6>
+                                                            <ul class="small text-start mb-0">
+                                                                <li>마우스로 크롭 영역을 드래그하여 이동</li>
+                                                                <li>모서리를 드래그하여 크기 조절</li>
+                                                                <li>비율은 자동으로 3.5:2.2 유지</li>
+                                                            </ul>
+                                                        </div>
+                                                        <div class="col-md-6">
+                                                            <h6 class="text-success mb-2">
+                                                                <i class="fas fa-expand-arrows-alt me-1"></i>이미지 조절
+                                                            </h6>
+                                                            <div class="btn-group-vertical d-grid gap-1">
+                                                                <button type="button" class="btn btn-sm btn-outline-success" id="zoomIn">
+                                                                    <i class="fas fa-search-plus me-1"></i>확대
+                                                                </button>
+                                                                <button type="button" class="btn btn-sm btn-outline-success" id="zoomOut">
+                                                                    <i class="fas fa-search-minus me-1"></i>축소
+                                                                </button>
+                                                                <button type="button" class="btn btn-sm btn-outline-info" id="resetZoom">
+                                                                    <i class="fas fa-undo me-1"></i>원래크기
+                                                                </button>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div class="text-center">
+                                                    <div id="cropContainer" style="max-width: 100%; max-height: 450px; overflow: hidden; border: 2px solid #dee2e6; border-radius: 8px; position: relative;">
+                                                        <img id="cropImage" style="max-width: 100%; height: auto; cursor: move;">
+                                                    </div>
+                                                </div>
+                                                <div class="mt-2 text-center">
+                                                    <small class="text-muted">
+                                                        <i class="fas fa-hand-paper me-1"></i>
+                                                        이미지를 드래그하여 위치를 조절하세요. 마우스 휠로 확대/축소할 수 있습니다.
+                                                    </small>
+                                                </div>
+                                            </div>
+                                            <div class="modal-footer">
+                                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                                                    <i class="fas fa-times me-1"></i>취소
+                                                </button>
+                                                <button type="button" class="btn btn-primary" id="cropConfirm">
+                                                    <i class="fas fa-check me-1"></i>크롭 적용
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- 이미지 미리보기 영역 -->
+                                <div id="imagePreview" class="mt-3" style="display: none;">
+                                    <p class="text-muted mb-2">
+                                        <i class="fas fa-eye me-1"></i>새 이미지 미리보기:
+                                    </p>
+                                    <div class="d-flex align-items-center">
+                                        <img id="previewImage" 
+                                             class="img-thumbnail me-3" 
+                                             style="width: 105px; height: 66px; object-fit: cover; border: 2px solid #28a745; border-radius: 8px;">
+                                        <div class="ms-2">
+                                            <small class="text-success">
+                                                <i class="fas fa-check me-1"></i>새 이미지가 선택되었습니다<br>
+                                                저장 버튼을 눌러 변경사항을 적용하세요
+                                            </small>
+                                            <div class="mt-1">
+                                                <button type="button" class="btn btn-sm btn-outline-primary" id="recropButton">
+                                                    <i class="fas fa-crop me-1"></i>다시 크롭하기
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
                                 <input type="hidden" th:field="*{profileImage}">
                             </div>
 
@@ -155,7 +303,7 @@
 
 <div th:replace="~{layout/footer :: scripts}"></div>
 
-<!-- 내정보수정 전용 JavaScript -->
+<!-- 내정보수정 전용 JavaScript (단순화) -->
 <script src="/js/myinfo.js"></script>
 </body>
 </html>

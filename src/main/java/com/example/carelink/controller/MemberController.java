@@ -5,6 +5,7 @@ import com.example.carelink.dto.MemberDTO;
 import com.example.carelink.service.MemberService;
 import com.example.carelink.common.Constants;
 import com.example.carelink.validation.groups.OnFacilityJoin;
+import com.example.carelink.common.CustomMultipartFile;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -336,6 +337,9 @@ public class MemberController {
                 return "redirect:/member/login";
             }
 
+            // 크롭 페이지 접근 권한 플래그 설정 (보안용)
+            session.setAttribute("myinfo_verified", true);
+            
             model.addAttribute("memberDTO", memberInfo);
             return "member/myinfo";
 
@@ -344,6 +348,151 @@ public class MemberController {
             redirectAttributes.addFlashAttribute("error", "회원 정보를 불러오는 중 오류가 발생했습니다.");
             return "redirect:/"; // 오류 발생 시 홈으로 리다이렉트
         }
+    }
+
+    /**
+     * 프로필 이미지 크롭 페이지
+     */
+    @GetMapping("/myinfo/crop-image")
+    public String cropImagePage(HttpSession session, Model model, RedirectAttributes redirectAttributes) {
+        MemberDTO loginMember = (MemberDTO) session.getAttribute(Constants.SESSION_MEMBER);
+        if (loginMember == null) {
+            redirectAttributes.addFlashAttribute("error", "로그인이 필요합니다.");
+            return "redirect:/member/login";
+        }
+        
+        // 마이페이지에서 온 사용자인지 확인 (보안)
+        Boolean myinfoVerified = (Boolean) session.getAttribute("myinfo_verified");
+        if (myinfoVerified == null || !myinfoVerified) {
+            redirectAttributes.addFlashAttribute("error", "올바른 경로로 접근해주세요.");
+            return "redirect:/member/myinfo";
+        }
+        
+        model.addAttribute("memberDTO", loginMember);
+        return "member/crop-image";
+    }
+
+    /**
+     * 프로필 이미지 크롭 처리 (임시 저장)
+     */
+    @PostMapping("/myinfo/crop-image/upload")
+    @ResponseBody
+    public Map<String, Object> uploadTempImage(@RequestParam("imageFile") MultipartFile imageFile,
+                                               HttpSession session) {
+        Map<String, Object> result = new HashMap<>();
+        
+        try {
+            MemberDTO loginMember = (MemberDTO) session.getAttribute(Constants.SESSION_MEMBER);
+            if (loginMember == null) {
+                result.put("success", false);
+                result.put("message", "로그인이 필요합니다.");
+                return result;
+            }
+            
+            if (imageFile.isEmpty()) {
+                result.put("success", false);
+                result.put("message", "이미지 파일이 없습니다.");
+                return result;
+            }
+            
+            // 파일 크기 검증 (5MB)
+            if (imageFile.getSize() > 5 * 1024 * 1024) {
+                result.put("success", false);
+                result.put("message", "파일 크기는 5MB 이하여야 합니다.");
+                return result;
+            }
+            
+            // 파일 타입 검증
+            String contentType = imageFile.getContentType();
+            if (contentType == null || !contentType.startsWith("image/")) {
+                result.put("success", false);
+                result.put("message", "이미지 파일만 업로드 가능합니다.");
+                return result;
+            }
+            
+            // Base64로 인코딩하여 임시 저장
+            byte[] imageBytes = imageFile.getBytes();
+            String base64Image = "data:" + contentType + ";base64," + 
+                                java.util.Base64.getEncoder().encodeToString(imageBytes);
+            
+            // 세션에 임시 저장
+            session.setAttribute("tempImageData", base64Image);
+            session.setAttribute("tempImageName", imageFile.getOriginalFilename());
+            
+            result.put("success", true);
+            result.put("imageData", base64Image);
+            result.put("message", "이미지가 업로드되었습니다.");
+            
+        } catch (Exception e) {
+            log.error("임시 이미지 업로드 중 오류 발생", e);
+            result.put("success", false);
+            result.put("message", "이미지 업로드 중 오류가 발생했습니다.");
+        }
+        
+        return result;
+    }
+
+    /**
+     * 크롭된 이미지 저장 처리
+     */
+    @PostMapping("/myinfo/crop-image/save")
+    @ResponseBody
+    public Map<String, Object> saveCroppedImage(@RequestParam("croppedImage") String croppedImageData,
+                                                HttpSession session) {
+        Map<String, Object> result = new HashMap<>();
+        
+        try {
+            MemberDTO loginMember = (MemberDTO) session.getAttribute(Constants.SESSION_MEMBER);
+            if (loginMember == null) {
+                result.put("success", false);
+                result.put("message", "로그인이 필요합니다.");
+                return result;
+            }
+            
+            // Base64 데이터에서 실제 이미지 데이터 추출
+            String base64Data = croppedImageData.split(",")[1];
+            byte[] imageBytes = java.util.Base64.getDecoder().decode(base64Data);
+            
+            // 커스텀 MultipartFile로 변환하여 기존 서비스 활용
+            CustomMultipartFile croppedImageFile = new CustomMultipartFile(
+                "profileImage", 
+                "cropped-profile.jpg", 
+                "image/jpeg", 
+                imageBytes
+            );
+            
+            // 기존 회원정보 조회
+            MemberDTO memberDTO = memberService.findById(loginMember.getMemberId());
+            if (memberDTO == null) {
+                result.put("success", false);
+                result.put("message", "회원 정보를 찾을 수 없습니다.");
+                return result;
+            }
+            
+            // 프로필 이미지만 업데이트
+            memberService.updateMember(memberDTO, croppedImageFile);
+            
+            // 세션 정보 업데이트
+            MemberDTO updatedMember = memberService.findById(loginMember.getMemberId());
+            if (updatedMember != null) {
+                session.setAttribute(Constants.SESSION_MEMBER, updatedMember);
+            }
+            
+            // 임시 데이터 삭제
+            session.removeAttribute("tempImageData");
+            session.removeAttribute("tempImageName");
+            
+            result.put("success", true);
+            result.put("message", "프로필 이미지가 성공적으로 저장되었습니다.");
+            result.put("profileImageUrl", updatedMember.getProfileImage());
+            
+        } catch (Exception e) {
+            log.error("크롭된 이미지 저장 중 오류 발생", e);
+            result.put("success", false);
+            result.put("message", "이미지 저장 중 오류가 발생했습니다.");
+        }
+        
+        return result;
     }
 
     /**
