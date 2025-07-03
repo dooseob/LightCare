@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="ko">
+<head th:replace="~{layout/header :: header}">
+    <title>회원탈퇴 - CareLink</title>
+</head>
+<body class="d-flex flex-column min-vh-100 pt-5">
+<nav th:replace="~{layout/header :: navbar}"></nav>
+
+<div th:replace="~{layout/header :: messages}"></div>
+
+<main class="flex-grow-1">
+    <div class="container mt-4">
+        <!-- 브레드크럼 -->
+        <nav aria-label="breadcrumb" class="mb-4">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="/">홈</a></li>
+                <li class="breadcrumb-item"><a href="/member/myinfo">내 정보</a></li>
+                <li class="breadcrumb-item active" aria-current="page">회원탈퇴</li>
+            </ol>
+        </nav>
+        
+        <div class="row justify-content-center">
+            <div class="col-md-6 col-lg-5">
+                <!-- 회원탈퇴 확인 카드 -->
+                <div class="card shadow border-danger">
+                    <div class="card-body p-4">
+                        <!-- 제목 -->
+                        <div class="text-center mb-4">
+                            <h3 class="card-title fw-bold text-danger">
+                                <i class="fas fa-user-times me-2"></i>
+                                회원탈퇴
+                            </h3>
+                            <p class="text-muted">정말로 탈퇴하시겠습니까?</p>
+                        </div>
+                        
+                        <!-- 탈퇴 안내 -->
+                        <div class="alert alert-danger" role="alert">
+                            <h6 class="alert-heading">
+                                <i class="fas fa-exclamation-triangle me-2"></i>
+                                탈퇴 시 주의사항
+                            </h6>
+                            <ul class="mb-0 small">
+                                <li>회원탈퇴 시 모든 개인정보가 삭제됩니다</li>
+                                <li>작성하신 게시글과 댓글은 유지됩니다</li>
+                                <li>동일한 아이디로 재가입이 불가능합니다</li>
+                                <li>탈퇴 처리 후에는 복구할 수 없습니다</li>
+                            </ul>
+                        </div>
+                        
+                        <!-- 회원 정보 확인 -->
+                        <div class="card mb-4">
+                            <div class="card-body">
+                                <h6 class="card-title">탈퇴할 회원정보</h6>
+                                <div class="row">
+                                    <div class="col-4 text-muted">아이디:</div>
+                                    <div class="col-8" th:text="${member.userId}">user01</div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-4 text-muted">이름:</div>
+                                    <div class="col-8" th:text="${member.name}">홍길동</div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-4 text-muted">이메일:</div>
+                                    <div class="col-8" th:text="${member.email ?: '등록된 이메일 없음'}">example@email.com</div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-4 text-muted">가입일:</div>
+                                    <div class="col-8" th:text="${#temporals.format(member.createdAt, 'yyyy-MM-dd')}">2024-01-01</div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- 비밀번호 확인 폼 -->
+                        <form id="deleteMemberForm" th:action="@{/member/mypage/delete}" method="post" novalidate>
+                            <div class="mb-3">
+                                <label for="password" class="form-label">
+                                    <i class="fas fa-lock me-1"></i>현재 비밀번호 <span class="text-danger">*</span>
+                                </label>
+                                <div class="input-group">
+                                    <input type="password" 
+                                           class="form-control" 
+                                           id="password" 
+                                           name="password"
+                                           placeholder="탈퇴 확인을 위해 현재 비밀번호를 입력하세요"
+                                           required>
+                                    <button class="btn btn-outline-secondary" type="button" id="togglePassword">
+                                        <i class="fas fa-eye"></i>
+                                    </button>
+                                </div>
+                                <div id="passwordFeedback" class="invalid-feedback"></div>
+                            </div>
+                            
+                            <!-- 탈퇴 확인 체크박스 -->
+                            <div class="mb-4">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="confirmDelete" required>
+                                    <label class="form-check-label text-danger fw-bold" for="confirmDelete">
+                                        위의 주의사항을 모두 확인했으며, 회원탈퇴에 동의합니다.
+                                    </label>
+                                    <div class="invalid-feedback">
+                                        탈퇴 동의 체크박스를 선택해주세요.
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- 버튼들 -->
+                            <div class="row g-2">
+                                <div class="col-6">
+                                    <a href="/member/myinfo" class="btn btn-secondary w-100">
+                                        <i class="fas fa-arrow-left me-1"></i>
+                                        취소
+                                    </a>
+                                </div>
+                                <div class="col-6">
+                                    <button type="submit" class="btn btn-danger w-100" id="submitButton" disabled>
+                                        <i class="fas fa-user-times me-2"></i>
+                                        탈퇴하기
+                                    </button>
+                                </div>
+                            </div>
+                        </form>
+                        
+                        <!-- 추가 안내 -->
+                        <hr class="my-4">
+                        <div class="text-center">
+                            <small class="text-muted">
+                                <i class="fas fa-info-circle me-1"></i>
+                                문의사항이 있으시면 <a href="/board?type=qna">Q&A 게시판</a>을 이용해주세요.
+                            </small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</main>
+
+<footer th:replace="~{layout/footer :: footer}"></footer>
+
+<div th:replace="~{layout/footer :: scripts}"></div>
+
+<!-- 회원탈퇴 전용 JavaScript -->
+<script src="/js/delete-member.js"></script>
+
+</body>
+</html>

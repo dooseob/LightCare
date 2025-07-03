@@ -268,10 +268,56 @@ public class MemberController {
     }
 
     /**
-     * 내 정보 페이지 표시 (HttpSession 사용으로 복원)
+     * 비밀번호 확인 페이지 (내 정보 수정 전)
      */
     @GetMapping("/myinfo")
-    public String myInfo(HttpSession session, Model model, RedirectAttributes redirectAttributes) {
+    public String verifyPasswordForm(HttpSession session, Model model, RedirectAttributes redirectAttributes) {
+        MemberDTO loginMember = (MemberDTO) session.getAttribute(Constants.SESSION_MEMBER);
+
+        if (loginMember == null) {
+            redirectAttributes.addFlashAttribute("error", "로그인이 필요합니다.");
+            return "redirect:/member/login";
+        }
+
+        return "member/verifyPassword";
+    }
+    
+    /**
+     * 비밀번호 확인 처리
+     */
+    @PostMapping("/myinfo/verify")
+    public String verifyPassword(@RequestParam("password") String password,
+                                HttpSession session,
+                                RedirectAttributes redirectAttributes) {
+        MemberDTO loginMember = (MemberDTO) session.getAttribute(Constants.SESSION_MEMBER);
+
+        if (loginMember == null) {
+            redirectAttributes.addFlashAttribute("error", "로그인이 필요합니다.");
+            return "redirect:/member/login";
+        }
+
+        try {
+            // 비밀번호 확인
+            if (!password.equals(loginMember.getPassword())) {
+                redirectAttributes.addFlashAttribute("error", "비밀번호가 일치하지 않습니다.");
+                return "redirect:/member/myinfo";
+            }
+            
+            // 비밀번호 확인 성공 시 실제 내정보 페이지로 이동
+            return "redirect:/member/myinfo/edit";
+            
+        } catch (Exception e) {
+            log.error("비밀번호 확인 중 오류 발생: {}", loginMember.getUserId(), e);
+            redirectAttributes.addFlashAttribute("error", "비밀번호 확인 중 오류가 발생했습니다.");
+            return "redirect:/member/myinfo";
+        }
+    }
+
+    /**
+     * 내 정보 수정 페이지 표시 (비밀번호 확인 후)
+     */
+    @GetMapping("/myinfo/edit")
+    public String myInfoEdit(HttpSession session, Model model, RedirectAttributes redirectAttributes) {
         MemberDTO loginMember = (MemberDTO) session.getAttribute(Constants.SESSION_MEMBER);
 
         if (loginMember == null) {
@@ -304,38 +350,75 @@ public class MemberController {
      * 회원정보 수정 처리 (HttpSession 사용으로 복원)
      */
     @PostMapping("/myinfo/update")
-    public String updateMember(@Valid @ModelAttribute MemberDTO memberDTO,
+    public String updateMember(@ModelAttribute MemberDTO memberDTO,
                                BindingResult bindingResult,
                                @RequestParam(value = "profileImageFile", required = false) MultipartFile profileImageFile,
                                HttpSession session,
+                               Model model,
                                RedirectAttributes redirectAttributes) {
 
+        log.info("회원정보 수정 요청: memberId={}, name={}, email={}", 
+                memberDTO.getMemberId(), memberDTO.getName(), memberDTO.getEmail());
+        
         MemberDTO loginMember = (MemberDTO) session.getAttribute(Constants.SESSION_MEMBER);
-        if (loginMember == null || !loginMember.getMemberId().equals(memberDTO.getMemberId())) {
+        log.info("세션 로그인 멤버: {}", loginMember != null ? loginMember.getMemberId() : "null");
+        
+        if (loginMember == null) {
+            log.warn("세션에 로그인 정보가 없음");
+            redirectAttributes.addFlashAttribute("error", "로그인이 필요합니다.");
+            return "redirect:/member/login";
+        }
+        
+        if (!loginMember.getMemberId().equals(memberDTO.getMemberId())) {
+            log.warn("권한 없음: 세션 memberId={}, 요청 memberId={}", 
+                    loginMember.getMemberId(), memberDTO.getMemberId());
             redirectAttributes.addFlashAttribute("error", "권한이 없거나 로그인 정보가 유효하지 않습니다.");
             return "redirect:/member/myinfo";
         }
 
+        // 수동 유효성 검사 (정보수정에 필요한 필드만)
+        if (memberDTO.getName() == null || memberDTO.getName().trim().isEmpty()) {
+            bindingResult.rejectValue("name", "NotBlank", "이름은 필수입니다.");
+        }
+        if (memberDTO.getEmail() != null && !memberDTO.getEmail().trim().isEmpty()) {
+            if (!memberDTO.getEmail().matches("^[A-Za-z0-9+_.-]+@(.+)$")) {
+                bindingResult.rejectValue("email", "Email", "올바른 이메일 형식이 아닙니다.");
+            }
+        }
+        if (memberDTO.getPhone() != null && !memberDTO.getPhone().trim().isEmpty()) {
+            if (!memberDTO.getPhone().matches("^01(?:0|1|[6-9])-(?:\\d{3}|\\d{4})-\\d{4}$")) {
+                bindingResult.rejectValue("phone", "Pattern", "올바른 휴대폰 번호 형식이 아닙니다.");
+            }
+        }
+        
         if (bindingResult.hasErrors()) {
             log.warn("회원정보 수정 유효성 검사 실패: {}", bindingResult.getAllErrors());
-            // 에러가 있을 경우, 기존의 myinfo 폼으로 다시 데이터를 채워서 보내줘야 함
+            model.addAttribute("memberDTO", memberDTO);
             return "member/myinfo";
         }
 
         try {
+            log.info("회원정보 수정 서비스 호출 시작");
             memberService.updateMember(memberDTO, profileImageFile);
+            log.info("회원정보 수정 서비스 호출 완료");
 
             // 세션 정보 업데이트 (수정된 최신 정보로 갱신)
             MemberDTO updatedMember = memberService.findById(memberDTO.getMemberId());
-            session.setAttribute(Constants.SESSION_MEMBER, updatedMember);
+            if (updatedMember != null) {
+                session.setAttribute(Constants.SESSION_MEMBER, updatedMember);
+                log.info("세션 정보 업데이트 완료: {}", updatedMember.getName());
+            } else {
+                log.warn("업데이트된 회원 정보 조회 실패");
+            }
 
             redirectAttributes.addFlashAttribute("message", "회원정보가 성공적으로 수정되었습니다.");
-            return "redirect:/member/myinfo";
+            return "redirect:/member/myinfo/edit";
 
         } catch (Exception e) {
-            log.error("회원정보 수정 중 오류 발생: {}", memberDTO.getUserId(), e);
-            redirectAttributes.addFlashAttribute("error", "회원정보 수정 중 오류가 발생했습니다.");
-            return "redirect:/member/myinfo";
+            log.error("회원정보 수정 중 오류 발생: memberId={}, userId={}", 
+                    memberDTO.getMemberId(), memberDTO.getUserId(), e);
+            redirectAttributes.addFlashAttribute("error", "회원정보 수정 중 오류가 발생했습니다: " + e.getMessage());
+            return "redirect:/member/myinfo/edit";
         }
     }
 
@@ -358,7 +441,7 @@ public class MemberController {
     @PostMapping("/mypage/change-password")
     public String changePassword(@RequestParam("currentPassword") String currentPassword,
                                  @RequestParam("newPassword") String newPassword,
-                                 @RequestParam("confirmNewPassword") String confirmNewPassword,
+                                 @RequestParam("confirmPassword") String confirmNewPassword,
                                  HttpSession session,
                                  RedirectAttributes redirectAttributes) {
         MemberDTO loginMember = (MemberDTO) session.getAttribute(Constants.SESSION_MEMBER);
@@ -371,7 +454,7 @@ public class MemberController {
         try {
             memberService.changePassword(userId, currentPassword, newPassword, confirmNewPassword);
             redirectAttributes.addFlashAttribute("message", "비밀번호가 성공적으로 변경되었습니다.");
-            return "redirect:/member/myinfo"; // 비밀번호 변경 후 내 정보 페이지로
+            return "redirect:/member/myinfo/edit"; // 비밀번호 변경 후 내 정보 페이지로
         } catch (IllegalArgumentException e) {
             redirectAttributes.addFlashAttribute("error", e.getMessage());
             return "redirect:/member/mypage/change-password";
@@ -383,26 +466,49 @@ public class MemberController {
     }
 
     /**
-     * 회원 탈퇴 처리 (논리 삭제) (HttpSession 사용으로 복원)
+     * 회원 탈퇴 페이지 표시
      */
     @GetMapping("/mypage/delete")
-    public String deleteMember(HttpSession session, RedirectAttributes redirectAttributes) {
+    public String deleteMemberForm(HttpSession session, Model model, RedirectAttributes redirectAttributes) {
         MemberDTO loginMember = (MemberDTO) session.getAttribute(Constants.SESSION_MEMBER);
         if (loginMember == null) {
             redirectAttributes.addFlashAttribute("error", "로그인이 필요합니다.");
             return "redirect:/member/login";
         }
 
-        String userId = loginMember.getUserId(); // 세션에서 userId 가져오기
+        model.addAttribute("member", loginMember);
+        return "member/deleteMember";
+    }
+
+    /**
+     * 회원 탈퇴 처리 (논리 삭제)
+     */
+    @PostMapping("/mypage/delete")
+    public String deleteMember(@RequestParam("password") String password,
+                              HttpSession session, 
+                              RedirectAttributes redirectAttributes) {
+        MemberDTO loginMember = (MemberDTO) session.getAttribute(Constants.SESSION_MEMBER);
+        if (loginMember == null) {
+            redirectAttributes.addFlashAttribute("error", "로그인이 필요합니다.");
+            return "redirect:/member/login";
+        }
+
+        String userId = loginMember.getUserId();
         try {
+            // 현재 비밀번호 확인
+            if (!password.equals(loginMember.getPassword())) {
+                redirectAttributes.addFlashAttribute("error", "현재 비밀번호가 일치하지 않습니다.");
+                return "redirect:/member/mypage/delete";
+            }
+            
             memberService.deleteMember(userId);
             session.invalidate(); // 탈퇴 후 세션 무효화
             redirectAttributes.addFlashAttribute("message", "회원 탈퇴가 완료되었습니다.");
-            return "redirect:/"; // 홈페이지로 리다이렉트
+            return "redirect:/";
         } catch (Exception e) {
             log.error("회원 탈퇴 처리 중 오류 발생: {}", userId, e);
             redirectAttributes.addFlashAttribute("error", "회원 탈퇴 처리 중 오류가 발생했습니다.");
-            return "redirect:/member/myinfo";
+            return "redirect:/member/mypage/delete";
         }
     }
 
