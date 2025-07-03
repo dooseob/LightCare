@@ -3,7 +3,7 @@
 <head th:replace="~{layout/header :: header}">
     <title>로그인 - CareLink</title>
 </head>
-<body class="d-flex flex-column min-vh-100">
+<body class="d-flex flex-column min-vh-100 pt-5">
     <!-- 네비게이션 바 -->
     <nav th:replace="~{layout/header :: navbar}"></nav>
     
@@ -11,8 +11,8 @@
     <div th:replace="~{layout/header :: messages}"></div>
     
     <!-- 메인 콘텐츠 -->
-    <main class="flex-grow-1 py-5">
-        <div class="container">
+    <main class="flex-grow-1">
+        <div class="container mt-4">
             <!-- 브레드크럼 -->
             <nav aria-label="breadcrumb" class="mb-4">
                 <ol class="breadcrumb">
@@ -152,6 +152,7 @@
                     </div>
                 </div>
             </div>
+        </div>
         </div>
     </main>
     
