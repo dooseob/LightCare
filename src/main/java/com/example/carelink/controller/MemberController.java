@@ -450,8 +450,24 @@ public class MemberController {
             return "redirect:/member/login";
         }
 
-        model.addAttribute("member", loginMember);
-        return "member/deleteMember";
+        try {
+            // 작성한 콘텐츠 개수 조회
+            Map<String, Integer> contentCounts = memberService.getUserContentCounts(loginMember.getMemberId());
+            
+            model.addAttribute("member", loginMember);
+            model.addAttribute("contentCounts", contentCounts);
+            
+            log.info("회원탈퇴 페이지 접근: userId={}, 작성 콘텐츠={}", 
+                    loginMember.getUserId(), contentCounts);
+                    
+            return "member/deleteMember";
+            
+        } catch (Exception e) {
+            log.error("회원탈퇴 페이지 로드 중 오류: {}", loginMember.getUserId(), e);
+            model.addAttribute("member", loginMember);
+            model.addAttribute("contentCounts", Map.of("board", 0, "review", 0, "job", 0));
+            return "member/deleteMember";
+        }
     }
 
     /**
@@ -460,6 +476,7 @@ public class MemberController {
     @PostMapping("/mypage/delete")
     public String deleteMember(@RequestParam("password") String password,
                               @RequestParam("confirmName") String confirmName,
+                              @RequestParam("deleteOption") String deleteOption,
                               HttpSession session, 
                               RedirectAttributes redirectAttributes) {
         MemberDTO loginMember = (MemberDTO) session.getAttribute(Constants.SESSION_MEMBER);
@@ -469,8 +486,8 @@ public class MemberController {
         }
 
         String userId = loginMember.getUserId();
-        log.info("회원탈퇴 요청: userId={}, 입력된 비밀번호 길이={}, 입력된 이름={}", 
-                userId, password.length(), confirmName);
+        log.info("회원탈퇴 요청: userId={}, 입력된 비밀번호 길이={}, 입력된 이름={}, 삭제옵션={}", 
+                userId, password.length(), confirmName, deleteOption);
         
         try {
             // DB에서 최신 비밀번호 정보 조회
@@ -504,14 +521,14 @@ public class MemberController {
             
             log.info("이름 확인 성공: userId={}, 이름={}", userId, confirmName);
             
-            // 회원 탈퇴 처리
-            memberService.deleteMember(userId);
-            log.info("회원탈퇴 완료: userId={}", userId);
+            // 회원 탈퇴 처리 (옵션에 따라 처리 방식 결정)
+            String resultMessage = memberService.deleteMemberWithOption(userId, deleteOption);
+            log.info("회원탈퇴 완료: userId={}, 옵션={}", userId, deleteOption);
             
             // 세션 무효화
             session.invalidate();
             
-            redirectAttributes.addFlashAttribute("message", "회원 탈퇴가 완료되었습니다. 그동안 이용해 주셔서 감사합니다.");
+            redirectAttributes.addFlashAttribute("message", resultMessage + " 그동안 이용해 주셔서 감사합니다.");
             return "redirect:/";
         } catch (Exception e) {
             log.error("회원 탈퇴 처리 중 오류 발생: {}", userId, e);

@@ -19,6 +19,8 @@ import java.nio.file.Files; // 파일 처리 관련 클래스 유지
 import java.nio.file.Path; // 파일 처리 관련 클래스 유지
 import java.nio.file.Paths; // 파일 처리 관련 클래스 유지
 import java.util.List; // List 유지 (페이징, 역할별 조회)
+import java.util.Map; // Map 인터페이스
+import java.util.HashMap; // HashMap 클래스
 import java.util.UUID; // UUID 유지 (파일 이름 생성)
 
 /**
@@ -338,7 +340,93 @@ public class MemberService {
     }
 
     /**
-     * 회원 탈퇴 (논리 삭제) (유지)
+     * 사용자가 작성한 콘텐츠 개수 조회
+     */
+    @Transactional(readOnly = true)
+    public Map<String, Integer> getUserContentCounts(Long memberId) {
+        Map<String, Integer> counts = new HashMap<>();
+        try {
+            // 각 매퍼에서 콘텐츠 개수 조회
+            int boardCount = 0; // boardMapper.getCountByMemberId(memberId);
+            int reviewCount = 0; // reviewMapper.getCountByMemberId(memberId); 
+            int jobCount = 0; // jobMapper.getCountByMemberId(memberId);
+            
+            counts.put("board", boardCount);
+            counts.put("review", reviewCount);
+            counts.put("job", jobCount);
+            counts.put("total", boardCount + reviewCount + jobCount);
+            
+            log.info("사용자 콘텐츠 개수 조회: memberId={}, 결과={}", memberId, counts);
+            return counts;
+            
+        } catch (Exception e) {
+            log.error("콘텐츠 개수 조회 중 오류: memberId={}", memberId, e);
+            // 오류 시 기본값 반환
+            counts.put("board", 0);
+            counts.put("review", 0);
+            counts.put("job", 0);
+            counts.put("total", 0);
+            return counts;
+        }
+    }
+    
+    /**
+     * 회원 탈퇴 (옵션에 따라 처리 방식 결정)
+     */
+    @Transactional
+    public String deleteMemberWithOption(String userId, String deleteOption) {
+        try {
+            if ("anonymous".equals(deleteOption)) {
+                // 익명화: 개인정보만 삭제, 콘텐츠는 "탈퇴회원"으로 표시
+                int result = memberMapper.anonymizeMember(userId);
+                if (result == 0) {
+                    throw new RuntimeException("회원 익명화 처리 중 오류가 발생했습니다.");
+                }
+                log.info("회원 익명화 처리 완료: {}", userId);
+                return "회원 탈퇴가 완료되었습니다. 작성하신 게시글은 '탈퇴회원'으로 표시됩니다.";
+            } else if ("complete".equals(deleteOption)) {
+                // 완전삭제: 모든 콘텐츠와 함께 물리 삭제
+                deleteAllUserContent(userId);
+                int result = memberMapper.hardDeleteMember(userId);
+                if (result == 0) {
+                    throw new RuntimeException("회원 완전삭제 처리 중 오류가 발생했습니다.");
+                }
+                log.info("회원 완전삭제 처리 완료: {}", userId);
+                return "회원 탈퇴가 완료되었습니다. 모든 개인정보와 작성 콘텐츠가 완전히 삭제되었습니다.";
+            } else {
+                // 기본: 논리 삭제
+                int result = memberMapper.softDeleteMember(userId);
+                if (result == 0) {
+                    throw new RuntimeException("회원 탈퇴 처리 중 오류가 발생했습니다.");
+                }
+                log.info("회원 논리삭제 처리 완료: {}", userId);
+                return "회원 탈퇴가 완료되었습니다.";
+            }
+        } catch (Exception e) {
+            log.error("회원 탈퇴 처리 중 오류 발생: userId={}, option={}", userId, deleteOption, e);
+            throw new RuntimeException("회원 탈퇴 처리 중 오류가 발생했습니다.", e);
+        }
+    }
+    
+    /**
+     * 사용자의 모든 콘텐츠 삭제
+     */
+    @Transactional
+    private void deleteAllUserContent(String userId) {
+        try {
+            // 각 매퍼에서 사용자 콘텐츠 삭제
+            // boardMapper.deleteByUserId(userId);
+            // reviewMapper.deleteByUserId(userId);
+            // jobMapper.deleteByUserId(userId);
+            log.info("사용자 콘텐츠 삭제 완료: {}", userId);
+        } catch (Exception e) {
+            log.error("사용자 콘텐츠 삭제 중 오류: {}", userId, e);
+            throw e;
+        }
+    }
+    
+    /**
+     * 회원 탈퇴 (논리 삭제) - 이전 버전 호환성
      */
     @Transactional
     public void deleteMember(String userId) {

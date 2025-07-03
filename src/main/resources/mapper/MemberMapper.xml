@@ -100,6 +100,27 @@
             updated_at = NOW()
         WHERE user_id = #{userId}
     </update>
+    
+    <!-- 익명화: 개인정보만 삭제, 콘텐츠는 유지 -->
+    <update id="anonymizeMember">
+        UPDATE member
+        SET
+            name = '탈퇴회원',
+            email = NULL,
+            phone = NULL,
+            address = NULL,
+            profile_image = NULL,
+            password = 'DELETED',
+            is_deleted = TRUE,
+            is_active = FALSE,
+            updated_at = NOW()
+        WHERE user_id = #{userId}
+    </update>
+    
+    <!-- 물리 삭제: 완전히 데이터 제거 -->
+    <delete id="hardDeleteMember">
+        DELETE FROM member WHERE user_id = #{userId}
+    </delete>
 
     <update id="updatePassword" parameterType="MemberDTO">
         UPDATE member

@@ -229,11 +229,16 @@ document.addEventListener('DOMContentLoaded', function() {
                     return false;
                 }
                 
-                // 폼 제출 중 버튼 비활성화
+                // 제출 중 버튼 비활성화 및 진행 상태 표시
                 if (elements.submitButton) {
                     elements.submitButton.disabled = true;
                     elements.submitButton.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>탈퇴 처리 중...';
+                    elements.submitButton.classList.remove('btn-danger');
+                    elements.submitButton.classList.add('btn-warning');
                 }
+                
+                // 페이지 되돌아가기 방지 (중복 제출 방지)
+                window.onbeforeunload = null;
                 
                 console.log('회원탈퇴 폼 제출');
                 
@@ -258,6 +263,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // 페이지 나가기 전 경고
     function setupBeforeUnloadWarning() {
         let formChanged = false;
+        let isSubmitting = false; // 폼 제출 상태 플래그
         
         // 폼 변경 감지
         if (elements.password) {
@@ -278,9 +284,16 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         }
         
-        // 페이지 나가기 전 경고
+        // 폼 제출 시 경고 비활성화
+        if (elements.form) {
+            elements.form.addEventListener('submit', function() {
+                isSubmitting = true;
+            });
+        }
+        
+        // 페이지 나가기 전 경고 (폼 제출 시에는 비활성화)
         window.addEventListener('beforeunload', function(event) {
-            if (formChanged) {
+            if (formChanged && !isSubmitting) {
                 event.preventDefault();
                 event.returnValue = '입력된 내용이 있습니다. 정말로 페이지를 나가시겠습니까?';
                 return event.returnValue;
@@ -294,7 +307,7 @@ document.addEventListener('DOMContentLoaded', function() {
         setupEventListeners();
         updateSubmitButton(); // 초기 상태 설정
         showInitialWarning();
-        setupBeforeUnloadWarning();
+        // setupBeforeUnloadWarning(); // 탈퇴 페이지에서는 비활성화
         
         console.log('회원탈퇴 페이지 JavaScript 초기화 완료');
     }

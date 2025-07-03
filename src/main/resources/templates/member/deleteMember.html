@@ -90,6 +90,39 @@
                                 <div id="passwordFeedback" class="invalid-feedback"></div>
                             </div>
                             
+                            <!-- 작성 콘텐츠 안내 -->
+                            <div th:if="${contentCounts.total > 0}" class="alert alert-warning mb-3" role="alert">
+                                <h6 class="alert-heading">
+                                    <i class="fas fa-edit me-2"></i>
+                                    작성하신 콘텐츠가 있습니다
+                                </h6>
+                                <ul class="mb-2 small">
+                                    <li th:if="${contentCounts.board > 0}">게시글: <strong th:text="${contentCounts.board}">..</strong>개</li>
+                                    <li th:if="${contentCounts.review > 0}">리뷰: <strong th:text="${contentCounts.review}">..</strong>개</li>
+                                    <li th:if="${contentCounts.job > 0}">구인구직: <strong th:text="${contentCounts.job}">..</strong>개</li>
+                                </ul>
+                                <div class="mb-3">
+                                    <label class="form-label fw-bold text-warning">콘텐츠 처리 방식 선택 <span class="text-danger">*</span></label>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="radio" name="deleteOption" id="anonymousOption" value="anonymous" checked required>
+                                        <label class="form-check-label" for="anonymousOption">
+                                            <strong>익명화</strong> - 개인정보만 삭제, 콘텐츠는 "탈퇴회원"으로 표시
+                                        </label>
+                                        <div class="form-text text-muted small">추천: 작성한 콘텐츠가 다른 사용자에게 도움이 될 수 있습니다</div>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="radio" name="deleteOption" id="completeOption" value="complete" required>
+                                        <label class="form-check-label" for="completeOption">
+                                            <strong class="text-danger">완전삭제</strong> - 모든 개인정보와 콘텐츠 완전 삭제
+                                        </label>
+                                        <div class="form-text text-danger small">경고: 작성한 모든 게시글, 리뷰 등이 영구 삭제됩니다</div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- 콘텐츠가 없는 경우 숨겨진 필드 -->
+                            <input th:if="${contentCounts.total == 0}" type="hidden" name="deleteOption" value="complete">
+                            
                             <!-- 이름 확인 입력 -->
                             <div class="mb-3">
                                 <label for="confirmName" class="form-label">
