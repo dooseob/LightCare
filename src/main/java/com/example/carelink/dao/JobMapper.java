@@ -62,4 +62,9 @@ public interface JobMapper {
      * 전체 구인구직 수 조회 (통계용 - 검색 조건 없음)
      */
     int getJobCount();
+    
+    /**
+     * 특정 회원이 작성한 구인구직 게시글 목록 조회
+     */
+    List<JobDTO> findJobsByMemberId(@Param("memberId") Long memberId);
 } 

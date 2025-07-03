@@ -95,10 +95,10 @@
                             <span th:unless="${session.loginMember != null}" th:text="'테스트사용자' + ${session.memberId}">테스트사용자</span>
                         </a>
                         <ul class="dropdown-menu dropdown-menu-end">
-                            <li><a class="dropdown-item" href="/member/myinfo">내 정보</a></li>
-                            <li><a class="dropdown-item" href="/member/mypost">내가 쓴 글</a></li>
+                            <li><a class="dropdown-item" href="/member/myinfo" onclick="event.stopPropagation();">내 정보</a></li>
+                            <li><a class="dropdown-item" href="/member/mypost" onclick="event.stopPropagation();">내가 쓴 글</a></li>
                             <li><hr class="dropdown-divider"></li>
-                            <li><a class="dropdown-item" href="/member/logout">로그아웃</a></li>
+                            <li><a class="dropdown-item" href="/member/logout" onclick="event.stopPropagation();">로그아웃</a></li>
                         </ul>
                     </li>
                     
@@ -121,7 +121,7 @@
     </nav>
     
     <!-- 메시지 표시 영역 -->
-    <div th:fragment="messages" class="container mt-3" style="position: relative; z-index: 1040;">
+    <div th:fragment="messages" class="container mt-3" style="position: relative; z-index: 1030;">
         <!-- 성공 메시지 -->
         <div class="alert alert-success alert-dismissible fade show" role="alert" th:if="${message}">
             <i class="fas fa-check-circle me-2"></i>
@@ -143,5 +143,22 @@
             <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
         </div>
     </div>
+    
+    <!-- 드롭다운 메뉴와 메시지 충돌 방지 스크립트 -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // 드롭다운이 열릴 때 메시지 자동 숨김
+            var dropdownToggles = document.querySelectorAll('.dropdown-toggle');
+            dropdownToggles.forEach(function(toggle) {
+                toggle.addEventListener('click', function() {
+                    // 메시지 알림 즉시 숨김
+                    var alerts = document.querySelectorAll('.alert');
+                    alerts.forEach(function(alert) {
+                        alert.style.display = 'none';
+                    });
+                });
+            });
+        });
+    </script>
 </body>
 </html> 
