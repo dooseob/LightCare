@@ -6,11 +6,16 @@ document.addEventListener('DOMContentLoaded', function() {
     const elements = {
         form: document.getElementById('deleteMemberForm'),
         password: document.getElementById('password'),
+        confirmName: document.getElementById('confirmName'),
         confirmDelete: document.getElementById('confirmDelete'),
         submitButton: document.getElementById('submitButton'),
         togglePassword: document.getElementById('togglePassword'),
-        passwordFeedback: document.getElementById('passwordFeedback')
+        passwordFeedback: document.getElementById('passwordFeedback'),
+        nameValidationFeedback: document.getElementById('nameValidationFeedback')
     };
+    
+    // 서버에서 전달된 사용자 이름 (전역 변수로 설정)
+    const memberName = document.querySelector('.form-text strong').textContent.trim();
 
     // 디버깅: DOM 요소 확인
     console.log('회원탈퇴 페이지 DOM 요소:', elements);
@@ -64,10 +69,10 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    // 비밀번호 검증
+    // 비밀번호 검증 (기본 입력 여부만 확인, 실제 비밀번호 일치는 서버에서 처리)
     function validatePassword() {
         const value = elements.password.value.trim();
-        const isValid = value.length >= 1; // 최소 1자리만 있으면 됨
+        const isValid = value.length >= 8; // 최소 8자리 이상 입력되어야 함
         
         if (value === '') {
             clearValidationState(elements.password);
@@ -77,9 +82,30 @@ document.addEventListener('DOMContentLoaded', function() {
         
         setValidationState(elements.password, isValid);
         if (!isValid) {
-            setFeedback(elements.passwordFeedback, '비밀번호를 입력해주세요.', false);
+            setFeedback(elements.passwordFeedback, '비밀번호는 최소 8자 이상 입력해주세요.', false);
         } else {
-            setFeedback(elements.passwordFeedback, '비밀번호가 입력되었습니다.', true);
+            setFeedback(elements.passwordFeedback, '비밀번호 형식이 유효합니다. (실제 일치 여부는 제출 시 확인)', true);
+        }
+        
+        return isValid;
+    }
+    
+    // 이름 검증
+    function validateName() {
+        const value = elements.confirmName.value.trim();
+        const isValid = value === memberName;
+        
+        if (value === '') {
+            clearValidationState(elements.confirmName);
+            setFeedback(elements.nameValidationFeedback, '', true);
+            return false;
+        }
+        
+        setValidationState(elements.confirmName, isValid);
+        if (!isValid) {
+            setFeedback(elements.nameValidationFeedback, `이름이 일치하지 않습니다. '입력값: ${value}' ≠ '등록된 이름: ${memberName}'`, false);
+        } else {
+            setFeedback(elements.nameValidationFeedback, '이름이 확인되었습니다.', true);
         }
         
         return isValid;
@@ -93,9 +119,10 @@ document.addEventListener('DOMContentLoaded', function() {
     // 제출 버튼 활성화/비활성화
     function updateSubmitButton() {
         const isPasswordValid = validatePassword();
+        const isNameValid = validateName();
         const isConfirmChecked = validateConfirmDelete();
         
-        const isFormValid = isPasswordValid && isConfirmChecked;
+        const isFormValid = isPasswordValid && isNameValid && isConfirmChecked;
         
         if (elements.submitButton) {
             elements.submitButton.disabled = !isFormValid;
@@ -107,12 +134,12 @@ document.addEventListener('DOMContentLoaded', function() {
     // 탈퇴 확인 다이얼로그
     function showConfirmDialog() {
         const confirmMessage = 
-            "정말로 회원탈퇴를 진행하시겠습니까?\n\n" +
-            "⚠️ 주의사항:\n" +
-            "• 모든 개인정보가 삭제됩니다\n" +
+            `최종 확인: ${memberName}님의 회원탈퇴를 진행하시겠습니까?\n\n` +
+            "⚠️ 마지막 경고:\n" +
+            "• 모든 개인정보가 영구 삭제됩니다\n" +
             "• 동일한 아이디로 재가입이 불가능합니다\n" +
-            "• 탈퇴 후에는 복구할 수 없습니다\n\n" +
-            "정말로 탈퇴하시겠습니까?";
+            "• 탈퇴 후에는 절대 복구할 수 없습니다\n\n" +
+            "지금 탈퇴하시겠습니까?";
         
         return confirm(confirmMessage);
     }
@@ -136,6 +163,23 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         }
 
+        // 이름 입력 이벤트
+        if (elements.confirmName) {
+            elements.confirmName.addEventListener('input', function() {
+                updateSubmitButton();
+            });
+            
+            elements.confirmName.addEventListener('blur', function() {
+                validateName();
+                updateSubmitButton();
+            });
+            
+            elements.confirmName.addEventListener('focus', function() {
+                clearValidationState(this);
+                setFeedback(elements.nameValidationFeedback, '', true);
+            });
+        }
+        
         // 동의 체크박스 이벤트
         if (elements.confirmDelete) {
             elements.confirmDelete.addEventListener('change', function() {
@@ -166,6 +210,10 @@ document.addEventListener('DOMContentLoaded', function() {
                     // 첫 번째 오류 필드에 포커스
                     if (!validatePassword() && elements.password) {
                         elements.password.focus();
+                        alert('비밀번호를 올바르게 입력해주세요.');
+                    } else if (!validateName() && elements.confirmName) {
+                        elements.confirmName.focus();
+                        alert(`이름을 정확히 입력해주세요. 등록된 이름: '${memberName}'`);
                     } else if (!validateConfirmDelete() && elements.confirmDelete) {
                         elements.confirmDelete.focus();
                         elements.confirmDelete.classList.add('is-invalid');
@@ -214,6 +262,12 @@ document.addEventListener('DOMContentLoaded', function() {
         // 폼 변경 감지
         if (elements.password) {
             elements.password.addEventListener('input', () => {
+                formChanged = true;
+            });
+        }
+        
+        if (elements.confirmName) {
+            elements.confirmName.addEventListener('input', () => {
                 formChanged = true;
             });
         }

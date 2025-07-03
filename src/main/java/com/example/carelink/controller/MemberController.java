@@ -485,6 +485,7 @@ public class MemberController {
      */
     @PostMapping("/mypage/delete")
     public String deleteMember(@RequestParam("password") String password,
+                              @RequestParam("confirmName") String confirmName,
                               HttpSession session, 
                               RedirectAttributes redirectAttributes) {
         MemberDTO loginMember = (MemberDTO) session.getAttribute(Constants.SESSION_MEMBER);
@@ -494,16 +495,49 @@ public class MemberController {
         }
 
         String userId = loginMember.getUserId();
+        log.info("회원탈퇴 요청: userId={}, 입력된 비밀번호 길이={}, 입력된 이름={}", 
+                userId, password.length(), confirmName);
+        
         try {
-            // 현재 비밀번호 확인
-            if (!password.equals(loginMember.getPassword())) {
+            // DB에서 최신 비밀번호 정보 조회
+            MemberDTO currentMember = memberService.findById(loginMember.getMemberId());
+            if (currentMember == null) {
+                log.warn("회원탈퇴: 회원 정보를 찾을 수 없음: memberId={}", loginMember.getMemberId());
+                redirectAttributes.addFlashAttribute("error", "회원 정보를 찾을 수 없습니다.");
+                return "redirect:/member/mypage/delete";
+            }
+            
+            // 현재 비밀번호 확인 (개발용: 평문 비교)
+            log.info("비밀번호 비교: DB 비밀번호={}, 입력 비밀번호={}", 
+                    currentMember.getPassword(), password);
+            
+            if (!password.equals(currentMember.getPassword())) {
+                log.warn("회원탈퇴: 비밀번호 불일치: userId={}", userId);
                 redirectAttributes.addFlashAttribute("error", "현재 비밀번호가 일치하지 않습니다.");
                 return "redirect:/member/mypage/delete";
             }
             
+            log.info("비밀번호 확인 성공: userId={}", userId);
+            
+            // 이름 확인 검증
+            if (!confirmName.trim().equals(currentMember.getName().trim())) {
+                log.warn("회원탈퇴: 이름 불일치: userId={}, 입력된 이름={}, 등록된 이름={}", 
+                        userId, confirmName, currentMember.getName());
+                redirectAttributes.addFlashAttribute("error", 
+                        String.format("이름이 일치하지 않습니다. 등록된 이름 '%s'를 정확히 입력해주세요.", currentMember.getName()));
+                return "redirect:/member/mypage/delete";
+            }
+            
+            log.info("이름 확인 성공: userId={}, 이름={}", userId, confirmName);
+            
+            // 회원 탈퇴 처리
             memberService.deleteMember(userId);
-            session.invalidate(); // 탈퇴 후 세션 무효화
-            redirectAttributes.addFlashAttribute("message", "회원 탈퇴가 완료되었습니다.");
+            log.info("회원탈퇴 완료: userId={}", userId);
+            
+            // 세션 무효화
+            session.invalidate();
+            
+            redirectAttributes.addFlashAttribute("message", "회원 탈퇴가 완료되었습니다. 그동안 이용해 주셔서 감사합니다.");
             return "redirect:/";
         } catch (Exception e) {
             log.error("회원 탈퇴 처리 중 오류 발생: {}", userId, e);
