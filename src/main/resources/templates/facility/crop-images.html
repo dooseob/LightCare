@@ -818,69 +818,98 @@ function initializeCropper() {
     });
 }
 
-// 스마트 스크롤 설정
+// 스마트 스크롤 설정 (개선된 버전)
 function setupSmartScroll() {
-    if (!cropper) return;
+    if (!cropper) {
+        console.log('❌ 크롭퍼가 없어서 스마트 스크롤 설정 불가');
+        return;
+    }
     
     const cropperContainer = document.querySelector('.cropper-container');
-    if (!cropperContainer) return;
+    if (!cropperContainer) {
+        console.log('❌ 크롭퍼 컨테이너를 찾을 수 없음');
+        return;
+    }
     
-    const MIN_ZOOM = 0.1;
-    const MAX_ZOOM = 3.0;
+    console.log('🖱️ 스마트 스크롤 시스템 초기화 시작');
     
-    console.log('🖱️ 스마트 스크롤 시스템 초기화');
+    // 기존 이벤트 리스너 제거 (중복 방지)
+    cropperContainer.removeEventListener('wheel', handleSmartScroll);
     
-    cropperContainer.addEventListener('wheel', function(event) {
+    // 새 이벤트 리스너 추가
+    cropperContainer.addEventListener('wheel', handleSmartScroll, { passive: false });
+    
+    console.log('✅ 스마트 스크롤 시스템 초기화 완료');
+}
+
+// 스마트 스크롤 핸들러 (별도 함수로 분리)
+function handleSmartScroll(event) {
+    if (!cropper) return;
+    
+    try {
         const imageData = cropper.getImageData();
-        const currentZoom = imageData.width / imageData.naturalWidth;
+        const canvasData = cropper.getCanvasData();
+        
+        // 현재 줌 레벨 계산 (더 정확한 방법)
+        const currentZoom = canvasData.width / canvasData.naturalWidth;
         
         const isZoomingIn = event.deltaY < 0;
         const isZoomingOut = event.deltaY > 0;
         
-        console.log('🔍 현재 줌:', currentZoom.toFixed(2), '방향:', isZoomingIn ? '확대' : '축소');
+        console.log('🔍 스마트 스크롤 - 현재 줌:', currentZoom.toFixed(3), '방향:', isZoomingIn ? '확대' : '축소');
         
-        // 임계값 설정
-        const maxThreshold = 2.8;
-        const minThreshold = 0.2;
+        // 더 정밀한 임계값 설정
+        const MAX_ZOOM_THRESHOLD = 2.9;  // 최대 줌 임계값
+        const MIN_ZOOM_THRESHOLD = 0.15; // 최소 줌 임계값
         
-        // 확대 시: 최대 줌 근처에서 페이지 스크롤 허용
-        if (isZoomingIn && currentZoom >= maxThreshold) {
-            updateZoomIndicator(currentZoom, '최대 확대');
-            console.log('📈 최대 확대 근처 - 페이지 스크롤 실행');
+        // 최대 확대 상태에서 더 확대 시도 시 → 페이지 스크롤
+        if (isZoomingIn && currentZoom >= MAX_ZOOM_THRESHOLD) {
+            console.log('📈 최대 확대 도달 → 페이지 스크롤 전환');
+            updateZoomIndicator(currentZoom, '최대 확대 - 페이지 스크롤');
             
-            const scrollAmount = event.deltaY * 0.5;
+            // 페이지 스크롤 실행
             window.scrollBy({
-                top: scrollAmount,
-                behavior: 'smooth'
+                top: event.deltaY * 0.8,
+                behavior: 'auto'
             });
-            return;
+            return; // preventDefault 하지 않고 종료
         }
         
-        // 축소 시: 최소 줌 근처에서 페이지 스크롤 허용
-        if (isZoomingOut && currentZoom <= minThreshold) {
-            updateZoomIndicator(currentZoom, '최소 축소');
-            console.log('📉 최소 축소 근처 - 페이지 스크롤 실행');
+        // 최소 축소 상태에서 더 축소 시도 시 → 페이지 스크롤
+        if (isZoomingOut && currentZoom <= MIN_ZOOM_THRESHOLD) {
+            console.log('📉 최소 축소 도달 → 페이지 스크롤 전환');
+            updateZoomIndicator(currentZoom, '최소 축소 - 페이지 스크롤');
             
-            const scrollAmount = event.deltaY * 0.5;
+            // 페이지 스크롤 실행
             window.scrollBy({
-                top: scrollAmount,
-                behavior: 'smooth'
+                top: event.deltaY * 0.8,
+                behavior: 'auto'
             });
-            return;
+            return; // preventDefault 하지 않고 종료
         }
         
-        // 이미지 확대/축소 범위 내에서는 기본 스크롤 차단하고 줌 적용
+        // 줌 범위 내에서는 이미지 줌 처리
         event.preventDefault();
         event.stopPropagation();
         
         const zoomDelta = isZoomingIn ? 0.1 : -0.1;
         cropper.zoom(zoomDelta);
         
-        // 줌 표시기 업데이트
-        const newZoom = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, currentZoom + zoomDelta));
+        // 새로운 줌 레벨 계산
+        const newImageData = cropper.getImageData();
+        const newCanvasData = cropper.getCanvasData();
+        const newZoom = newCanvasData.width / newCanvasData.naturalWidth;
+        
         updateZoomIndicator(newZoom, isZoomingIn ? '확대' : '축소');
         
-    }, { passive: false });
+    } catch (error) {
+        console.error('❌ 스마트 스크롤 처리 중 오류:', error);
+        // 오류 발생 시 기본 스크롤 허용
+        window.scrollBy({
+            top: event.deltaY * 0.5,
+            behavior: 'auto'
+        });
+    }
 }
 
 // 줌 표시기 업데이트 (개선된 버전)
