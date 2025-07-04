@@ -250,6 +250,9 @@ public class JobService {
         // JobApplicationMapper를 통해 DB에 삽입합니다.
         jobApplicationMapper.insertJobApplication(jobApplication); // 이 줄의 주석을 해제하고 사용합니다.
 
+        // 3. apply_count 증가 (여기가 핵심적으로 추가되어야 하는 부분!)
+        jobMapper.incrementApplyCount(jobId); // <-- 이 줄을 추가합니다!
+
         log.info("구인공고 지원 로직 완료 - jobId: {}, applicantMemberId: {}, 생성된 지원 ID: {}",
                 jobId, applicantMemberId, jobApplication.getId());
     }

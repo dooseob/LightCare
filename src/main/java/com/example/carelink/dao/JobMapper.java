@@ -62,4 +62,11 @@ public interface JobMapper {
      * 전체 구인구직 수 조회 (통계용 - 검색 조건 없음)
      */
     int getJobCount();
+
+    // --- applyCount 증가를 위한 메서드 추가 ---
+    /**
+     * 특정 구인구직 공고의 지원자 수 (applyCount)를 1 증가시킵니다.
+     */
+    void incrementApplyCount(@Param("jobId") Long jobId); // <-- 이 줄을 추가합니다!
+
 } 
