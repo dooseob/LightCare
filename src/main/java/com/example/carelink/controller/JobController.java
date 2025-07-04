@@ -1,16 +1,14 @@
 package com.example.carelink.controller;
 
 import com.example.carelink.common.Constants;
-import com.example.carelink.common.PageInfo;
-import com.example.carelink.dto.BoardDTO;
 import com.example.carelink.dto.JobDTO;
 import com.example.carelink.dto.MemberDTO;
-import com.example.carelink.service.BoardService;
 import com.example.carelink.service.JobService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import javax.servlet.http.HttpSession;
 import java.util.List;
@@ -43,29 +41,51 @@ public class JobController {
         
         return "job/list";
     }
-    
+
     /**
-     * 구인구직 작성 페이지 (시설회원만 접근 가능)
+     * 구인구직 작성 페이지 로드
+     * 시설회원 또는 관리자만 접근 가능
      */
-    @GetMapping("/write")
-    public String writePage(Model model, HttpSession session) {
-        // 로그인 체크
+    @GetMapping("/write") // URL 경로 확인 필요 (예: /job/write)
+    public String writePage(
+            @RequestParam(value = "jobType", required = false) String jobTypeParam,
+            Model model,
+            HttpSession session) {
+
         MemberDTO loggedInMember = (MemberDTO) session.getAttribute(Constants.SESSION_MEMBER);
         if (loggedInMember == null) {
             return "redirect:/member/login";
         }
-        
-        // 시설회원 또는 관리자 권한 체크
+
+        // 권한 체크: 시설회원 또는 관리자만 접근 허용
         if (!"FACILITY".equals(loggedInMember.getRole()) && !"ADMIN".equals(loggedInMember.getRole())) {
-            // 일반회원이 접근한 경우 에러 메시지와 함께 리다이렉트
             session.setAttribute("errorMessage", "구인등록은 시설회원만 이용할 수 있습니다.");
             return "redirect:/job";
         }
-        
-        model.addAttribute("jobDTO", new JobDTO());
+
+        JobDTO jobDTO = new JobDTO();
+
+        // 사용자의 역할 및 jobType 파라미터에 따라 jobDTO 초기값 설정
+        if ("ADMIN".equals(loggedInMember.getRole())) {
+            if ("RECRUIT".equalsIgnoreCase(jobTypeParam)) {
+                jobDTO.setJobType("RECRUIT");
+            } else if ("SEARCH".equalsIgnoreCase(jobTypeParam)) {
+                jobDTO.setJobType("SEARCH");
+            } else {
+                jobDTO.setJobType("RECRUIT"); // 관리자 기본값
+            }
+        } else if ("FACILITY".equals(loggedInMember.getRole())) {
+            jobDTO.setJobType("RECRUIT");
+        } else if ("USER".equals(loggedInMember.getRole())) {
+            jobDTO.setJobType("SEARCH");
+        }
+
+        model.addAttribute("jobDTO", jobDTO);
+
+        // 반환할 템플릿 경로 (templates/job/write.html)
         return "job/write";
     }
-    
+
     /**
      * 구인구직 등록 처리 (시설회원만 가능)
      */
@@ -104,36 +124,6 @@ public class JobController {
         return "redirect:/job";
 
     }
-
-    /*
-    *//**
-     * 구인구직 상세보기
-     *//*
-    @GetMapping("/detail/{id}")
-    public String detailPage(@PathVariable Long id, Model model, HttpSession session) {
-        try {
-            JobDTO job = jobService.getJobById(id);
-            if (job == null) {
-                session.setAttribute("errorMessage", "해당 구인공고를 찾을 수 없습니다.");
-                return "redirect:/job";
-            }
-
-            // 조회수 증가 (작성자 제외)
-            MemberDTO loggedInMember = (MemberDTO) session.getAttribute(Constants.SESSION_MEMBER);
-            if (loggedInMember == null || !job.getMemberId().equals(loggedInMember.getMemberId())) {
-                // TODO: jobService.increaseViewCount(id); 를 구현해야 함
-                // jobService.increaseViewCount(id);
-            }
-
-            model.addAttribute("job", job);
-            return "job/detail";
-
-        } catch (Exception e) {
-            session.setAttribute("errorMessage", "구인공고 조회 중 오류가 발생했습니다.");
-            return "redirect:/job";
-        }
-    }
-    */
 
     @GetMapping("/detail/{id}")
     public String detailPage(@PathVariable Long id, Model model, HttpSession session) {
@@ -260,4 +250,40 @@ public class JobController {
         session.setAttribute("successMessage", "구인공고가 삭제되었습니다.");
         return "redirect:/job";
     }
+
+    /**
+     * 구인공고에 지원하기 (개인 회원만 가능)
+     * POST 요청으로 지원 처리를 수행합니다.
+     */
+    @PostMapping("/{id}/apply")
+    public String applyForJob(@PathVariable Long id, HttpSession session, RedirectAttributes redirectAttributes) {
+        // 1. 로그인 여부 및 회원 유형 확인 (개인 회원만 지원 가능하도록)
+        MemberDTO loggedInMember = (MemberDTO) session.getAttribute(Constants.SESSION_MEMBER);
+        if (loggedInMember == null) {
+            redirectAttributes.addFlashAttribute("errorMessage", "로그인 후 이용해주세요.");
+            return "redirect:/member/login";
+        }
+        if (!"USER".equals(loggedInMember.getRole())) {
+            redirectAttributes.addFlashAttribute("errorMessage", "개인 회원만 구인공고에 지원할 수 있습니다.");
+            return "redirect:/job/detail/" + id;
+        }
+
+        try {
+            // 2. JobService를 통해 지원 로직 수행
+            // 이 메서드는 JobService에 추가해야 합니다. (아래 참고)
+            jobService.applyForJob(id, loggedInMember.getMemberId());
+
+            redirectAttributes.addFlashAttribute("successMessage", "구인공고 지원이 완료되었습니다!");
+            return "redirect:/job/detail/" + id; // 지원 완료 후 상세 페이지로 리다이렉트
+        } catch (IllegalArgumentException e) {
+            // 예를 들어, 이미 지원했거나, 없는 공고에 지원 시
+            redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
+            return "redirect:/job/detail/" + id;
+        } catch (Exception e) {
+            // 기타 예상치 못한 오류 발생 시
+            redirectAttributes.addFlashAttribute("errorMessage", "구인공고 지원 중 오류가 발생했습니다. 다시 시도해주세요.");
+            return "redirect:/job/detail/" + id;
+        }
+    }
+
 } 

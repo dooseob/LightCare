@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.carelink.dao.JobApplicationMapper">
+
+    <insert id="insertJobApplication" parameterType="com.example.carelink.dto.JobApplicationDTO"
+            useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO job_application (
+            job_id,
+            applicant_member_id,
+            application_date,
+            status
+        ) VALUES (
+            #{jobId},
+            #{applicantMemberId},
+            #{applicationDate},
+            #{status}
+        )
+    </insert>
+
+    <select id="countByJobIdAndApplicantMemberId" resultType="int">
+        SELECT COUNT(*)
+        FROM job_application
+        WHERE job_id = #{jobId} AND applicant_member_id = #{applicantMemberId}
+    </select>
+
+    </mapper>
