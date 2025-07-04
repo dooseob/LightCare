@@ -1,9 +1,11 @@
 package com.example.carelink.controller;
 
 import com.example.carelink.dto.FacilityDTO;
+import com.example.carelink.dto.FacilityImageDTO;
 import com.example.carelink.dto.ReviewDTO;
 import com.example.carelink.service.FacilityService;
 import com.example.carelink.service.ReviewService;
+import com.example.carelink.service.FacilityImageService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import lombok.RequiredArgsConstructor;
@@ -31,6 +33,7 @@ public class FacilityController {
 
     private final FacilityService facilityService;
     private final ReviewService reviewService;
+    private final FacilityImageService facilityImageService;
 
     /**
      * Jackson ObjectMapper에 Java 8 날짜/시간 모듈을 등록합니다.
@@ -266,7 +269,14 @@ public class FacilityController {
             // approval_status가 null인 경우 기본값 설정
             String approvalStatus = existingFacility.getApprovalStatus();
             if (approvalStatus == null || approvalStatus.trim().isEmpty()) {
-                approvalStatus = existingFacility.getIsApproved() ? "APPROVED" : "PENDING";
+                // 기존 시설의 is_approved 상태를 기반으로 적절한 값 설정
+                if (existingFacility.getIsApproved() != null && existingFacility.getIsApproved()) {
+                    approvalStatus = "APPROVED";
+                    log.info("🔧 approval_status NULL 방지 - 승인된 시설: APPROVED");
+                } else {
+                    approvalStatus = "PENDING";
+                    log.info("🔧 approval_status NULL 방지 - 미승인 시설: PENDING");
+                }
             }
             facilityDTO.setApprovalStatus(approvalStatus);
             
@@ -402,7 +412,7 @@ public class FacilityController {
     }
 
     /**
-     * 시설 이미지 저장 처리
+     * 시설 이미지 저장 처리 (다중 이미지 지원)
      */
     @PostMapping("/crop-images/save/{facilityId}")
     @ResponseBody
@@ -448,17 +458,17 @@ public class FacilityController {
             }
             
             // Alt 텍스트 설정
+            String finalAltText;
             if (altText != null && !altText.trim().isEmpty()) {
-                facility.setFacilityImageAltText(altText.trim());
-                log.info("🏷️ 시설 이미지 Alt 텍스트 설정: {}", altText.trim());
+                finalAltText = altText.trim();
+                log.info("🏷️ 시설 이미지 Alt 텍스트 설정: {}", finalAltText);
             } else {
                 // 기본값 설정
-                String defaultAltText = facility.getFacilityName() + " 시설 이미지";
+                finalAltText = facility.getFacilityName() + " 시설 이미지";
                 if (imageIndex != null && !imageIndex.isEmpty()) {
-                    defaultAltText += " " + (Integer.parseInt(imageIndex) + 1);
+                    finalAltText += " " + (Integer.parseInt(imageIndex) + 1);
                 }
-                facility.setFacilityImageAltText(defaultAltText);
-                log.info("🏷️ 시설 이미지 Alt 텍스트 기본값 설정: {}", defaultAltText);
+                log.info("🏷️ 시설 이미지 Alt 텍스트 기본값 설정: {}", finalAltText);
             }
             
             // 이미지 형식 정보 로깅
@@ -474,15 +484,19 @@ public class FacilityController {
                 }
             }
             
-            // 시설 이미지 업데이트 (단일 이미지로 처리, 향후 다중 이미지 확장 가능)
-            facilityService.updateFacility(facility, facilityImageFile);
+            // 다중 이미지 시스템으로 저장
+            Integer orderIndex = imageIndex != null ? Integer.parseInt(imageIndex) : null;
+            FacilityImageDTO savedImage = facilityImageService.saveSingleFacilityImage(
+                facilityId, facilityImageFile, finalAltText, orderIndex);
             
             result.put("success", true);
             result.put("message", "시설 이미지가 성공적으로 저장되었습니다.");
             result.put("facilityId", facilityId);
             result.put("imageIndex", imageIndex);
+            result.put("imageId", savedImage.getImageId());
+            result.put("imagePath", savedImage.getImagePath());
             
-            log.info("✅ 시설 이미지 저장 성공: facilityId={}", facilityId);
+            log.info("✅ 시설 이미지 저장 성공: facilityId={}, imageId={}", facilityId, savedImage.getImageId());
             
         } catch (Exception e) {
             log.error("❌ 시설 이미지 저장 중 오류 발생: facilityId={}", facilityId, e);
@@ -491,5 +505,28 @@ public class FacilityController {
         }
         
         return result;
+    }
+    
+    /**
+     * 시설 이미지 목록 조회 API
+     */
+    @GetMapping("/api/{facilityId}/images")
+    @ResponseBody
+    public List<FacilityImageDTO> getFacilityImages(@PathVariable Long facilityId, HttpSession session) {
+        MemberDTO member = (MemberDTO) session.getAttribute(Constants.SESSION_MEMBER);
+        
+        if (member == null) {
+            throw new RuntimeException("로그인이 필요합니다.");
+        }
+        
+        FacilityDTO facility = facilityService.getFacilityById(facilityId);
+        if (facility == null) {
+            throw new RuntimeException("시설을 찾을 수 없습니다.");
+        }
+        
+        // 권한 확인 (시설 소유자, 관리자, 또는 모든 사용자에게 조회 허용)
+        // 필요에 따라 권한 체크 로직 수정 가능
+        
+        return facilityImageService.getImagesByFacilityId(facilityId);
     }
 }

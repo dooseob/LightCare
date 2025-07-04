@@ -9,7 +9,8 @@
       "Bash(mysql:*)",
       "Bash(curl:*)",
       "Bash(pkill:*)",
-      "Bash(true)"
+      "Bash(true)",
+      "Bash(kill:*)"
     ],
     "deny": []
   }
