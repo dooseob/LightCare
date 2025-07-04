@@ -48,21 +48,29 @@ public class JobController {
      * 구인구직 작성 페이지 (시설회원만 접근 가능)
      */
     @GetMapping("/write")
-    public String writePage(Model model, HttpSession session) {
+    public String writePage(@RequestParam(defaultValue = "RECRUIT") String type, Model model, HttpSession session) {
         // 로그인 체크
-        MemberDTO loggedInMember = (MemberDTO) session.getAttribute(Constants.SESSION_MEMBER);
+        MemberDTO loggedInMember = getCurrentMember(session);
         if (loggedInMember == null) {
             return "redirect:/member/login";
         }
         
-        // 시설회원 또는 관리자 권한 체크
-        if (!"FACILITY".equals(loggedInMember.getRole()) && !"ADMIN".equals(loggedInMember.getRole())) {
-            // 일반회원이 접근한 경우 에러 메시지와 함께 리다이렉트
-            session.setAttribute("errorMessage", "구인등록은 시설회원만 이용할 수 있습니다.");
+        // 권한별 작성 가능 타입 체크
+        if ("RECRUIT".equals(type) && !canWriteRecruit(loggedInMember)) {
+            session.setAttribute("errorMessage", "구인공고는 시설회원 또는 관리자만 작성할 수 있습니다.");
             return "redirect:/job";
         }
         
-        model.addAttribute("jobDTO", new JobDTO());
+        if ("SEARCH".equals(type) && !canWriteSearch(loggedInMember)) {
+            session.setAttribute("errorMessage", "구직공고는 일반회원 또는 관리자만 작성할 수 있습니다.");
+            return "redirect:/job";
+        }
+
+        JobDTO jobDTO = new JobDTO();
+        jobDTO.setJobType(type); // 기본 타입 설정
+        model.addAttribute("jobDTO", jobDTO);
+        model.addAttribute("selectedType", type);
+        model.addAttribute("currentMember", loggedInMember);
         return "job/write";
     }
     
@@ -72,14 +80,20 @@ public class JobController {
     @PostMapping("/write")
     public String writeJob(@ModelAttribute JobDTO jobDTO, HttpSession session) {
         // 로그인 체크
-        MemberDTO loggedInMember = (MemberDTO) session.getAttribute(Constants.SESSION_MEMBER);
+        MemberDTO loggedInMember = getCurrentMember(session);
         if (loggedInMember == null) {
             return "redirect:/member/login";
         }
         
-        // 시설회원 또는 관리자 권한 체크
-        if (!"FACILITY".equals(loggedInMember.getRole()) && !"ADMIN".equals(loggedInMember.getRole())) {
-            session.setAttribute("errorMessage", "구인등록은 시설회원만 이용할 수 있습니다.");
+        // 권한별 작성 가능 타입 체크
+        String jobType = jobDTO.getJobType();
+        if ("RECRUIT".equals(jobType) && !canWriteRecruit(loggedInMember)) {
+            session.setAttribute("errorMessage", "구인공고는 시설회원 또는 관리자만 작성할 수 있습니다.");
+            return "redirect:/job";
+        }
+        
+        if ("SEARCH".equals(jobType) && !canWriteSearch(loggedInMember)) {
+            session.setAttribute("errorMessage", "구직공고는 일반회원 또는 관리자만 작성할 수 있습니다.");
             return "redirect:/job";
         }
 
@@ -150,12 +164,9 @@ public class JobController {
             return "redirect:/job";
         }
         
-        // 작성자, 시설회원 또는 관리자 권한 체크
-        boolean isOwner = job.getMemberId().equals(loggedInMember.getMemberId());
-        boolean isFacilityOrAdmin = "FACILITY".equals(loggedInMember.getRole()) || "ADMIN".equals(loggedInMember.getRole());
-        
-        if (!isOwner && !"ADMIN".equals(loggedInMember.getRole())) {
-            session.setAttribute("errorMessage", "수정 권한이 없습니다. 작성자만 수정할 수 있습니다.");
+        // 수정 권한 체크 (작성자 또는 관리자)
+        if (!canEditJob(loggedInMember, job.getMemberId())) {
+            session.setAttribute("errorMessage", "수정 권한이 없습니다. 작성자 또는 관리자만 수정할 수 있습니다.");
             return "redirect:/job/detail/" + id;
         }
         
@@ -180,12 +191,9 @@ public class JobController {
             return "redirect:/job";
         }
         
-        // 작성자 또는 관리자 권한 체크
-        boolean isOwner = existingJob.getMemberId().equals(loggedInMember.getMemberId());
-        boolean isAdmin = "ADMIN".equals(loggedInMember.getRole());
-        
-        if (!isOwner && !isAdmin) {
-            session.setAttribute("errorMessage", "수정 권한이 없습니다. 작성자만 수정할 수 있습니다.");
+        // 수정 권한 체크 (작성자 또는 관리자)
+        if (!canEditJob(loggedInMember, existingJob.getMemberId())) {
+            session.setAttribute("errorMessage", "수정 권한이 없습니다. 작성자 또는 관리자만 수정할 수 있습니다.");
             return "redirect:/job/detail/" + id;
         }
         
@@ -224,5 +232,49 @@ public class JobController {
         jobService.deleteJob(id);
         session.setAttribute("successMessage", "구인공고가 삭제되었습니다.");
         return "redirect:/job";
+    }
+    
+    // ================= 권한 체크 메서드들 =================
+    
+    /**
+     * 현재 로그인한 사용자 조회
+     */
+    private MemberDTO getCurrentMember(HttpSession session) {
+        return (MemberDTO) session.getAttribute(Constants.SESSION_MEMBER);
+    }
+    
+    /**
+     * 구인공고 작성 권한 확인 (시설회원, 관리자)
+     */
+    private boolean canWriteRecruit(MemberDTO member) {
+        return member != null && ("FACILITY".equals(member.getRole()) || "ADMIN".equals(member.getRole()));
+    }
+    
+    /**
+     * 구직공고 작성 권한 확인 (일반회원, 관리자)
+     */
+    private boolean canWriteSearch(MemberDTO member) {
+        return member != null && ("USER".equals(member.getRole()) || "ADMIN".equals(member.getRole()));
+    }
+    
+    /**
+     * 수정/삭제 권한 확인 (작성자, 관리자)
+     */
+    private boolean canEditJob(MemberDTO member, Long authorId) {
+        return member != null && (member.getMemberId().equals(authorId) || "ADMIN".equals(member.getRole()));
+    }
+    
+    /**
+     * 지원/연락 권한 확인 (작성자가 아닌 로그인 사용자)
+     */
+    private boolean canApplyOrContact(MemberDTO member, Long authorId) {
+        return member != null && !member.getMemberId().equals(authorId);
+    }
+    
+    /**
+     * 관리자 권한 확인
+     */
+    private boolean isAdmin(MemberDTO member) {
+        return member != null && "ADMIN".equals(member.getRole());
     }
 } 

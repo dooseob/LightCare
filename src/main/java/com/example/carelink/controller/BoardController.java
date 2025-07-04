@@ -1,7 +1,9 @@
 package com.example.carelink.controller;
 
 import com.example.carelink.common.PageInfo;
+import com.example.carelink.common.Constants;
 import com.example.carelink.dto.BoardDTO;
+import com.example.carelink.dto.MemberDTO;
 import com.example.carelink.service.BoardService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -322,10 +324,10 @@ public class BoardController {
             
             log.info("수정 요청 - 게시글 ID: {}, 작성자 ID: {}, 요청자 ID: {}", id, existingBoard.getMemberId(), memberId);
             
-            // 작성자 본인 확인 - 보안상 중요!
-            if (!existingBoard.getMemberId().equals(memberId)) {
+            // 작성자 또는 관리자 권한 확인 - 보안상 중요!
+            if (!hasEditPermission(session, existingBoard.getMemberId())) {
                 log.warn("권한 없는 수정 시도 - 게시글 작성자: {}, 요청자: {}", existingBoard.getMemberId(), memberId);
-                redirectAttributes.addFlashAttribute("error", "작성자만 수정할 수 있습니다.");
+                redirectAttributes.addFlashAttribute("error", "작성자 또는 관리자만 수정할 수 있습니다.");
                 return "redirect:/board/detail/" + id + "?type=" + type;
             }
             
@@ -393,10 +395,10 @@ public class BoardController {
             log.info("🔍 권한 체크 - 게시글 작성자: {}, 요청자: {}", board.getMemberId(), memberId);
             log.info("삭제 요청 - 게시글 ID: {}, 작성자 ID: {}, 요청자 ID: {}", id, board.getMemberId(), memberId);
             
-            // 작성자 확인 - 보안상 중요!
-            if (!board.getMemberId().equals(memberId)) {
+            // 작성자 또는 관리자 권한 확인 - 보안상 중요!
+            if (!hasEditPermission(session, board.getMemberId())) {
                 log.warn("❌ 권한 없는 삭제 시도 - 게시글 작성자: {}, 요청자: {}", board.getMemberId(), memberId);
-                redirectAttributes.addFlashAttribute("error", "작성자만 삭제할 수 있습니다.");
+                redirectAttributes.addFlashAttribute("error", "작성자 또는 관리자만 삭제할 수 있습니다.");
                 return getRedirectUrl(type);
             }
             
@@ -503,6 +505,35 @@ public class BoardController {
         }
     }
     
+    /**
+     * 현재 로그인한 사용자 정보 조회
+     */
+    private MemberDTO getCurrentMember(HttpSession session) {
+        return (MemberDTO) session.getAttribute(Constants.SESSION_MEMBER);
+    }
+    
+    /**
+     * 현재 로그인한 사용자 ID 조회 (기존 memberId 세션 키 사용)
+     */
+    private Long getCurrentMemberId(HttpSession session) {
+        return (Long) session.getAttribute("memberId");
+    }
+    
+    /**
+     * 현재 사용자가 관리자인지 확인
+     */
+    private boolean isAdmin(HttpSession session) {
+        MemberDTO loginMember = getCurrentMember(session);
+        return loginMember != null && "ADMIN".equals(loginMember.getRole());
+    }
+    
+    /**
+     * 수정/삭제 권한 확인 (작성자 또는 관리자)
+     */
+    private boolean hasEditPermission(HttpSession session, Long authorMemberId) {
+        Long currentMemberId = getCurrentMemberId(session);
+        return (currentMemberId != null && currentMemberId.equals(authorMemberId)) || isAdmin(session);
+    }
 
 
 } 

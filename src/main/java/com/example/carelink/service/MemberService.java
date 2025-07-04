@@ -798,14 +798,14 @@ public class MemberService {
     @Transactional(readOnly = true)
     public List<MemberDTO> getMembersByRole(String role, int page, int pageSize) {
         try {
-            MemberDTO searchDTO = new MemberDTO();
-            searchDTO.setRole("ALL".equals(role) ? null : role);
+            log.info("역할별 회원 목록 조회 시작: role={}, page={}, pageSize={}", role, page, pageSize);
             
-            // 페이징 계산
-            int offset = (page - 1) * pageSize;
-            // MyBatis에서 offset, limit 처리를 위한 추가 설정이 필요할 수 있음
+            // "ALL"일 때는 null을 전달하여 모든 역할 조회
+            String searchRole = "ALL".equals(role) ? null : role;
+            List<MemberDTO> members = memberMapper.findMembersByRole(searchRole);
             
-            return memberMapper.findMembersByRole("ALL".equals(role) ? null : role);
+            log.info("역할별 회원 조회 완료: role={}, count={} 명", role, members.size());
+            return members;
         } catch (Exception e) {
             log.error("역할별 회원 목록 조회 중 오류 발생: role={}, page={}", role, page, e);
             return new ArrayList<>();

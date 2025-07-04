@@ -1,5 +1,6 @@
 package com.example.carelink.controller;
 
+import com.example.carelink.common.Constants;
 import com.example.carelink.dto.FacilityDTO;
 import com.example.carelink.dto.MemberDTO;
 import com.example.carelink.service.FacilityService;
@@ -12,6 +13,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import javax.servlet.http.HttpSession;
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -31,7 +33,7 @@ public class AdminController {
      * 관리자 권한 확인 메서드
      */
     private boolean isAdmin(HttpSession session) {
-        MemberDTO sessionMember = (MemberDTO) session.getAttribute("loginMember");
+        MemberDTO sessionMember = (MemberDTO) session.getAttribute(Constants.SESSION_MEMBER);
         return sessionMember != null && "ADMIN".equals(sessionMember.getRole());
     }
 
@@ -40,19 +42,8 @@ public class AdminController {
      */
     @GetMapping("")
     public String adminDashboard(HttpSession session, Model model, RedirectAttributes redirectAttributes) {
-        // 디버깅: 현재 세션 정보 로그
-        MemberDTO sessionMember = (MemberDTO) session.getAttribute("loginMember");
-        log.info("=== 관리자 페이지 접근 시도 ===");
-        log.info("세션 멤버: {}", sessionMember);
-        if (sessionMember != null) {
-            log.info("사용자 ID: {}, 역할: {}", sessionMember.getUserId(), sessionMember.getRole());
-        }
-        log.info("관리자 권한 체크 결과: {}", isAdmin(session));
-        log.info("================================");
-        
         if (!isAdmin(session)) {
-            redirectAttributes.addFlashAttribute("errorMessage", "관리자 권한이 필요합니다. 현재 역할: " + 
-                (sessionMember != null ? sessionMember.getRole() : "로그인되지 않음"));
+            redirectAttributes.addFlashAttribute("errorMessage", "관리자 권한이 필요합니다.");
             return "redirect:/";
         }
 
@@ -96,15 +87,25 @@ public class AdminController {
         }
 
         try {
+            log.info("시설 승인 관리 페이지 접근 시도 - 상태: {}", status);
+            
             List<FacilityDTO> facilities = facilityService.getFacilitiesByApprovalStatus(status);
+            log.info("시설 목록 조회 완료 - 상태: {}, 개수: {}", status, facilities != null ? facilities.size() : "null");
+            
+            // null 체크 및 빈 리스트 기본값 설정
+            if (facilities == null) {
+                facilities = new ArrayList<>();
+                log.warn("시설 목록이 null이어서 빈 리스트로 초기화했습니다.");
+            }
+            
             model.addAttribute("facilities", facilities);
             model.addAttribute("currentStatus", status);
 
-            log.info("시설 승인 관리 페이지 접근 - 상태: {}, 개수: {}", status, facilities.size());
-
         } catch (Exception e) {
-            log.error("시설 목록 조회 중 오류 발생", e);
-            redirectAttributes.addFlashAttribute("errorMessage", "시설 목록을 불러오는 중 오류가 발생했습니다.");
+            log.error("시설 목록 조회 중 오류 발생 - 상태: {}", status, e);
+            model.addAttribute("facilities", new ArrayList<>());
+            model.addAttribute("currentStatus", status);
+            redirectAttributes.addFlashAttribute("errorMessage", "시설 목록을 불러오는 중 오류가 발생했습니다: " + e.getMessage());
         }
 
         return "admin/facilities";
