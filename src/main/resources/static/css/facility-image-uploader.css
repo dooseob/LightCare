@@ -1,0 +1,454 @@
+/**
+ * 시설 이미지 업로더 스타일
+ * 사용자 친화적이고 현대적인 디자인
+ */
+
+.facility-image-uploader {
+    max-width: 100%;
+    margin: 0 auto;
+}
+
+/* 업로드 영역 */
+.upload-area {
+    border: 2px dashed #dee2e6;
+    border-radius: 12px;
+    padding: 40px 20px;
+    text-align: center;
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    transition: all 0.3s ease;
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+}
+
+.upload-area::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
+    transition: left 0.5s ease;
+}
+
+.upload-area:hover {
+    border-color: #007bff;
+    background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(0,123,255,0.15);
+}
+
+.upload-area:hover::before {
+    left: 100%;
+}
+
+.upload-area.drag-over {
+    border-color: #28a745;
+    background: linear-gradient(135deg, #e8f5e8 0%, #c3e6cb 100%);
+    transform: scale(1.02);
+}
+
+.upload-content {
+    position: relative;
+    z-index: 1;
+}
+
+.upload-icon {
+    margin-bottom: 20px;
+}
+
+.upload-icon i {
+    animation: float 3s ease-in-out infinite;
+}
+
+@keyframes float {
+    0%, 100% { transform: translateY(0px); }
+    50% { transform: translateY(-10px); }
+}
+
+.upload-title {
+    color: #495057;
+    font-weight: 600;
+    margin-bottom: 10px;
+}
+
+.upload-description {
+    font-size: 16px;
+    margin-bottom: 15px;
+}
+
+.upload-format-info {
+    margin-bottom: 20px;
+}
+
+/* 미리보기 영역 */
+.preview-area {
+    border: 1px solid #dee2e6;
+    border-radius: 12px;
+    padding: 20px;
+    background: #fff;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+}
+
+.preview-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    padding-bottom: 15px;
+    border-bottom: 1px solid #e9ecef;
+}
+
+.preview-header h6 {
+    color: #495057;
+    font-weight: 600;
+}
+
+.preview-image-container {
+    position: relative;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    margin-bottom: 20px;
+}
+
+.preview-image {
+    width: 100%;
+    max-height: 300px;
+    object-fit: cover;
+    display: block;
+}
+
+.image-overlay {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: linear-gradient(transparent, rgba(0,0,0,0.7));
+    color: white;
+    padding: 15px;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.preview-image-container:hover .image-overlay {
+    opacity: 1;
+}
+
+.image-info {
+    display: flex;
+    gap: 15px;
+    font-size: 14px;
+}
+
+.image-size, .image-dimensions {
+    background: rgba(255,255,255,0.2);
+    padding: 4px 8px;
+    border-radius: 4px;
+    backdrop-filter: blur(5px);
+}
+
+/* 압축 설정 */
+.compression-settings {
+    background: #f8f9fa;
+    border-radius: 8px;
+    padding: 15px;
+    border: 1px solid #e9ecef;
+}
+
+.compression-savings {
+    font-size: 14px;
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.7; }
+}
+
+.form-range {
+    appearance: none;
+    background: transparent;
+    cursor: pointer;
+}
+
+.form-range::-webkit-slider-track {
+    background: #dee2e6;
+    height: 6px;
+    border-radius: 3px;
+}
+
+.form-range::-webkit-slider-thumb {
+    appearance: none;
+    height: 20px;
+    width: 20px;
+    border-radius: 50%;
+    background: #007bff;
+    cursor: pointer;
+    border: 2px solid #fff;
+    box-shadow: 0 2px 6px rgba(0,123,255,0.3);
+}
+
+.form-range::-moz-range-track {
+    background: #dee2e6;
+    height: 6px;
+    border-radius: 3px;
+    border: none;
+}
+
+.form-range::-moz-range-thumb {
+    height: 20px;
+    width: 20px;
+    border-radius: 50%;
+    background: #007bff;
+    cursor: pointer;
+    border: 2px solid #fff;
+    box-shadow: 0 2px 6px rgba(0,123,255,0.3);
+}
+
+/* Alt 텍스트 섹션 */
+.alt-text-section {
+    background: #fff3cd;
+    border: 1px solid #ffeaa7;
+    border-radius: 8px;
+    padding: 15px;
+}
+
+.alt-text-section .form-label {
+    color: #856404;
+    font-weight: 600;
+}
+
+/* 진행률 영역 */
+.progress-area {
+    margin: 20px 0;
+    padding: 15px;
+    background: #f8f9fa;
+    border-radius: 8px;
+    border: 1px solid #e9ecef;
+}
+
+.progress {
+    height: 8px;
+    border-radius: 4px;
+    background: #e9ecef;
+    overflow: hidden;
+}
+
+.progress-bar {
+    background: linear-gradient(45deg, #007bff, #0056b3);
+    transition: width 0.3s ease;
+}
+
+.progress-text {
+    margin-top: 10px;
+    color: #6c757d;
+    font-weight: 500;
+}
+
+/* 버튼 스타일 */
+.btn {
+    border-radius: 8px;
+    font-weight: 500;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.btn::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0;
+    height: 0;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.3);
+    transition: all 0.3s ease;
+    transform: translate(-50%, -50%);
+}
+
+.btn:hover::before {
+    width: 300px;
+    height: 300px;
+}
+
+.btn-lg {
+    padding: 12px 30px;
+    font-size: 16px;
+    font-weight: 600;
+}
+
+.btn-primary {
+    background: linear-gradient(45deg, #007bff, #0056b3);
+    border: none;
+    box-shadow: 0 4px 15px rgba(0,123,255,0.3);
+}
+
+.btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(0,123,255,0.4);
+}
+
+.btn-outline-danger {
+    border-color: #dc3545;
+    color: #dc3545;
+}
+
+.btn-outline-danger:hover {
+    background: #dc3545;
+    border-color: #dc3545;
+    color: white;
+    transform: translateY(-1px);
+}
+
+.btn-outline-secondary {
+    border-color: #6c757d;
+    color: #6c757d;
+}
+
+.btn-outline-secondary:hover {
+    background: #6c757d;
+    border-color: #6c757d;
+    color: white;
+}
+
+/* 에러 메시지 */
+.error-message {
+    border-radius: 8px;
+    border: none;
+    background: linear-gradient(45deg, #dc3545, #c82333);
+    color: white;
+    font-weight: 500;
+    animation: slideInDown 0.3s ease;
+}
+
+@keyframes slideInDown {
+    from {
+        opacity: 0;
+        transform: translateY(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* 반응형 디자인 */
+@media (max-width: 768px) {
+    .upload-area {
+        padding: 30px 15px;
+    }
+    
+    .upload-title {
+        font-size: 1.1rem;
+    }
+    
+    .upload-description {
+        font-size: 14px;
+    }
+    
+    .preview-area {
+        padding: 15px;
+    }
+    
+    .compression-settings {
+        padding: 12px;
+    }
+    
+    .btn-lg {
+        padding: 10px 25px;
+        font-size: 15px;
+    }
+    
+    .image-info {
+        flex-direction: column;
+        gap: 8px;
+    }
+}
+
+@media (max-width: 576px) {
+    .preview-header {
+        flex-direction: column;
+        gap: 10px;
+        text-align: center;
+    }
+    
+    .compression-settings .row {
+        flex-direction: column;
+    }
+    
+    .compression-settings .col-md-6 {
+        margin-bottom: 15px;
+    }
+}
+
+/* 다크 모드 지원 */
+@media (prefers-color-scheme: dark) {
+    .upload-area {
+        background: linear-gradient(135deg, #343a40 0%, #495057 100%);
+        border-color: #495057;
+    }
+    
+    .upload-title, .upload-description {
+        color: #f8f9fa;
+    }
+    
+    .preview-area {
+        background: #343a40;
+        border-color: #495057;
+    }
+    
+    .compression-settings {
+        background: #495057;
+        border-color: #6c757d;
+    }
+    
+    .alt-text-section {
+        background: #856404;
+        border-color: #ffc107;
+    }
+    
+    .progress-area {
+        background: #495057;
+        border-color: #6c757d;
+    }
+}
+
+/* 애니메이션 향상 */
+.facility-image-uploader * {
+    transition: all 0.3s ease;
+}
+
+/* 포커스 상태 */
+.btn:focus,
+.form-control:focus,
+.form-range:focus {
+    box-shadow: 0 0 0 0.2rem rgba(0,123,255,0.25);
+    outline: none;
+}
+
+/* 로딩 상태 */
+.loading {
+    pointer-events: none;
+    opacity: 0.6;
+}
+
+.loading::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 20px;
+    height: 20px;
+    margin: -10px 0 0 -10px;
+    border: 2px solid #fff;
+    border-top-color: transparent;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}

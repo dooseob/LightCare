@@ -14,6 +14,7 @@
         <result property="longitude" column="longitude"/>
         <result property="description" column="description"/>
         <result property="facilityImage" column="facility_image"/>
+        <result property="facilityImageAltText" column="facility_image_alt_text"/>
         <result property="homepage" column="homepage"/>
         <result property="capacity" column="capacity"/>
         <result property="currentOccupancy" column="current_occupancy"/>
@@ -99,13 +100,13 @@
     <insert id="insertFacility" parameterType="com.example.carelink.dto.FacilityDTO" useGeneratedKeys="true" keyProperty="facilityId">
         INSERT INTO facility (
             facility_name, facility_type, address, detail_address, phone,
-            latitude, longitude, description, facility_image, homepage,
+            latitude, longitude, description, facility_image, facility_image_alt_text, homepage,
             capacity, current_occupancy, operating_hours, features,
             average_rating, review_count, registered_member_id,
             is_approved, approval_status
         ) VALUES (
                      #{facilityName}, #{facilityType}, #{address}, #{detailAddress}, #{phone},
-                     #{latitude}, #{longitude}, #{description}, #{facilityImage}, #{homepage},
+                     #{latitude}, #{longitude}, #{description}, #{facilityImage}, #{facilityImageAltText}, #{homepage},
                      #{capacity}, #{currentOccupancy}, #{operatingHours}, #{features},
                      #{averageRating}, #{reviewCount}, #{registeredMemberId},
                      #{isApproved}, #{approvalStatus}
@@ -124,6 +125,7 @@
             longitude = #{longitude},
             description = #{description},
             facility_image = #{facilityImage},
+            facility_image_alt_text = #{facilityImageAltText},
             homepage = #{homepage},
             capacity = #{capacity},
             current_occupancy = #{currentOccupancy},

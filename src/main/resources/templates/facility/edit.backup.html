@@ -109,50 +109,21 @@
                             </div>
                         </div>
 
-                        <!-- 시설 이미지 관리 -->
+                        <!-- 새 시설 이미지 업로드 -->
                         <div class="mb-4">
                             <label class="form-label">
-                                <i class="fas fa-images me-1"></i>시설 사진 관리
+                                <i class="fas fa-cloud-upload-alt me-1"></i>시설 사진 
                                 <span th:if="${facility.facilityImage == null}" class="text-danger">*</span>
+                                <span th:if="${facility.facilityImage != null}" class="text-muted">(새 이미지로 변경)</span>
                             </label>
                             
-                            <div class="image-management-section">
-                                <!-- 고급 이미지 크롭 시스템 링크 -->
-                                <div class="card border-primary mb-3">
-                                    <div class="card-body text-center">
-                                        <i class="fas fa-crop-alt fa-2x text-primary mb-2"></i>
-                                        <h6 class="card-title">고급 이미지 관리 시스템</h6>
-                                        <p class="card-text text-muted small mb-3">
-                                            16:9 비율로 최적화된 시설 사진을 최대 5장까지 등록하고 <br>
-                                            AVIF/WebP 압축으로 빠른 로딩 속도를 구현하세요
-                                        </p>
-                                        <a th:href="@{/facility/crop-images/{id}(id=${facility.facilityId})}" 
-                                           class="btn btn-primary">
-                                            <i class="fas fa-images me-2"></i>시설 이미지 관리
-                                        </a>
-                                    </div>
-                                </div>
-                                
-                                <!-- 기존 간단 업로드 (호환성 유지) -->
-                                <div class="simple-upload-section">
-                                    <div class="form-check mb-2">
-                                        <input class="form-check-input" type="checkbox" id="useSimpleUpload">
-                                        <label class="form-check-label text-muted" for="useSimpleUpload">
-                                            <small>간단 업로드 사용 (크롭 없이 업로드)</small>
-                                        </label>
-                                    </div>
-                                    
-                                    <div id="simpleUploadContainer" style="display: none;">
-                                        <input type="file" class="form-control" id="facilityImageFile" 
-                                               name="facilityImageFile" accept="image/*"
-                                               th:required="${facility.facilityImage == null}">
-                                        <small class="text-muted">
-                                            <i class="fas fa-info-circle me-1"></i>
-                                            JPG, PNG 파일만 지원. 고급 기능을 원하시면 위의 이미지 관리 시스템을 이용하세요.
-                                        </small>
-                                    </div>
-                                </div>
-                            </div>
+                            <!-- 새로운 이미지 업로더 컴포넌트 -->
+                            <div id="facilityImageUploader"></div>
+                            
+                            <!-- 숨겨진 파일 입력 (기존 폼과 호환성을 위해) -->
+                            <input type="file" id="facilityImageFile" name="facilityImageFile" 
+                                   accept="image/*" style="display: none;"
+                                   th:required="${facility.facilityImage == null}">
                             
                             <!-- Alt 텍스트 입력 (SEO용) -->
                             <input type="hidden" id="facilityImageAltText" name="facilityImageAltText" 
@@ -529,14 +500,7 @@ $(document).ready(function() {
 
 // 시설 이미지 크롭퍼 초기화
 function initializeFacilityImageCropper() {
-    try {
-        // Cropper.js 사용 가능 여부 확인
-        if (typeof Cropper === 'undefined') {
-            console.warn('Cropper.js를 로드할 수 없습니다. 기존 파일 입력을 사용합니다.');
-            return; // 기존 파일 입력 폼을 그대로 사용
-        }
-        
-        const facilityImageCropper = new AdvancedImageCropper('facilityImageUploader', {
+    const facilityImageCropper = new AdvancedImageCropper('facilityImageUploader', {
         // 시설 이미지 최적화 설정
         aspectRatio: 16/10, // 시설 카드 비율
         cropWidth: 800,
@@ -583,11 +547,6 @@ function initializeFacilityImageCropper() {
     
     // 전역에서 접근 가능하도록 저장
     window.facilityImageCropper = facilityImageCropper;
-    } catch (error) {
-        console.error('시설 이미지 크롭퍼 초기화 실패:', error);
-        console.warn('기존 파일 입력 방식을 사용합니다.');
-        // 기존 파일 입력이 이미 있으므로 별도 처리 불필요
-    }
 }
 
 // 성공 메시지 표시
@@ -631,25 +590,6 @@ function showErrorMessage(message) {
         }
     }, 10000);
 }
-
-// 간단 업로드 토글 기능
-document.addEventListener('DOMContentLoaded', function() {
-    const useSimpleUpload = document.getElementById('useSimpleUpload');
-    const simpleUploadContainer = document.getElementById('simpleUploadContainer');
-    
-    if (useSimpleUpload && simpleUploadContainer) {
-        useSimpleUpload.addEventListener('change', function() {
-            if (this.checked) {
-                simpleUploadContainer.style.display = 'block';
-            } else {
-                simpleUploadContainer.style.display = 'none';
-                // 파일 입력 초기화
-                const fileInput = document.getElementById('facilityImageFile');
-                if (fileInput) fileInput.value = '';
-            }
-        });
-    }
-});
 </script>
 
 </body>
