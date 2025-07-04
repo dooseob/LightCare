@@ -252,4 +252,59 @@
         LIMIT 1
     </select>
 
+    <!-- ================== 관리자용 쿼리들 ================== -->
+    
+    <!-- 승인 상태별 시설 목록 조회 (관리자용) -->
+    <select id="getFacilitiesByApprovalStatus" resultType="FacilityDTO">
+        SELECT 
+            f.facility_id,
+            f.facility_name,
+            f.facility_type,
+            f.address,
+            f.detail_address,
+            f.phone,
+            f.description,
+            f.homepage,
+            f.capacity,
+            f.operating_hours,
+            f.features,
+            f.facility_image,
+            f.latitude,
+            f.longitude,
+            f.approval_status,
+            f.rejection_reason,
+            f.registered_member_id,
+            f.created_at,
+            f.updated_at,
+            m.user_id as registeredUserName,
+            m.name as registeredMemberName
+        FROM facility f
+        LEFT JOIN member m ON f.registered_member_id = m.member_id
+        WHERE f.is_deleted = false
+        <if test="status != null and status != ''">
+            AND f.approval_status = #{status}
+        </if>
+        ORDER BY f.created_at DESC
+    </select>
+
+    <!-- 시설 승인 상태 업데이트 (관리자용) -->
+    <update id="updateFacilityApprovalStatus">
+        UPDATE facility 
+        SET 
+            approval_status = #{newStatus},
+            <if test="reason != null">
+            rejection_reason = #{reason},
+            </if>
+            updated_at = NOW()
+        WHERE facility_id = #{facilityId}
+    </update>
+
+    <!-- 승인 상태별 시설 수 조회 (관리자용) -->
+    <select id="countFacilitiesByStatus" resultType="int">
+        SELECT COUNT(*) 
+        FROM facility 
+        WHERE is_deleted = false 
+        AND approval_status = #{status}
+    </select>
+
 </mapper>

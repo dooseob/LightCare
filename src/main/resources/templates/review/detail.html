@@ -150,18 +150,21 @@
                                     </small>
                                 </div>
                                 <div class="col-md-6 text-end">
-                                    <!-- 작성자만 수정/삭제 가능 -->
-                                    <div class="btn-group" role="group" th:if="${session.memberId != null and session.memberId == review.memberId}">
+                                    <!-- 작성자 또는 관리자만 수정/삭제 가능 -->
+                                    <div class="btn-group" role="group" th:if="${session.loginMember != null and (session.loginMember.memberId == review.memberId or session.loginMember.role == 'ADMIN')}">
                                         <a th:href="@{/review/edit/{id}(id=${review.reviewId})}" class="btn btn-outline-primary btn-sm">
                                             <i class="fas fa-edit me-1"></i>수정
                                         </a>
                                         <button type="button" class="btn btn-outline-danger btn-sm" data-action="deleteReview">
                                             <i class="fas fa-trash me-1"></i>삭제
                                         </button>
+                                        <!-- 관리자인 경우 표시 -->
+                                        <span th:if="${session.loginMember.role == 'ADMIN' and session.loginMember.memberId != review.memberId}" 
+                                              class="badge bg-warning text-dark ms-2">관리자</span>
                                     </div>
-                                    <!-- 작성자가 아닌 경우 신고 버튼만 표시 -->
+                                    <!-- 작성자도 아니고 관리자도 아닌 경우 신고 버튼만 표시 -->
                                     <button type="button" class="btn btn-outline-warning btn-sm" 
-                                            th:if="${session.memberId != null and session.memberId != review.memberId}"
+                                            th:if="${session.loginMember != null and session.loginMember.memberId != review.memberId and session.loginMember.role != 'ADMIN'}"
                                             data-action="reportReview">
                                         <i class="fas fa-exclamation-triangle me-1"></i>신고
                                     </button>

@@ -95,8 +95,8 @@
                             </small>
                         </div>
                         <div class="col-md-6 text-end">
-                            <!-- 로그인한 사용자이면서 작성자인 경우에만 수정/삭제 버튼 표시 -->
-                            <div th:if="${session.memberId != null and session.memberId == board.memberId}" 
+                            <!-- 작성자 또는 관리자만 수정/삭제 가능 -->
+                            <div th:if="${session.loginMember != null and (session.loginMember.memberId == board.memberId or session.loginMember.role == 'ADMIN')}" 
                                  class="btn-group" role="group">
                                 <a th:href="@{/board/edit/{id}(id=${board.boardId}, type=${type})}" 
                                    class="btn btn-outline-primary btn-sm">
@@ -108,12 +108,15 @@
                                         th:data-type="${type}">
                                     <i class="fas fa-trash me-1"></i>삭제
                                 </button>
+                                <!-- 관리자인 경우 표시 -->
+                                <span th:if="${session.loginMember.role == 'ADMIN' and session.loginMember.memberId != board.memberId}" 
+                                      class="badge bg-warning text-dark ms-2">관리자</span>
                             </div>
-                            <!-- 비로그인 사용자 또는 작성자가 아닌 경우 -->
-                            <div th:unless="${session.memberId != null and session.memberId == board.memberId}">
+                            <!-- 권한이 없는 경우 -->
+                            <div th:unless="${session.loginMember != null and (session.loginMember.memberId == board.memberId or session.loginMember.role == 'ADMIN')}">
                                 <small class="text-muted">
-                                    <span th:if="${session.memberId == null}">로그인 후 수정/삭제가 가능합니다.</span>
-                                    <span th:if="${session.memberId != null and session.memberId != board.memberId}">작성자만 수정/삭제가 가능합니다.</span>
+                                    <span th:if="${session.loginMember == null}">로그인 후 수정/삭제가 가능합니다.</span>
+                                    <span th:if="${session.loginMember != null and session.loginMember.memberId != board.memberId and session.loginMember.role != 'ADMIN'}">작성자 또는 관리자만 수정/삭제가 가능합니다.</span>
                                 </small>
                             </div>
                         </div>
