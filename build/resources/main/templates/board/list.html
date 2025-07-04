@@ -29,30 +29,30 @@
                     </h2>
                     <p class="text-muted mb-3" th:text="${boardDescription}">게시판 설명</p>
                     
-                    <!-- 게시판 타입 메뉴 -->
+                    <!-- 게시판 타입 메뉴 (기존 방식 그대로 유지) -->
                     <div class="btn-group mb-3" role="group" aria-label="게시판 타입">
                         <a th:href="@{/board(type='all')}" 
-                           class="btn btn-sm"
+                           class="btn btn-sm board-type-link"
                            th:classappend="${type == 'all'} ? 'btn-primary' : 'btn-outline-primary'">
                             전체
                         </a>
                         <a th:href="@{/board(type='notice')}" 
-                           class="btn btn-sm"
+                           class="btn btn-sm board-type-link"
                            th:classappend="${type == 'notice'} ? 'btn-primary' : 'btn-outline-primary'">
                             공지사항
                         </a>
                         <a th:href="@{/board(type='info')}" 
-                           class="btn btn-sm"
+                           class="btn btn-sm board-type-link"
                            th:classappend="${type == 'info'} ? 'btn-primary' : 'btn-outline-primary'">
                             정보공유
                         </a>
                         <a th:href="@{/board(type='qna')}" 
-                           class="btn btn-sm"
+                           class="btn btn-sm board-type-link"
                            th:classappend="${type == 'qna'} ? 'btn-primary' : 'btn-outline-primary'">
                             Q&A
                         </a>
                         <a th:href="@{/board(type='faq')}" 
-                           class="btn btn-sm"
+                           class="btn btn-sm board-type-link"
                            th:classappend="${type == 'faq'} ? 'btn-primary' : 'btn-outline-primary'">
                             FAQ
                         </a>
@@ -95,6 +95,8 @@
                 </div>
             </div>
 
+            <!-- 동적 로딩될 게시판 컨텐츠 컨테이너 -->
+            <div id="boardContentContainer">
             <!-- 통계 정보 -->
             <div class="row mb-4">
                 <div class="col-md-12">
@@ -262,6 +264,7 @@
                     </nav>
                 </div>
             </div>
+            </div> <!-- boardContentContainer 끝 -->
         </div>
     </main>
 
@@ -270,5 +273,8 @@
     
     <!-- JavaScript -->
     <div th:replace="~{layout/footer :: scripts}"></div>
+    
+    <!-- 게시판 네비게이션 공통 스크립트 -->
+    <script src="/js/board-navigation.js"></script>
 </body>
 </html> 
