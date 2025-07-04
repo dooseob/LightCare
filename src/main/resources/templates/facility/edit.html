@@ -64,12 +64,6 @@
                                 <button type="button" class="btn btn-outline-primary" onclick="searchFacilityAddress()">
                                     <i class="fas fa-search me-1"></i>주소 검색
                                 </button>
-                                <button type="button" class="btn btn-outline-info ms-1" onclick="simpleAddressTest()">
-                                    <i class="fas fa-vial me-1"></i>테스트
-                                </button>
-                                <button type="button" class="btn btn-outline-success ms-1" onclick="checkCoordinates()">
-                                    <i class="fas fa-map-marked-alt me-1"></i>좌표확인
-                                </button>
                             </div>
                             <input type="text" class="form-control" id="detailAddress" th:field="*{detailAddress}"
                                    placeholder="상세 주소를 입력하세요 (예: 101호, 2층)">
@@ -115,13 +109,9 @@
                                 <span th:if="${facility.facilityImage != null}" class="text-muted">(변경하려면 새 파일 선택)</span>
                             </label>
                             <input type="file" class="form-control" id="facilityImageFile" name="facilityImageFile"
-                                   accept="image/*" onchange="previewFacilityImage(this)"
+                                   accept="image/*" data-image-compressor='{"quality": 0.8, "maxWidth": 1920, "maxHeight": 1080}'
                                    th:required="${facility.facilityImage == null}">
-                            <small class="form-text text-muted">JPG, PNG 파일만 업로드 가능 (최대 5MB)</small>
-                            <div id="facilityImagePreview" class="mt-2" style="display: none;">
-                                <img id="facilityImagePreviewImg" src="" alt="시설 사진 미리보기" 
-                                     style="max-width: 200px; max-height: 150px; border-radius: 8px; border: 1px solid #dee2e6;">
-                            </div>
+                            <small class="form-text text-muted">JPG, PNG 파일만 업로드 가능 (SEO 최적화를 위해 자동 압축됩니다)</small>
                         </div>
 
                         <!-- 수용 인원 -->
@@ -243,7 +233,8 @@
                                 <i class="fas fa-info-circle me-1"></i>시설 설명
                             </label>
                             <textarea class="form-control" id="description" th:field="*{description}" rows="4"
-                                      placeholder="시설에 대한 설명을 입력하세요"></textarea>
+                                      placeholder="시설에 대한 설명을 입력하세요"
+                                      data-rich-editor='{"height": "250px", "enableImage": true, "enableTable": false, "enableLink": true}'></textarea>
                         </div>
 
                         <!-- 시설 특징 -->
@@ -283,6 +274,13 @@
 <!-- 카카오맵 유틸리티 -->
 <script src="/js/kakaomap.js"></script>
 <script src="/js/facility-edit.js"></script>
+<!-- 이미지 압축 라이브러리 -->
+<link rel="stylesheet" href="/css/image-compressor.css">
+<script src="/js/image-compressor.js"></script>
+
+<!-- 리치 텍스트 에디터 -->
+<link rel="stylesheet" href="/css/rich-text-editor.css">
+<script src="/js/rich-text-editor.js"></script>
 
 <script>
 $(document).ready(function() {
@@ -438,117 +436,6 @@ function updateOperatingHours() {
     $('#operatingHours').val(operatingHours);
 }
 
-// 간단한 주소 검색 테스트 (Daum API 직접 호출)
-function simpleAddressTest() {
-    console.log('간단한 주소 검색 테스트 시작...');
-    
-    if (typeof daum === 'undefined') {
-        console.error('Daum API가 로드되지 않았습니다.');
-        alert('Daum API가 로드되지 않았습니다.');
-        return;
-    }
-    
-    new daum.Postcode({
-        oncomplete: function(data) {
-            console.log('주소 선택됨:', data);
-            
-            const selectedAddress = data.roadAddress || data.jibunAddress;
-            
-            // 주소 직접 설정
-            const addressInput = document.getElementById('facilityAddress');
-            if (addressInput) {
-                addressInput.removeAttribute('readonly');
-                addressInput.value = selectedAddress;
-                addressInput.setAttribute('readonly', 'readonly');
-                addressInput.style.backgroundColor = '#d4edda';
-                
-                setTimeout(function() {
-                    addressInput.style.backgroundColor = '';
-                }, 2000);
-                
-                console.log('주소 설정 완료:', selectedAddress);
-            } else {
-                alert('facilityAddress 필드를 찾을 수 없음');
-                return;
-            }
-            
-            // 위도/경도 변환 및 설정
-            if (typeof kakao !== 'undefined' && kakao.maps && kakao.maps.services) {
-                const geocoder = new kakao.maps.services.Geocoder();
-                
-                geocoder.addressSearch(selectedAddress, function(result, status) {
-                    if (status === kakao.maps.services.Status.OK) {
-                        const latitude = parseFloat(result[0].y);
-                        const longitude = parseFloat(result[0].x);
-                        
-                        // 위도/경도 히든 필드에 설정
-                        const latitudeInput = document.getElementById('latitude');
-                        const longitudeInput = document.getElementById('longitude');
-                        
-                        if (latitudeInput) {
-                            latitudeInput.value = latitude;
-                            console.log('위도 설정:', latitude);
-                        }
-                        
-                        if (longitudeInput) {
-                            longitudeInput.value = longitude;
-                            console.log('경도 설정:', longitude);
-                        }
-                        
-                        alert('주소와 위치 좌표 설정 완료!\n주소: ' + selectedAddress + '\n위도: ' + latitude + '\n경도: ' + longitude);
-                    } else {
-                        console.error('위도/경도 변환 실패:', status);
-                        alert('주소는 설정되었지만 위도/경도 변환에 실패했습니다.');
-                    }
-                });
-            } else {
-                console.error('카카오맵 API가 로드되지 않았습니다.');
-                alert('주소는 설정되었지만 카카오맵 API가 없어 위도/경도를 설정할 수 없습니다.');
-            }
-        },
-        onclose: function(state) {
-            console.log('주소 검색 창 닫힘:', state);
-        },
-        onerror: function(error) {
-            console.error('주소 검색 오류:', error);
-            alert('주소 검색 중 오류 발생');
-        }
-    }).open();
-}
-
-// 현재 설정된 위도/경도 확인 함수
-function checkCoordinates() {
-    console.log('좌표확인 함수 실행됨');
-    
-    const addressInput = document.getElementById('facilityAddress');
-    const latitudeInput = document.getElementById('latitude');
-    const longitudeInput = document.getElementById('longitude');
-    
-    const address = addressInput ? addressInput.value : '필드 없음';
-    const latitude = latitudeInput ? latitudeInput.value : '필드 없음';
-    const longitude = longitudeInput ? longitudeInput.value : '필드 없음';
-    
-    console.log('현재 값:');
-    console.log('- 주소:', address);
-    console.log('- 위도:', latitude);
-    console.log('- 경도:', longitude);
-    
-    // 빈 값 체크
-    const displayAddress = address || '설정되지 않음';
-    const displayLatitude = latitude || '설정되지 않음';
-    const displayLongitude = longitude || '설정되지 않음';
-    
-    const message = `📍 현재 설정된 정보:\n\n🏠 주소: ${displayAddress}\n🌍 위도: ${displayLatitude}\n🗺️ 경도: ${displayLongitude}`;
-    
-    alert(message);
-    
-    // 추가 진단 정보
-    if (!latitude || !longitude || latitude === '' || longitude === '') {
-        setTimeout(function() {
-            alert('⚠️ 위도/경도가 설정되지 않았습니다!\n\n해결 방법:\n1. "테스트" 버튼으로 주소 다시 검색\n2. 주소 선택 후 자동으로 좌표 설정됨\n3. "수정 완료"로 저장');
-        }, 100);
-    }
-}
 
 // 간단한 시간 설정 라디오 버튼 동적 추가
 $(document).ready(function() {

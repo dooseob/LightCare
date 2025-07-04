@@ -34,8 +34,8 @@
                     
                     <!-- 1. 시설 이미지 -->
                     <div class="text-center mb-4 flex-grow-1">
-                        <img th:src="@{/images/{image}(image=${facility.facilityImage ?: 'default_facility.jpg'})}"
-                             src="/images/default-facility.png"
+                        <img th:src="${facility.facilityImage != null ? facility.facilityImage : '/images/default_facility.jpg'}"
+                             src="/images/default_facility.jpg"
                              class="img-fluid rounded shadow-sm"
                              style="height: 250px; width: 100%; object-fit: cover;"
                              alt="시설 이미지">
@@ -62,6 +62,26 @@
                     
                     <!-- 3. 버튼 -->
                     <div class="mt-auto">
+                        <!-- 관리자 또는 시설 소유자인 경우 관리 버튼 표시 -->
+                        <div th:if="${isAdmin or isOwner}" class="mb-3">
+                            <div class="row g-2">
+                                <div class="col-6">
+                                    <a th:href="@{/facility/edit/{id}(id=${facility.facilityId})}" 
+                                       class="btn btn-warning w-100 btn-sm">
+                                        <i class="fas fa-edit"></i><br><small>시설수정</small>
+                                    </a>
+                                </div>
+                                <div class="col-6">
+                                    <button class="btn btn-danger w-100 btn-sm" 
+                                            th:onclick="'deleteFacility(' + ${facility.facilityId} + ')'">
+                                        <i class="fas fa-trash"></i><br><small>시설삭제</small>
+                                    </button>
+                                </div>
+                            </div>
+                            <hr class="my-3">
+                        </div>
+                        
+                        <!-- 일반 사용자 버튼 -->
                         <div class="row g-2">
                             <div class="col-6">
                                 <button class="btn btn-primary w-100 btn-sm" th:data-phone="${facility.phone}" onclick="callFacilityPhone(this)">
@@ -452,6 +472,31 @@
             });
         } else {
             alert('카카오톡 공유하기를 사용할 수 없습니다.');
+        }
+    }
+
+    // 시설 삭제 함수
+    function deleteFacility(facilityId) {
+        if (confirm('정말로 이 시설을 삭제하시겠습니까?\n삭제된 시설은 복구할 수 없습니다.')) {
+            // AJAX로 삭제 요청
+            fetch('/facility/delete/' + facilityId, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                }
+            })
+            .then(response => {
+                if (response.ok) {
+                    alert('시설이 삭제되었습니다.');
+                    window.location.href = '/facility/search';
+                } else {
+                    alert('시설 삭제 중 오류가 발생했습니다.');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('시설 삭제 중 오류가 발생했습니다.');
+            });
         }
     }
     /*]]>*/

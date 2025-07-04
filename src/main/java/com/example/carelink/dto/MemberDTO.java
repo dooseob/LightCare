@@ -54,6 +54,7 @@ public class MemberDTO extends BaseDTO {
     private String address;       // 주소 (DDL에 따라 VARCHAR 길이 제한 추가 고려)
 
     private String profileImage;  // 프로필 이미지 경로 (DB에 저장될 URL)
+    private String profileImageAltText;  // 프로필 이미지 alt 텍스트 (SEO 최적화용)
     
     // 시설회원 추가 정보 (facility 테이블에 저장될 정보)
     private String facilityName;     // 시설명
