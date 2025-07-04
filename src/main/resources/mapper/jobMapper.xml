@@ -270,4 +270,17 @@
         WHERE is_deleted = false AND status = 'ACTIVE'
     </select>
 
+    <!-- 회원 ID로 구인구직 게시글 삭제 (회원 탈퇴 시 사용) -->
+    <delete id="deleteByMemberId" parameterType="long">
+        DELETE FROM job_posting WHERE member_id = #{memberId}
+    </delete>
+
+    <!-- 시설 회원 ID로 구인구직 게시글 삭제 (시설 삭제 시 사용) -->
+    <delete id="deleteByFacilityMemberId" parameterType="long">
+        DELETE FROM job_posting 
+        WHERE facility_id IN (
+            SELECT facility_id FROM facility WHERE registered_member_id = #{memberId}
+        )
+    </delete>
+
 </mapper> 

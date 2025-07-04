@@ -435,5 +435,9 @@
         ORDER BY b.created_at DESC
     </select>
 
+    <!-- 회원 ID로 게시글 삭제 (회원 탈퇴 시 사용) -->
+    <delete id="deleteByMemberId" parameterType="long">
+        DELETE FROM board WHERE member_id = #{memberId}
+    </delete>
 
 </mapper> 

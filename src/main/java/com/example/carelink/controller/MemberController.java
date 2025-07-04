@@ -6,6 +6,7 @@ import com.example.carelink.service.MemberService;
 import com.example.carelink.common.Constants;
 import com.example.carelink.validation.groups.OnFacilityJoin;
 import com.example.carelink.common.CustomMultipartFile;
+import org.springframework.web.multipart.MultipartFile;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -123,6 +124,7 @@ public class MemberController {
             @Validated(value = {javax.validation.groups.Default.class})
             @ModelAttribute MemberDTO memberDTO,
             BindingResult bindingResult,
+            @RequestParam(value = "facilityImageFile", required = false) MultipartFile facilityImageFile,
             HttpSession session,
             RedirectAttributes redirectAttributes,
             Model model) {
@@ -154,8 +156,8 @@ public class MemberController {
         }
 
         try {
-            // MemberService를 통해 회원가입 처리
-            memberService.join(memberDTO);
+            // MemberService를 통해 회원가입 처리 (시설 이미지 파일 포함)
+            memberService.join(memberDTO, facilityImageFile);
             log.info("회원가입 성공: {}", memberDTO.getUserId());
 
             // 회원가입 후 자동 로그인 처리

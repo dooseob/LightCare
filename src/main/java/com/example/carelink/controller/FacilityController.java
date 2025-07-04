@@ -11,10 +11,12 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Bean;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+import com.example.carelink.dto.MemberDTO;
+import com.example.carelink.common.Constants;
+import javax.servlet.http.HttpSession;
 
 import java.util.List;
 import java.util.ArrayList; // ArrayList를 사용하기 위해 추가된 import 문
@@ -132,5 +134,216 @@ public class FacilityController {
             model.addAttribute("error", "시설 정보를 불러오는 중 오류가 발생했습니다.");
             return "redirect:/facility/search";
         }
+    }
+
+    /**
+     * 시설 관리 페이지
+     */
+    @GetMapping("/manage")
+    public String manageFacility(HttpSession session, Model model, RedirectAttributes redirectAttributes) {
+        MemberDTO member = (MemberDTO) session.getAttribute(Constants.SESSION_MEMBER);
+        
+        if (member == null) {
+            redirectAttributes.addFlashAttribute("error", "로그인이 필요합니다.");
+            return "redirect:/member/login";
+        }
+        
+        if (!Constants.MEMBER_ROLE_FACILITY.equals(member.getRole())) {
+            redirectAttributes.addFlashAttribute("error", "시설 회원만 접근할 수 있습니다.");
+            return "redirect:/";
+        }
+        
+        try {
+            // 회원의 모든 시설 정보 조회
+            List<FacilityDTO> facilities = facilityService.getFacilitiesByMemberId(member.getMemberId());
+            
+            // 각 시설별 구인공고 수 조회 (TODO: 향후 JobService에서 조회)
+            // for (FacilityDTO facility : facilities) {
+            //     int jobCount = jobService.getJobCountByFacilityId(facility.getFacilityId());
+            //     facility.setJobCount(jobCount);
+            // }
+            
+            model.addAttribute("facilities", facilities);
+            model.addAttribute("facilityCount", facilities.size());
+            log.info("시설 관리 페이지 접근: memberId={}, 시설 수={}", 
+                    member.getMemberId(), facilities.size());
+            
+            return "facility/manage";
+        } catch (Exception e) {
+            log.error("시설 관리 페이지 조회 중 오류 발생: memberId={}", member.getMemberId(), e);
+            redirectAttributes.addFlashAttribute("error", "시설 정보를 불러오는 중 오류가 발생했습니다.");
+            return "redirect:/";
+        }
+    }
+
+    /**
+     * 시설 수정 페이지
+     */
+    @GetMapping("/edit/{facilityId}")
+    public String editFacilityForm(@PathVariable Long facilityId, HttpSession session, 
+                                   Model model, RedirectAttributes redirectAttributes) {
+        MemberDTO member = (MemberDTO) session.getAttribute(Constants.SESSION_MEMBER);
+        
+        if (member == null) {
+            redirectAttributes.addFlashAttribute("error", "로그인이 필요합니다.");
+            return "redirect:/member/login";
+        }
+        
+        try {
+            FacilityDTO facility = facilityService.getFacilityById(facilityId);
+            
+            if (facility == null) {
+                redirectAttributes.addFlashAttribute("error", "시설을 찾을 수 없습니다.");
+                return "redirect:/facility/manage";
+            }
+            
+            // 권한 확인 (시설 소유자 또는 관리자만 수정 가능)
+            if (!facility.getRegisteredMemberId().equals(member.getMemberId()) 
+                && !Constants.MEMBER_ROLE_ADMIN.equals(member.getRole())) {
+                redirectAttributes.addFlashAttribute("error", "해당 시설을 수정할 권한이 없습니다.");
+                return "redirect:/facility/manage";
+            }
+            
+            model.addAttribute("facility", facility);
+            log.info("시설 수정 페이지 접근: facilityId={}, memberId={}", facilityId, member.getMemberId());
+            
+            return "facility/edit";
+        } catch (Exception e) {
+            log.error("시설 수정 페이지 조회 중 오류 발생: facilityId={}", facilityId, e);
+            redirectAttributes.addFlashAttribute("error", "시설 정보를 불러오는 중 오류가 발생했습니다.");
+            return "redirect:/facility/manage";
+        }
+    }
+
+    /**
+     * 시설 수정 처리
+     */
+    @PostMapping("/edit/{facilityId}")
+    public String updateFacility(@PathVariable Long facilityId,
+                                @ModelAttribute FacilityDTO facilityDTO,
+                                @RequestParam(value = "facilityImageFile", required = false) MultipartFile facilityImageFile,
+                                HttpSession session,
+                                RedirectAttributes redirectAttributes) {
+        MemberDTO member = (MemberDTO) session.getAttribute(Constants.SESSION_MEMBER);
+        
+        if (member == null) {
+            redirectAttributes.addFlashAttribute("error", "로그인이 필요합니다.");
+            return "redirect:/member/login";
+        }
+        
+        try {
+            FacilityDTO existingFacility = facilityService.getFacilityById(facilityId);
+            
+            if (existingFacility == null) {
+                redirectAttributes.addFlashAttribute("error", "시설을 찾을 수 없습니다.");
+                return "redirect:/facility/manage";
+            }
+            
+            // 권한 확인
+            if (!existingFacility.getRegisteredMemberId().equals(member.getMemberId()) 
+                && !Constants.MEMBER_ROLE_ADMIN.equals(member.getRole())) {
+                redirectAttributes.addFlashAttribute("error", "해당 시설을 수정할 권한이 없습니다.");
+                return "redirect:/facility/manage";
+            }
+            
+            // 기본 정보 유지
+            facilityDTO.setFacilityId(facilityId);
+            facilityDTO.setRegisteredMemberId(existingFacility.getRegisteredMemberId());
+            facilityDTO.setIsApproved(existingFacility.getIsApproved());
+            
+            // approval_status가 null인 경우 기본값 설정
+            String approvalStatus = existingFacility.getApprovalStatus();
+            if (approvalStatus == null || approvalStatus.trim().isEmpty()) {
+                approvalStatus = existingFacility.getIsApproved() ? "APPROVED" : "PENDING";
+            }
+            facilityDTO.setApprovalStatus(approvalStatus);
+            
+            facilityDTO.setAverageRating(existingFacility.getAverageRating());
+            facilityDTO.setReviewCount(existingFacility.getReviewCount());
+            facilityDTO.setCurrentOccupancy(existingFacility.getCurrentOccupancy());
+            facilityDTO.setGradeRating(existingFacility.getGradeRating());
+            
+            // 시설 정보 수정 (이미지 파일 포함)
+            facilityService.updateFacility(facilityDTO, facilityImageFile);
+            
+            log.info("시설 정보 수정 완료: facilityId={}, memberId={}", facilityId, member.getMemberId());
+            redirectAttributes.addFlashAttribute("message", "시설 정보가 성공적으로 수정되었습니다.");
+            
+            return "redirect:/facility/manage";
+        } catch (Exception e) {
+            log.error("시설 정보 수정 중 오류 발생: facilityId={}", facilityId, e);
+            redirectAttributes.addFlashAttribute("error", "시설 정보 수정 중 오류가 발생했습니다.");
+            return "redirect:/facility/edit/" + facilityId;
+        }
+    }
+
+    /**
+     * 시설 삭제
+     */
+    @PostMapping("/delete/{facilityId}")
+    public String deleteFacility(@PathVariable Long facilityId,
+                                HttpSession session,
+                                RedirectAttributes redirectAttributes) {
+        MemberDTO member = (MemberDTO) session.getAttribute(Constants.SESSION_MEMBER);
+        
+        if (member == null) {
+            redirectAttributes.addFlashAttribute("error", "로그인이 필요합니다.");
+            return "redirect:/member/login";
+        }
+        
+        try {
+            FacilityDTO facility = facilityService.getFacilityById(facilityId);
+            
+            if (facility == null) {
+                redirectAttributes.addFlashAttribute("error", "시설을 찾을 수 없습니다.");
+                return "redirect:/facility/manage";
+            }
+            
+            // 권한 확인
+            if (!facility.getRegisteredMemberId().equals(member.getMemberId()) 
+                && !Constants.MEMBER_ROLE_ADMIN.equals(member.getRole())) {
+                redirectAttributes.addFlashAttribute("error", "해당 시설을 삭제할 권한이 없습니다.");
+                return "redirect:/facility/manage";
+            }
+            
+            // 시설 삭제
+            facilityService.deleteFacility(facilityId);
+            
+            log.info("시설 삭제 완료: facilityId={}, memberId={}", facilityId, member.getMemberId());
+            redirectAttributes.addFlashAttribute("message", "시설이 성공적으로 삭제되었습니다.");
+            
+            return "redirect:/facility/manage";
+        } catch (Exception e) {
+            log.error("시설 삭제 중 오류 발생: facilityId={}", facilityId, e);
+            redirectAttributes.addFlashAttribute("error", "시설 삭제 중 오류가 발생했습니다.");
+            return "redirect:/facility/manage";
+        }
+    }
+
+    /**
+     * 시설 API - AJAX용
+     */
+    @GetMapping("/api/{facilityId}")
+    @ResponseBody
+    public FacilityDTO getFacilityApi(@PathVariable Long facilityId, HttpSession session) {
+        MemberDTO member = (MemberDTO) session.getAttribute(Constants.SESSION_MEMBER);
+        
+        if (member == null) {
+            throw new RuntimeException("로그인이 필요합니다.");
+        }
+        
+        FacilityDTO facility = facilityService.getFacilityById(facilityId);
+        
+        if (facility == null) {
+            throw new RuntimeException("시설을 찾을 수 없습니다.");
+        }
+        
+        // 권한 확인 (시설 소유자 또는 관리자만 조회 가능)
+        if (!facility.getRegisteredMemberId().equals(member.getMemberId()) 
+            && !Constants.MEMBER_ROLE_ADMIN.equals(member.getRole())) {
+            throw new RuntimeException("해당 시설을 조회할 권한이 없습니다.");
+        }
+        
+        return facility;
     }
 }

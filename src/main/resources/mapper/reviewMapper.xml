@@ -222,4 +222,26 @@
         WHERE is_deleted = false AND is_visible = true
     </select>
 
+    <!-- 시설 평균 평점 조회 -->
+    <select id="getAverageRating" parameterType="long" resultType="double">
+        SELECT AVG(rating) 
+        FROM review 
+        WHERE facility_id = #{facilityId} 
+          AND is_deleted = false 
+          AND is_visible = true
+    </select>
+
+    <!-- 회원 ID로 리뷰 삭제 (회원 탈퇴 시 사용) -->
+    <delete id="deleteByMemberId" parameterType="long">
+        DELETE FROM review WHERE member_id = #{memberId}
+    </delete>
+
+    <!-- 시설 회원 ID로 리뷰 삭제 (시설 삭제 시 사용) -->
+    <delete id="deleteByFacilityMemberId" parameterType="long">
+        DELETE FROM review 
+        WHERE facility_id IN (
+            SELECT facility_id FROM facility WHERE registered_member_id = #{memberId}
+        )
+    </delete>
+
 </mapper> 
