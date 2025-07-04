@@ -1,5 +1,6 @@
 package com.example.carelink;
 
+import org.mybatis.spring.annotation.MapperScan;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
@@ -8,6 +9,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
  * 팀 프로젝트 - 4인 협업 개발
  */
 @SpringBootApplication
+@MapperScan(basePackages = {"com.example.carelink.dao"})
 public class CarelinkApplication {
 
     public static void main(String[] args) {
