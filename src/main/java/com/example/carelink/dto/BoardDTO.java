@@ -62,6 +62,11 @@ public class BoardDTO extends BaseDTO {
     private Integer replyDepth;      // 답글 깊이
     private Integer replyOrder;      // 답글 순서
     
+    // Q&A 관련 (질문-답변 구조)
+    private String qaType;           // Q&A 타입 (QUESTION: 질문, ANSWER: 답변)
+    private Boolean isAnswered;      // 답변 완료 여부 (질문글인 경우)
+    private Integer answerCount;     // 답변 수 (질문글인 경우)
+    
     // 검색용 필드
     private String searchKeyword;    // 검색 키워드
     private String searchType;       // 검색 유형 (TITLE, CONTENT, AUTHOR, ALL)

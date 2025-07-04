@@ -413,7 +413,10 @@ public class MemberController {
      */
     @PostMapping("/myinfo/crop-image/save")
     @ResponseBody
-    public Map<String, Object> saveCroppedImage(@RequestParam("croppedImage") String croppedImageData,
+    public Map<String, Object> saveCroppedImage(@RequestParam("croppedImage") MultipartFile croppedImageFile,
+                                                @RequestParam(value = "altText", required = false) String altText,
+                                                @RequestParam(value = "format", required = false) String format,
+                                                @RequestParam(value = "quality", required = false) String quality,
                                                 HttpSession session) {
         Map<String, Object> result = new HashMap<>();
         
@@ -425,17 +428,17 @@ public class MemberController {
                 return result;
             }
             
-            // Base64 데이터에서 실제 이미지 데이터 추출
-            String base64Data = croppedImageData.split(",")[1];
-            byte[] imageBytes = java.util.Base64.getDecoder().decode(base64Data);
+            log.info("🖼️ 크롭된 이미지 저장 요청 - 형식: {}, 품질: {}, 크기: {} bytes", 
+                    format, quality, croppedImageFile.getSize());
+            log.info("📁 파일 정보 - 이름: {}, 컨텐츠 타입: {}", 
+                    croppedImageFile.getOriginalFilename(), croppedImageFile.getContentType());
             
-            // 커스텀 MultipartFile로 변환하여 기존 서비스 활용
-            CustomMultipartFile croppedImageFile = new CustomMultipartFile(
-                "profileImage", 
-                "cropped-profile.jpg", 
-                "image/jpeg", 
-                imageBytes
-            );
+            // 업로드된 파일이 유효한지 확인
+            if (croppedImageFile.isEmpty()) {
+                result.put("success", false);
+                result.put("message", "업로드된 이미지 파일이 비어있습니다.");
+                return result;
+            }
             
             // 기존 회원정보 조회
             MemberDTO memberDTO = memberService.findById(loginMember.getMemberId());
@@ -445,7 +448,31 @@ public class MemberController {
                 return result;
             }
             
-            // 프로필 이미지만 업데이트
+            // Alt 텍스트 설정 (SEO 최적화용)
+            log.info("📋 받은 파라미터 - altText: '{}', format: '{}', quality: '{}'", altText, format, quality);
+            if (altText != null && !altText.trim().isEmpty()) {
+                memberDTO.setProfileImageAltText(altText.trim());
+                log.info("🏷️ 프로필 이미지 Alt 텍스트 설정: {}", altText.trim());
+            } else {
+                // 기본값 설정
+                memberDTO.setProfileImageAltText("사용자 프로필 사진");
+                log.info("🏷️ 프로필 이미지 Alt 텍스트 기본값 설정: 사용자 프로필 사진");
+            }
+            
+            // 이미지 형식 정보 로깅
+            String contentType = croppedImageFile.getContentType();
+            if (contentType != null) {
+                log.info("📷 업로드된 이미지 형식: {}", contentType);
+                if (contentType.contains("avif")) {
+                    log.info("✨ AVIF 형식 감지 - 최적 압축 적용됨");
+                } else if (contentType.contains("webp")) {
+                    log.info("🚀 WebP 형식 감지 - 효율적 압축 적용됨");
+                } else if (contentType.contains("jpeg")) {
+                    log.info("📸 JPEG 형식 감지 - 호환성 우선 적용됨");
+                }
+            }
+            
+            // 프로필 이미지 업데이트 (원본 형식 유지)
             memberService.updateMember(memberDTO, croppedImageFile);
             
             // 세션 정보 업데이트

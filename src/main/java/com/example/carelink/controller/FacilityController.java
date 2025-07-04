@@ -20,6 +20,8 @@ import javax.servlet.http.HttpSession;
 
 import java.util.List;
 import java.util.ArrayList; // ArrayList를 사용하기 위해 추가된 import 문
+import java.util.Map;
+import java.util.HashMap;
 
 @Controller
 @RequestMapping("/facility")
@@ -355,5 +357,139 @@ public class FacilityController {
         }
         
         return facility;
+    }
+
+    /**
+     * 시설 이미지 크롭 페이지
+     */
+    @GetMapping("/crop-images/{facilityId}")
+    public String cropImagePage(@PathVariable Long facilityId, 
+                                HttpSession session, 
+                                Model model, 
+                                RedirectAttributes redirectAttributes) {
+        try {
+            MemberDTO member = (MemberDTO) session.getAttribute(Constants.SESSION_MEMBER);
+            
+            if (member == null) {
+                redirectAttributes.addFlashAttribute("error", "로그인이 필요합니다.");
+                return "redirect:/member/login";
+            }
+            
+            // 시설 정보 조회
+            FacilityDTO facility = facilityService.getFacilityById(facilityId);
+            if (facility == null) {
+                redirectAttributes.addFlashAttribute("error", "시설을 찾을 수 없습니다.");
+                return "redirect:/facility/manage";
+            }
+            
+            // 권한 확인 (시설 소유자 또는 관리자만 접근 가능)
+            if (!facility.getRegisteredMemberId().equals(member.getMemberId()) 
+                && !Constants.MEMBER_ROLE_ADMIN.equals(member.getRole())) {
+                redirectAttributes.addFlashAttribute("error", "해당 시설의 이미지를 관리할 권한이 없습니다.");
+                return "redirect:/facility/manage";
+            }
+            
+            model.addAttribute("facility", facility);
+            log.info("시설 이미지 크롭 페이지 접속: facilityId={}, memberId={}", facilityId, member.getMemberId());
+            
+            return "facility/crop-images";
+            
+        } catch (Exception e) {
+            log.error("시설 이미지 크롭 페이지 오류: facilityId={}", facilityId, e);
+            redirectAttributes.addFlashAttribute("error", "페이지 로드 중 오류가 발생했습니다.");
+            return "redirect:/facility/manage";
+        }
+    }
+
+    /**
+     * 시설 이미지 저장 처리
+     */
+    @PostMapping("/crop-images/save/{facilityId}")
+    @ResponseBody
+    public Map<String, Object> saveFacilityImage(@PathVariable Long facilityId,
+                                                @RequestParam("facilityImage") MultipartFile facilityImageFile,
+                                                @RequestParam(value = "altText", required = false) String altText,
+                                                @RequestParam(value = "format", required = false) String format,
+                                                @RequestParam(value = "imageIndex", required = false) String imageIndex,
+                                                HttpSession session) {
+        Map<String, Object> result = new HashMap<>();
+        
+        try {
+            MemberDTO member = (MemberDTO) session.getAttribute(Constants.SESSION_MEMBER);
+            if (member == null) {
+                result.put("success", false);
+                result.put("message", "로그인이 필요합니다.");
+                return result;
+            }
+            
+            // 시설 정보 조회 및 권한 확인
+            FacilityDTO facility = facilityService.getFacilityById(facilityId);
+            if (facility == null) {
+                result.put("success", false);
+                result.put("message", "시설을 찾을 수 없습니다.");
+                return result;
+            }
+            
+            if (!facility.getRegisteredMemberId().equals(member.getMemberId()) 
+                && !Constants.MEMBER_ROLE_ADMIN.equals(member.getRole())) {
+                result.put("success", false);
+                result.put("message", "해당 시설의 이미지를 관리할 권한이 없습니다.");
+                return result;
+            }
+            
+            log.info("🖼️ 시설 이미지 저장 요청 - facilityId: {}, 형식: {}, 인덱스: {}, 크기: {} bytes", 
+                    facilityId, format, imageIndex, facilityImageFile.getSize());
+            
+            // 업로드된 파일이 유효한지 확인
+            if (facilityImageFile.isEmpty()) {
+                result.put("success", false);
+                result.put("message", "업로드된 이미지 파일이 비어있습니다.");
+                return result;
+            }
+            
+            // Alt 텍스트 설정
+            if (altText != null && !altText.trim().isEmpty()) {
+                facility.setFacilityImageAltText(altText.trim());
+                log.info("🏷️ 시설 이미지 Alt 텍스트 설정: {}", altText.trim());
+            } else {
+                // 기본값 설정
+                String defaultAltText = facility.getFacilityName() + " 시설 이미지";
+                if (imageIndex != null && !imageIndex.isEmpty()) {
+                    defaultAltText += " " + (Integer.parseInt(imageIndex) + 1);
+                }
+                facility.setFacilityImageAltText(defaultAltText);
+                log.info("🏷️ 시설 이미지 Alt 텍스트 기본값 설정: {}", defaultAltText);
+            }
+            
+            // 이미지 형식 정보 로깅
+            String contentType = facilityImageFile.getContentType();
+            if (contentType != null) {
+                log.info("📷 업로드된 이미지 형식: {}", contentType);
+                if (contentType.contains("avif")) {
+                    log.info("✨ AVIF 형식 감지 - 최적 압축 적용됨");
+                } else if (contentType.contains("webp")) {
+                    log.info("🚀 WebP 형식 감지 - 효율적 압축 적용됨");
+                } else if (contentType.contains("jpeg")) {
+                    log.info("📸 JPEG 형식 감지 - 호환성 우선 적용됨");
+                }
+            }
+            
+            // 시설 이미지 업데이트 (단일 이미지로 처리, 향후 다중 이미지 확장 가능)
+            facilityService.updateFacility(facility, facilityImageFile);
+            
+            result.put("success", true);
+            result.put("message", "시설 이미지가 성공적으로 저장되었습니다.");
+            result.put("facilityId", facilityId);
+            result.put("imageIndex", imageIndex);
+            
+            log.info("✅ 시설 이미지 저장 성공: facilityId={}", facilityId);
+            
+        } catch (Exception e) {
+            log.error("❌ 시설 이미지 저장 중 오류 발생: facilityId={}", facilityId, e);
+            result.put("success", false);
+            result.put("message", "이미지 저장 중 오류가 발생했습니다: " + e.getMessage());
+        }
+        
+        return result;
     }
 }

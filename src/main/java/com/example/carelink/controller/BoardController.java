@@ -115,6 +115,7 @@ public class BoardController {
     @GetMapping("/write")
     public String writePage(Model model, 
                           @RequestParam(defaultValue = "all") String type,
+                          @RequestParam(required = false) String qaType,
                           HttpSession session,
                           RedirectAttributes redirectAttributes) {
         
@@ -133,6 +134,13 @@ public class BoardController {
             return "redirect:/board?type=" + type;
         }
         
+        // Q&A 답변하기는 관리자만 가능
+        if ("qna".equals(type) && "ANSWER".equals(qaType) && 
+            (loginMember == null || !"ADMIN".equals(loginMember.getRole()))) {
+            redirectAttributes.addFlashAttribute("error", "답변하기는 관리자만 가능합니다.");
+            return "redirect:/board?type=" + type;
+        }
+        
         BoardDTO boardDTO = new BoardDTO();
         boardDTO.setMemberId(memberId); // 세션에서 가져온 사용자 ID 설정
         
@@ -143,10 +151,29 @@ public class BoardController {
             boardDTO.setCategory(defaultCategory);
         }
         
+        // Q&A 타입 설정
+        if ("qna".equals(type) && qaType != null) {
+            boardDTO.setQaType(qaType);
+            // 질문인 경우 답변 상태 초기값 설정
+            if ("QUESTION".equals(qaType)) {
+                boardDTO.setIsAnswered(false);
+                boardDTO.setAnswerCount(0);
+            }
+        }
+        
         model.addAttribute("boardDTO", boardDTO);
         model.addAttribute("type", type);
+        model.addAttribute("qaType", qaType);
         model.addAttribute("boardTitle", currentBoardInfo.get("title"));
-        model.addAttribute("pageTitle", currentBoardInfo.get("title") + " 작성");
+        
+        // Q&A 타입에 따른 페이지 제목 설정
+        String pageTitle = currentBoardInfo.get("title");
+        if ("qna".equals(type) && qaType != null) {
+            pageTitle += ("QUESTION".equals(qaType) ? " - 질문하기" : " - 답변하기");
+        } else {
+            pageTitle += " 작성";
+        }
+        model.addAttribute("pageTitle", pageTitle);
         
         // 타입별 전용 작성 템플릿 사용
         if ("faq".equals(type)) {
@@ -168,6 +195,7 @@ public class BoardController {
     @PostMapping("/write")
     public String writeBoard(@ModelAttribute BoardDTO boardDTO, 
                            @RequestParam(defaultValue = "all") String type,
+                           @RequestParam(required = false) String qaType,
                            HttpSession session,
                            RedirectAttributes redirectAttributes) {
         try {
@@ -186,8 +214,29 @@ public class BoardController {
                 return "redirect:/board?type=" + type;
             }
             
+            // Q&A 답변하기는 관리자만 가능
+            if ("qna".equals(type) && "ANSWER".equals(qaType) && 
+                (loginMember == null || !"ADMIN".equals(loginMember.getRole()))) {
+                redirectAttributes.addFlashAttribute("error", "답변하기는 관리자만 가능합니다.");
+                return "redirect:/board?type=" + type;
+            }
+            
             // 세션에서 가져온 사용자 ID 설정 (보안 강화)
             boardDTO.setMemberId(memberId);
+            
+            // Q&A 타입별 처리
+            if ("qna".equals(type) && qaType != null) {
+                boardDTO.setQaType(qaType);
+                if ("QUESTION".equals(qaType)) {
+                    // 질문인 경우 답변 상태 초기화
+                    boardDTO.setIsAnswered(false);
+                    boardDTO.setAnswerCount(0);
+                } else if ("ANSWER".equals(qaType)) {
+                    // 답변인 경우 (관리자만 가능)
+                    boardDTO.setIsAnswered(null); // 답변글은 답변 상태를 null로 설정
+                    boardDTO.setAnswerCount(null);
+                }
+            }
             
             // 기본값 설정
             if (boardDTO.getIsNotice() == null) {
@@ -204,7 +253,13 @@ public class BoardController {
             }
             
             boardService.insertBoard(boardDTO);
-            redirectAttributes.addFlashAttribute("message", "게시글이 성공적으로 등록되었습니다.");
+            
+            // 성공 메시지 설정
+            String successMessage = "게시글이 성공적으로 등록되었습니다.";
+            if ("qna".equals(type) && qaType != null) {
+                successMessage = "QUESTION".equals(qaType) ? "질문이 성공적으로 등록되었습니다." : "답변이 성공적으로 등록되었습니다.";
+            }
+            redirectAttributes.addFlashAttribute("message", successMessage);
             
             // 원래 게시판 타입으로 돌아가기
             if ("all".equals(type)) {
@@ -214,7 +269,11 @@ public class BoardController {
             }
         } catch (Exception e) {
             redirectAttributes.addFlashAttribute("error", "게시글 등록 중 오류가 발생했습니다: " + e.getMessage());
-            return "redirect:/board/write?type=" + type;
+            String redirectUrl = "redirect:/board/write?type=" + type;
+            if (qaType != null) {
+                redirectUrl += "&qaType=" + qaType;
+            }
+            return redirectUrl;
         }
     }
     
