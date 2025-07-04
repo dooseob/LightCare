@@ -110,4 +110,21 @@ public interface MemberMapper {
      */
     int hardDeleteMember(@Param("userId") String userId);
 
+    // ================== 관리자용 메서드들 ==================
+
+    /**
+     * 시설 회원 수 조회 (관리자용)
+     */
+    int getFacilityMemberCount();
+
+    /**
+     * 일반 회원 수 조회 (관리자용)
+     */
+    int getUserMemberCount();
+
+    /**
+     * 역할별 회원 수 조회 (관리자용)
+     */
+    int getMemberCountByRole(@Param("role") String role);
+
 }

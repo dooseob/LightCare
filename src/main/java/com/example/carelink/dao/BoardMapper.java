@@ -100,4 +100,9 @@ public interface BoardMapper {
      */
     List<BoardDTO> findBoardsByMemberId(@Param("memberId") Long memberId);
 
+    /**
+     * 회원 ID로 게시글 삭제 (회원 탈퇴 시 사용)
+     */
+    int deleteByMemberId(@Param("memberId") Long memberId);
+
 } 

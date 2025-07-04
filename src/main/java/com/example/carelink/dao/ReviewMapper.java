@@ -102,4 +102,14 @@ public interface ReviewMapper {
      * 전체 리뷰 수 조회 (통계용)
      */
     int getReviewCount();
+
+    /**
+     * 회원 ID로 리뷰 삭제 (회원 탈퇴 시 사용)
+     */
+    int deleteByMemberId(@Param("memberId") Long memberId);
+
+    /**
+     * 시설 회원 ID로 리뷰 삭제 (시설 삭제 시 사용)
+     */
+    int deleteByFacilityMemberId(@Param("memberId") Long memberId);
 } 

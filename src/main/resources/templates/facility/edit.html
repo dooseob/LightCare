@@ -1,0 +1,593 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{layout/header :: header}">
+    <title>시설 정보 수정 - 라이트케어</title>
+</head>
+
+<body class="d-flex flex-column min-vh-100 pt-5">
+<nav th:replace="~{layout/header :: navbar}"></nav>
+
+<div th:replace="~{layout/header :: messages}"></div>
+
+<main class="container my-4">
+    <!-- 브레드크럼 -->
+    <nav aria-label="breadcrumb" class="mb-4">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="/">홈</a></li>
+            <li class="breadcrumb-item"><a href="/facility/search">시설 찾기</a></li>
+            <li class="breadcrumb-item"><a href="/facility/manage">내 시설 관리</a></li>
+            <li class="breadcrumb-item active" aria-current="page">시설 정보 수정</li>
+        </ol>
+    </nav>
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white">
+                    <h3 class="card-title mb-0">
+                        <i class="fas fa-edit me-2"></i>시설 정보 수정
+                    </h3>
+                </div>
+                <div class="card-body">
+                    <form id="facilityEditForm" th:action="@{/facility/edit/{id}(id=${facility.facilityId})}" 
+                          method="post" enctype="multipart/form-data" th:object="${facility}">
+                        
+                        <!-- 시설명 -->
+                        <div class="mb-3">
+                            <label for="facilityName" class="form-label">
+                                <i class="fas fa-building me-1"></i>시설명 <span class="text-danger">*</span>
+                            </label>
+                            <input type="text" class="form-control" id="facilityName" th:field="*{facilityName}"
+                                   placeholder="시설명을 입력하세요" required>
+                        </div>
+
+                        <!-- 시설 유형 -->
+                        <div class="mb-3">
+                            <label for="facilityType" class="form-label">
+                                <i class="fas fa-tag me-1"></i>시설 유형 <span class="text-danger">*</span>
+                            </label>
+                            <select class="form-select" id="facilityType" th:field="*{facilityType}" required>
+                                <option value="">시설 유형을 선택하세요</option>
+                                <option value="NURSING_HOME">요양원</option>
+                                <option value="HOSPITAL">요양병원</option>
+                                <option value="DAY_CARE">데이케어센터</option>
+                            </select>
+                        </div>
+
+                        <!-- 주소 -->
+                        <div class="mb-3">
+                            <label for="facilityAddress" class="form-label">
+                                <i class="fas fa-map-marker-alt me-1"></i>주소 <span class="text-danger">*</span>
+                            </label>
+                            <div class="input-group mb-2">
+                                <input type="text" class="form-control" id="facilityAddress" th:field="*{address}"
+                                       placeholder="주소 검색 버튼을 클릭하세요" readonly required>
+                                <button type="button" class="btn btn-outline-primary" onclick="searchFacilityAddress()">
+                                    <i class="fas fa-search me-1"></i>주소 검색
+                                </button>
+                                <button type="button" class="btn btn-outline-info ms-1" onclick="simpleAddressTest()">
+                                    <i class="fas fa-vial me-1"></i>테스트
+                                </button>
+                                <button type="button" class="btn btn-outline-success ms-1" onclick="checkCoordinates()">
+                                    <i class="fas fa-map-marked-alt me-1"></i>좌표확인
+                                </button>
+                            </div>
+                            <input type="text" class="form-control" id="detailAddress" th:field="*{detailAddress}"
+                                   placeholder="상세 주소를 입력하세요 (예: 101호, 2층)">
+                            <!-- 위도/경도 히든 필드 -->
+                            <input type="hidden" id="latitude" th:field="*{latitude}">
+                            <input type="hidden" id="longitude" th:field="*{longitude}">
+                        </div>
+                        
+                        <!-- 위치 미리보기 지도 -->
+                        <div class="mb-3" id="mapPreviewContainer" style="display: none;">
+                            <label class="form-label">
+                                <i class="fas fa-map me-1"></i>위치 미리보기
+                            </label>
+                            <div id="previewMap" style="width:100%; height:200px; border-radius: 8px; border: 1px solid #dee2e6;"></div>
+                            <small class="form-text text-muted">선택된 주소의 위치가 지도에 표시됩니다.</small>
+                        </div>
+
+                        <!-- 시설 전화번호 -->
+                        <div class="mb-3">
+                            <label for="phone" class="form-label">
+                                <i class="fas fa-phone me-1"></i>시설 전화번호 <span class="text-danger">*</span>
+                            </label>
+                            <input type="tel" class="form-control" id="phone" th:field="*{phone}"
+                                   placeholder="숫자만 입력하세요 (자동으로 하이픈 추가됨)" required>
+                            <small class="form-text text-muted">일반 전화번호(02-1234-5678) 또는 휴대폰 번호 모두 가능합니다</small>
+                        </div>
+
+                        <!-- 현재 시설 이미지 -->
+                        <div class="mb-3" th:if="${facility.facilityImage}">
+                            <label class="form-label">
+                                <i class="fas fa-image me-1"></i>현재 시설 사진
+                            </label>
+                            <div class="mb-2">
+                                <img th:src="@{${facility.facilityImage}}" alt="현재 시설 사진" 
+                                     style="max-width: 200px; max-height: 150px; border-radius: 8px; border: 1px solid #dee2e6;">
+                            </div>
+                        </div>
+
+                        <!-- 새 시설 이미지 -->
+                        <div class="mb-3">
+                            <label for="facilityImageFile" class="form-label">
+                                <i class="fas fa-image me-1"></i>시설 사진 <span th:if="${facility.facilityImage == null}" class="text-danger">*</span>
+                                <span th:if="${facility.facilityImage != null}" class="text-muted">(변경하려면 새 파일 선택)</span>
+                            </label>
+                            <input type="file" class="form-control" id="facilityImageFile" name="facilityImageFile"
+                                   accept="image/*" onchange="previewFacilityImage(this)"
+                                   th:required="${facility.facilityImage == null}">
+                            <small class="form-text text-muted">JPG, PNG 파일만 업로드 가능 (최대 5MB)</small>
+                            <div id="facilityImagePreview" class="mt-2" style="display: none;">
+                                <img id="facilityImagePreviewImg" src="" alt="시설 사진 미리보기" 
+                                     style="max-width: 200px; max-height: 150px; border-radius: 8px; border: 1px solid #dee2e6;">
+                            </div>
+                        </div>
+
+                        <!-- 수용 인원 -->
+                        <div class="mb-3">
+                            <label for="capacity" class="form-label">
+                                <i class="fas fa-users me-1"></i>수용 인원
+                            </label>
+                            <input type="number" class="form-control" id="capacity" th:field="*{capacity}"
+                                   placeholder="수용 가능 인원을 입력하세요" min="1">
+                        </div>
+
+                        <!-- 운영 시간 -->
+                        <div class="mb-3">
+                            <label for="operatingHours" class="form-label">
+                                <i class="fas fa-clock me-1"></i>운영 시간
+                            </label>
+                            <div class="row g-2">
+                                <div class="col-12">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="radio" name="operatingType" id="operating24" 
+                                               value="24시간" th:checked="${facility.operatingHours == '24시간'}">
+                                        <label class="form-check-label fw-bold text-success" for="operating24">
+                                            <i class="fas fa-clock me-1"></i>24시간 운영
+                                        </label>
+                                    </div>
+                                </div>
+                                <div class="col-12">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="radio" name="operatingType" id="operatingCustom" 
+                                               value="custom" th:checked="${facility.operatingHours != '24시간' && facility.operatingHours != null}">
+                                        <label class="form-check-label" for="operatingCustom">
+                                            <i class="fas fa-clock me-1"></i>시간 직접 설정
+                                        </label>
+                                    </div>
+                                </div>
+                                <div class="col-12">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="radio" name="operatingType" id="operatingWeekly" value="weekly">
+                                        <label class="form-check-label" for="operatingWeekly">
+                                            <i class="fas fa-calendar-week me-1"></i>요일별 시간 설정
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- 간단한 시간 설정 -->
+                            <div id="simpleTimeContainer" class="mt-3" style="display: none;">
+                                <div class="card bg-light">
+                                    <div class="card-body">
+                                        <h6 class="card-title mb-3">운영 시간 설정</h6>
+                                        <div class="row g-2">
+                                            <div class="col-md-6">
+                                                <label class="form-label small">시작 시간</label>
+                                                <select class="form-select" id="startHour">
+                                                    <option value="">시</option>
+                                                </select>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <label class="form-label small">종료 시간</label>
+                                                <select class="form-select" id="endHour">
+                                                    <option value="">시</option>
+                                                </select>
+                                            </div>
+                                        </div>
+                                        <div class="mt-2">
+                                            <small class="text-muted">
+                                                <i class="fas fa-info-circle me-1"></i>
+                                                매일 동일한 시간으로 설정됩니다
+                                            </small>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- 요일별 시간 설정 -->
+                            <div id="weeklyTimeContainer" class="mt-3" style="display: none;">
+                                <div class="card bg-light">
+                                    <div class="card-body">
+                                        <h6 class="card-title mb-3">요일별 운영 시간</h6>
+                                        <div id="weeklySchedule">
+                                            <!-- JavaScript로 동적 생성 -->
+                                        </div>
+                                        
+                                        <div class="mt-3">
+                                            <small class="text-muted">
+                                                <i class="fas fa-info-circle me-1"></i>
+                                                운영하지 않는 요일은 체크를 해제하세요
+                                            </small>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- 직접 입력 -->
+                            <div id="customTimeContainer" class="mt-3" style="display: none;">
+                                <input type="text" class="form-control" id="customOperatingHours" 
+                                       placeholder="예: 09:00-18:00, 평일 09:00-18:00 주말 10:00-16:00"
+                                       th:value="${facility.operatingHours != '24시간' ? facility.operatingHours : ''}">
+                                <small class="form-text text-muted">
+                                    자유 형식으로 운영 시간을 입력하세요
+                                </small>
+                            </div>
+                            
+                            <input type="hidden" id="operatingHours" th:field="*{operatingHours}">
+                        </div>
+
+                        <!-- 홈페이지 -->
+                        <div class="mb-3">
+                            <label for="homepage" class="form-label">
+                                <i class="fas fa-globe me-1"></i>홈페이지 URL
+                            </label>
+                            <input type="url" class="form-control" id="homepage" th:field="*{homepage}"
+                                   placeholder="https://www.example.com">
+                        </div>
+
+                        <!-- 시설 설명 -->
+                        <div class="mb-3">
+                            <label for="description" class="form-label">
+                                <i class="fas fa-info-circle me-1"></i>시설 설명
+                            </label>
+                            <textarea class="form-control" id="description" th:field="*{description}" rows="4"
+                                      placeholder="시설에 대한 설명을 입력하세요"></textarea>
+                        </div>
+
+                        <!-- 시설 특징 -->
+                        <div class="mb-3">
+                            <label for="features" class="form-label">
+                                <i class="fas fa-star me-1"></i>시설 특징
+                            </label>
+                            <input type="text" class="form-control" id="features" th:field="*{features}"
+                                   placeholder="시설의 주요 특징을 쉼표로 구분하여 입력하세요 (예: 24시간 간병서비스, 물리치료실, 카페)">
+                            <small class="form-text text-muted">쉼표(,)로 구분하여 여러 특징을 입력할 수 있습니다</small>
+                        </div>
+
+                        <!-- 버튼 -->
+                        <div class="d-flex gap-2 justify-content-end">
+                            <a th:href="@{/facility/manage}" class="btn btn-secondary">
+                                <i class="fas fa-times me-2"></i>취소
+                            </a>
+                            <button type="submit" class="btn btn-primary" id="submitButton">
+                                <i class="fas fa-save me-2"></i>수정 완료
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</main>
+
+<footer th:replace="~{layout/footer :: footer}"></footer>
+
+<div th:replace="~{layout/footer :: scripts}"></div>
+
+<!-- 카카오 주소 검색 API -->
+<script src="//t1.daumcdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js"></script>
+<!-- 카카오맵 API (좌표 변환용) -->
+<script type="text/javascript" src="//dapi.kakao.com/v2/maps/sdk.js?appkey=3c4987cb946a721903add5fc474941a3&libraries=services"></script>
+<!-- 카카오맵 유틸리티 -->
+<script src="/js/kakaomap.js"></script>
+<script src="/js/facility-edit.js"></script>
+
+<script>
+$(document).ready(function() {
+    console.log('Initializing operating hours...');
+    
+    // 시간 옵션 동적 생성
+    initializeTimeOptions();
+    
+    // 요일별 스케줄 미리 생성
+    generateWeeklySchedule();
+    
+    // 직접 입력 변경 이벤트
+    $('#customOperatingHours').on('input', function() {
+        updateOperatingHours();
+    });
+    
+    // 초기 상태 설정
+    initializeOperatingHours();
+});
+
+function initializeTimeOptions() {
+    // 시작 시간 옵션 생성
+    for (let i = 0; i <= 23; i++) {
+        const hour = String(i).padStart(2, '0');
+        $('#startHour').append(`<option value="${hour}">${hour}시</option>`);
+        $('#endHour').append(`<option value="${hour}">${hour}시</option>`);
+    }
+}
+
+function generateWeeklySchedule() {
+    console.log('Generating weekly schedule...');
+    const days = ['월요일', '화요일', '수요일', '목요일', '금요일', '토요일', '일요일'];
+    let html = '';
+    
+    days.forEach((day, index) => {
+        html += `
+            <div class="row g-2 mb-2">
+                <div class="col-3">
+                    <div class="form-check">
+                        <input class="form-check-input day-check" type="checkbox" id="day${index}" checked>
+                        <label class="form-check-label" for="day${index}">${day}</label>
+                    </div>
+                </div>
+                <div class="col-9 time-controls">
+                    <div class="d-flex align-items-center gap-2">
+                        <select class="form-select form-select-sm day-start" id="start${index}" style="width: 80px;">
+                            <option value="">시작</option>
+                        </select>
+                        <span>시 ~</span>
+                        <select class="form-select form-select-sm day-end" id="end${index}" style="width: 80px;">
+                            <option value="">종료</option>
+                        </select>
+                        <span>시</span>
+                    </div>
+                    <div class="rest-day-notice text-muted small mt-1" style="display: none;">
+                        <i class="fas fa-moon me-1"></i>휴무일
+                    </div>
+                </div>
+            </div>
+        `;
+    });
+    
+    $('#weeklySchedule').html(html);
+    
+    // 시간 옵션 추가
+    for (let i = 0; i <= 23; i++) {
+        const hour = String(i).padStart(2, '0');
+        days.forEach((day, index) => {
+            $(`#start${index}`).append(`<option value="${hour}">${hour}</option>`);
+            $(`#end${index}`).append(`<option value="${hour}">${hour}</option>`);
+        });
+    }
+    
+    // 이벤트 리스너 추가
+    setTimeout(function() {
+        $('.day-check').off('change').on('change', function() {
+            const index = $(this).attr('id').replace('day', '');
+            const timeControls = $(this).closest('.row').find('.time-controls');
+            const restNotice = timeControls.find('.rest-day-notice');
+            const selects = timeControls.find('select');
+            
+            if ($(this).is(':checked')) {
+                selects.show();
+                timeControls.find('span').show();
+                restNotice.hide();
+            } else {
+                selects.hide();
+                timeControls.find('span').hide();
+                restNotice.show();
+            }
+            
+            updateOperatingHours();
+        });
+        
+        $('.day-start, .day-end').off('change').on('change', function() {
+            updateOperatingHours();
+        });
+        
+        // 간단한 시간 설정 이벤트도 여기서 등록
+        $('#startHour, #endHour').off('change').on('change', function() {
+            updateOperatingHours();
+        });
+    }, 100);
+}
+
+function initializeOperatingHours() {
+    const currentHours = $('#operatingHours').val();
+    
+    if (currentHours === '24시간') {
+        $('#operating24').prop('checked', true);
+    } else if (currentHours && currentHours !== '') {
+        $('#operatingCustom').prop('checked', true);
+        $('#customTimeContainer').show();
+        $('#customOperatingHours').val(currentHours);
+    }
+}
+
+function updateOperatingHours() {
+    const operatingType = $('input[name="operatingType"]:checked').val();
+    let operatingHours = '';
+    
+    if (operatingType === '24시간') {
+        operatingHours = '24시간';
+    } else if (operatingType === 'simple') {
+        const startHour = $('#startHour').val();
+        const endHour = $('#endHour').val();
+        
+        if (startHour && endHour) {
+            operatingHours = `${startHour}:00-${endHour}:00`;
+        }
+    } else if (operatingType === 'weekly') {
+        const weeklyHours = [];
+        const days = ['월', '화', '수', '목', '금', '토', '일'];
+        
+        $('.day-check').each(function(index) {
+            if ($(this).is(':checked')) {
+                const startHour = $(`#start${index}`).val();
+                const endHour = $(`#end${index}`).val();
+                
+                if (startHour && endHour) {
+                    weeklyHours.push(`${days[index]} ${startHour}:00-${endHour}:00`);
+                }
+            } else {
+                weeklyHours.push(`${days[index]} 휴무`);
+            }
+        });
+        
+        operatingHours = weeklyHours.join(', ');
+    } else if (operatingType === 'custom') {
+        operatingHours = $('#customOperatingHours').val();
+    }
+    
+    $('#operatingHours').val(operatingHours);
+}
+
+// 간단한 주소 검색 테스트 (Daum API 직접 호출)
+function simpleAddressTest() {
+    console.log('간단한 주소 검색 테스트 시작...');
+    
+    if (typeof daum === 'undefined') {
+        console.error('Daum API가 로드되지 않았습니다.');
+        alert('Daum API가 로드되지 않았습니다.');
+        return;
+    }
+    
+    new daum.Postcode({
+        oncomplete: function(data) {
+            console.log('주소 선택됨:', data);
+            
+            const selectedAddress = data.roadAddress || data.jibunAddress;
+            
+            // 주소 직접 설정
+            const addressInput = document.getElementById('facilityAddress');
+            if (addressInput) {
+                addressInput.removeAttribute('readonly');
+                addressInput.value = selectedAddress;
+                addressInput.setAttribute('readonly', 'readonly');
+                addressInput.style.backgroundColor = '#d4edda';
+                
+                setTimeout(function() {
+                    addressInput.style.backgroundColor = '';
+                }, 2000);
+                
+                console.log('주소 설정 완료:', selectedAddress);
+            } else {
+                alert('facilityAddress 필드를 찾을 수 없음');
+                return;
+            }
+            
+            // 위도/경도 변환 및 설정
+            if (typeof kakao !== 'undefined' && kakao.maps && kakao.maps.services) {
+                const geocoder = new kakao.maps.services.Geocoder();
+                
+                geocoder.addressSearch(selectedAddress, function(result, status) {
+                    if (status === kakao.maps.services.Status.OK) {
+                        const latitude = parseFloat(result[0].y);
+                        const longitude = parseFloat(result[0].x);
+                        
+                        // 위도/경도 히든 필드에 설정
+                        const latitudeInput = document.getElementById('latitude');
+                        const longitudeInput = document.getElementById('longitude');
+                        
+                        if (latitudeInput) {
+                            latitudeInput.value = latitude;
+                            console.log('위도 설정:', latitude);
+                        }
+                        
+                        if (longitudeInput) {
+                            longitudeInput.value = longitude;
+                            console.log('경도 설정:', longitude);
+                        }
+                        
+                        alert('주소와 위치 좌표 설정 완료!\n주소: ' + selectedAddress + '\n위도: ' + latitude + '\n경도: ' + longitude);
+                    } else {
+                        console.error('위도/경도 변환 실패:', status);
+                        alert('주소는 설정되었지만 위도/경도 변환에 실패했습니다.');
+                    }
+                });
+            } else {
+                console.error('카카오맵 API가 로드되지 않았습니다.');
+                alert('주소는 설정되었지만 카카오맵 API가 없어 위도/경도를 설정할 수 없습니다.');
+            }
+        },
+        onclose: function(state) {
+            console.log('주소 검색 창 닫힘:', state);
+        },
+        onerror: function(error) {
+            console.error('주소 검색 오류:', error);
+            alert('주소 검색 중 오류 발생');
+        }
+    }).open();
+}
+
+// 현재 설정된 위도/경도 확인 함수
+function checkCoordinates() {
+    console.log('좌표확인 함수 실행됨');
+    
+    const addressInput = document.getElementById('facilityAddress');
+    const latitudeInput = document.getElementById('latitude');
+    const longitudeInput = document.getElementById('longitude');
+    
+    const address = addressInput ? addressInput.value : '필드 없음';
+    const latitude = latitudeInput ? latitudeInput.value : '필드 없음';
+    const longitude = longitudeInput ? longitudeInput.value : '필드 없음';
+    
+    console.log('현재 값:');
+    console.log('- 주소:', address);
+    console.log('- 위도:', latitude);
+    console.log('- 경도:', longitude);
+    
+    // 빈 값 체크
+    const displayAddress = address || '설정되지 않음';
+    const displayLatitude = latitude || '설정되지 않음';
+    const displayLongitude = longitude || '설정되지 않음';
+    
+    const message = `📍 현재 설정된 정보:\n\n🏠 주소: ${displayAddress}\n🌍 위도: ${displayLatitude}\n🗺️ 경도: ${displayLongitude}`;
+    
+    alert(message);
+    
+    // 추가 진단 정보
+    if (!latitude || !longitude || latitude === '' || longitude === '') {
+        setTimeout(function() {
+            alert('⚠️ 위도/경도가 설정되지 않았습니다!\n\n해결 방법:\n1. "테스트" 버튼으로 주소 다시 검색\n2. 주소 선택 후 자동으로 좌표 설정됨\n3. "수정 완료"로 저장');
+        }, 100);
+    }
+}
+
+// 간단한 시간 설정 라디오 버튼 동적 추가
+$(document).ready(function() {
+    const simpleOption = `
+        <div class="col-12">
+            <div class="form-check">
+                <input class="form-check-input" type="radio" name="operatingType" id="operatingSimple" value="simple">
+                <label class="form-check-label" for="operatingSimple">
+                    <i class="fas fa-clock me-1"></i>간단한 시간 설정
+                </label>
+            </div>
+        </div>
+    `;
+    
+    $('#operatingCustom').closest('.col-12').after(simpleOption);
+    
+    // 이벤트 리스너 다시 등록
+    setTimeout(function() {
+        $('input[name="operatingType"]').off('change').on('change', function() {
+            const value = $(this).val();
+            console.log('Operating type changed:', value);
+            
+            // 모든 컨테이너 숨기기
+            $('#simpleTimeContainer, #weeklyTimeContainer, #customTimeContainer').hide();
+            
+            if (value === 'custom') {
+                $('#customTimeContainer').show();
+            } else if (value === 'weekly') {
+                $('#weeklyTimeContainer').show();
+                generateWeeklySchedule();
+            } else if (value === 'simple') {
+                $('#simpleTimeContainer').show();
+            }
+            
+            updateOperatingHours();
+        });
+    }, 100);
+});
+</script>
+
+</body>
+</html>

@@ -9,6 +9,41 @@ let map = null;
 let markers = []; // 지도에 표시된 마커들을 관리할 배열
 let infoWindow = null; // 인포윈도우 객체
 
+// 시설 이미지 미리보기 함수
+function previewFacilityImage(input) {
+    const preview = document.getElementById('facilityImagePreview');
+    const previewImg = document.getElementById('facilityImagePreviewImg');
+    
+    if (input.files && input.files[0]) {
+        const file = input.files[0];
+        
+        // 파일 크기 체크 (5MB = 5 * 1024 * 1024 bytes)
+        if (file.size > 5 * 1024 * 1024) {
+            alert('파일 크기가 5MB를 초과합니다. 더 작은 파일을 선택해주세요.');
+            input.value = '';
+            preview.style.display = 'none';
+            return;
+        }
+        
+        // 파일 형식 체크
+        if (!file.type.match('image.*')) {
+            alert('이미지 파일만 업로드 가능합니다.');
+            input.value = '';
+            preview.style.display = 'none';
+            return;
+        }
+        
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            previewImg.src = e.target.result;
+            preview.style.display = 'block';
+        };
+        reader.readAsDataURL(file);
+    } else {
+        preview.style.display = 'none';
+    }
+}
+
 // 지도를 초기화하는 함수
 function initKakaoMap(mapId) {
     const mapContainer = document.getElementById(mapId);
@@ -264,29 +299,127 @@ function getCoordinatesFromAddress(address, callback) {
  * 주소 선택 시 자동으로 위도/경도를 히든 필드에 설정
  */
 function searchFacilityAddress() {
-    openAddressSearch('facilityAddress', 'detailAddress', function(latitude, longitude) {
-        // 위도/경도를 히든 필드에 설정
-        const latitudeInput = document.getElementById('latitude');
-        const longitudeInput = document.getElementById('longitude');
-        
-        if (latitudeInput) {
-            latitudeInput.value = latitude;
+    console.log('searchFacilityAddress 함수 호출됨');
+    
+    // 기존 주소가 있는지 확인
+    const currentAddress = document.getElementById('facilityAddress').value;
+    if (currentAddress && currentAddress.trim() !== '') {
+        const confirmChange = confirm('기존 주소가 있습니다. 새로운 주소로 변경하시겠습니까?\n\n현재 주소: ' + currentAddress);
+        if (!confirmChange) {
+            console.log('주소 변경 취소됨');
+            return;
         }
-        if (longitudeInput) {
-            longitudeInput.value = longitude;
+    }
+    
+    // Daum 우편번호 서비스 직접 사용
+    new daum.Postcode({
+        oncomplete: function(data) {
+            console.log('주소 선택 완료:', data);
+            
+            // 주소 조합
+            let addr = '';
+            let extraAddr = '';
+            
+            if (data.userSelectedType === 'R') {
+                addr = data.roadAddress;
+            } else {
+                addr = data.jibunAddress;
+            }
+            
+            if(data.userSelectedType === 'R'){
+                if(data.bname !== '' && /[동|로|가]$/g.test(data.bname)){
+                    extraAddr += data.bname;
+                }
+                if(data.buildingName !== '' && data.apartment === 'Y'){
+                    extraAddr += (extraAddr !== '' ? ', ' + data.buildingName : data.buildingName);
+                }
+                if(extraAddr !== ''){
+                    extraAddr = ' (' + extraAddr + ')';
+                }
+            }
+            
+            const finalAddress = addr + extraAddr;
+            
+            // 주소 필드에 설정
+            const addressInput = document.getElementById('facilityAddress');
+            if (addressInput) {
+                // readonly 속성 임시 제거
+                addressInput.removeAttribute('readonly');
+                addressInput.value = finalAddress;
+                // readonly 속성 다시 적용
+                addressInput.setAttribute('readonly', 'readonly');
+                console.log('주소 설정 완료:', finalAddress);
+                
+                // 시각적 피드백 - 배경색 잠시 변경
+                addressInput.style.backgroundColor = '#d4edda';
+                setTimeout(function() {
+                    addressInput.style.backgroundColor = '';
+                }, 1000);
+            } else {
+                console.error('facilityAddress 필드를 찾을 수 없음');
+            }
+            
+            // 상세주소 입력란에 포커스
+            const detailAddressInput = document.getElementById('detailAddress');
+            if (detailAddressInput) {
+                detailAddressInput.focus();
+            }
+            
+            // 주소로부터 위도/경도 가져오기
+            getCoordinatesFromAddress(addr, function(latitude, longitude) {
+                // 위도/경도를 히든 필드에 설정
+                const latitudeInput = document.getElementById('latitude');
+                const longitudeInput = document.getElementById('longitude');
+                
+                if (latitudeInput) {
+                    latitudeInput.value = latitude;
+                    console.log('위도 설정:', latitude);
+                } else {
+                    console.error('latitude 필드를 찾을 수 없음');
+                }
+                
+                if (longitudeInput) {
+                    longitudeInput.value = longitude;
+                    console.log('경도 설정:', longitude);
+                } else {
+                    console.error('longitude 필드를 찾을 수 없음');
+                }
+                
+                // 위도/경도 설정 완료 알림
+                const notification = document.createElement('div');
+                notification.innerHTML = `
+                    <div class="alert alert-success alert-dismissible fade show position-fixed" 
+                         style="top: 20px; right: 20px; z-index: 9999; max-width: 300px;">
+                        <i class="fas fa-check-circle me-2"></i>
+                        주소와 위치 좌표가 설정되었습니다!
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                `;
+                document.body.appendChild(notification);
+                
+                // 3초 후 자동 제거
+                setTimeout(function() {
+                    if (notification && notification.parentNode) {
+                        notification.parentNode.removeChild(notification);
+                    }
+                }, 3000);
+                
+                console.log('시설 위치 좌표 설정 완료:', { latitude, longitude });
+                
+                // 미리보기 지도 컨테이너 표시
+                const mapPreviewContainer = document.getElementById('mapPreviewContainer');
+                if (mapPreviewContainer) {
+                    mapPreviewContainer.style.display = 'block';
+                }
+                
+                // 미리보기 지도가 있다면 해당 위치로 이동
+                updatePreviewMap(latitude, longitude);
+            });
+        },
+        onclose: function(state) {
+            console.log('주소 검색 창 닫힘. 상태:', state);
         }
-        
-        console.log('시설 위치 좌표 설정:', { latitude, longitude });
-        
-        // 미리보기 지도 컨테이너 표시
-        const mapPreviewContainer = document.getElementById('mapPreviewContainer');
-        if (mapPreviewContainer) {
-            mapPreviewContainer.style.display = 'block';
-        }
-        
-        // 미리보기 지도가 있다면 해당 위치로 이동
-        updatePreviewMap(latitude, longitude);
-    });
+    }).open();
 }
 
 /**

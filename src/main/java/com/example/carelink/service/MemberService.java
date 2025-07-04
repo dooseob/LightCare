@@ -8,22 +8,19 @@ import com.example.carelink.dao.JobMapper;
 import com.example.carelink.dto.LoginDTO;
 import com.example.carelink.dto.MemberDTO;
 import com.example.carelink.dto.FacilityDTO;
+import org.springframework.web.multipart.MultipartFile;
+import java.io.File;
+import java.io.IOException;
+import java.util.UUID;
 import com.example.carelink.dto.BoardDTO;
 import com.example.carelink.dto.ReviewDTO;
 import com.example.carelink.dto.JobDTO;
 import com.example.carelink.common.Constants;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value; // @Value를 사용한다면 유지
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.multipart.MultipartFile; // MultipartFile 유지
-
-import java.io.File; // 파일 처리 관련 클래스 유지
-import java.nio.file.Files; // 파일 처리 관련 클래스 유지
-import java.nio.file.Path; // 파일 처리 관련 클래스 유지
-import java.nio.file.Paths; // 파일 처리 관련 클래스 유지
 import java.util.List; // List 유지 (페이징, 역할별 조회)
 import java.util.Map; // Map 인터페이스
 import java.util.HashMap; // HashMap 클래스
@@ -47,9 +44,6 @@ public class MemberService {
     private final JobMapper jobMapper;
     private final PasswordEncoder passwordEncoder; // 비밀번호 암호화를 위해 주입
 
-    // @Value 설정과 관련 변수 유지 (프로필 이미지 업로드 기능이 DTO에 있으므로)
-    @Value("${file.upload-dir.profile}")
-    private String uploadDir;
 
     /**
      * 로그인 처리
@@ -105,10 +99,18 @@ public class MemberService {
     }
 
     /**
-     * 회원가입 처리
+     * 회원가입 처리 (기존 메서드 - 파일 없이)
      */
     @Transactional
     public void join(MemberDTO memberDTO) {
+        join(memberDTO, null);
+    }
+
+    /**
+     * 회원가입 처리 (파일 포함)
+     */
+    @Transactional
+    public void join(MemberDTO memberDTO, MultipartFile facilityImageFile) {
         try {
             // 1. 아이디 중복 확인
             if (isUserIdDuplicate(memberDTO.getUserId())) {
@@ -175,9 +177,18 @@ public class MemberService {
                 facilityDTO.setCapacity(memberDTO.getCapacity());
                 facilityDTO.setOperatingHours(memberDTO.getOperatingHours());
                 facilityDTO.setFeatures(memberDTO.getFeatures());
+                // 위도/경도 설정 추가
+                facilityDTO.setLatitude(memberDTO.getLatitude());
+                facilityDTO.setLongitude(memberDTO.getLongitude());
                 facilityDTO.setRegisteredMemberId(memberDTO.getMemberId());
                 facilityDTO.setIsApproved(false); // 기본값: 승인 대기
                 facilityDTO.setApprovalStatus("PENDING");
+                
+                // 시설 이미지 파일 처리
+                if (facilityImageFile != null && !facilityImageFile.isEmpty()) {
+                    String imagePath = saveFacilityImage(facilityImageFile, memberDTO.getUserId());
+                    facilityDTO.setFacilityImage(imagePath);
+                }
                 
                 int facilityResult = facilityMapper.insertFacility(facilityDTO);
                 if (facilityResult == 0) {
@@ -266,36 +277,25 @@ public class MemberService {
         memberDTO.setCreatedAt(existingMember.getCreatedAt());
 
         if (profileImageFile != null && !profileImageFile.isEmpty()) {
-            Path uploadPath = Paths.get(uploadDir);
-            if (!Files.exists(uploadPath)) {
-                Files.createDirectories(uploadPath);
-                log.info("프로필 이미지 업로드 디렉토리 생성: {}", uploadPath.toAbsolutePath());
-            }
-
-            String originalFilename = profileImageFile.getOriginalFilename();
-            String fileExtension = "";
-            if (originalFilename != null && originalFilename.contains(".")) {
-                fileExtension = originalFilename.substring(originalFilename.lastIndexOf("."));
-            }
-            String savedFileName = UUID.randomUUID().toString() + fileExtension;
-            Path filePath = uploadPath.resolve(savedFileName);
-
-            Files.copy(profileImageFile.getInputStream(), filePath);
-            log.info("새 프로필 이미지 저장: {}", filePath.toAbsolutePath());
-
-            memberDTO.setProfileImage("/profile_images/" + savedFileName); // 웹 접근 경로
-
+            // 프로필 이미지 저장 (새로운 방식 사용)
+            String profileImagePath = saveProfileImage(profileImageFile, existingMember.getUserId());
+            memberDTO.setProfileImage(profileImagePath);
+            
             // 기존 프로필 이미지 삭제 (기존 이미지가 있고, 새 이미지가 업로드된 경우)
             if (existingMember.getProfileImage() != null && !existingMember.getProfileImage().isEmpty()) {
-                // 저장된 파일명을 추출 (예: /profile_images/abc-123.jpg 에서 abc-123.jpg)
-                String oldProfileImagePath = existingMember.getProfileImage();
-                String oldFileName = oldProfileImagePath.substring(oldProfileImagePath.lastIndexOf("/") + 1);
-                Path oldFilePath = Paths.get(uploadDir + oldFileName);
                 try {
-                    Files.deleteIfExists(oldFilePath);
-                    log.info("기존 프로필 이미지 삭제: {}", oldFilePath.toAbsolutePath());
+                    // 기존 파일 삭제
+                    String projectRoot = System.getProperty("user.dir");
+                    String oldImagePath = existingMember.getProfileImage();
+                    if (oldImagePath.startsWith("/uploads/profile/")) {
+                        String oldFileName = oldImagePath.substring("/uploads/profile/".length());
+                        File oldFile = new File(projectRoot + "/src/main/resources/static" + oldImagePath);
+                        if (oldFile.exists() && oldFile.delete()) {
+                            log.info("기존 프로필 이미지 삭제 성공: {}", oldFile.getAbsolutePath());
+                        }
+                    }
                 } catch (Exception e) {
-                    log.warn("기존 프로필 이미지 삭제 실패 (파일이 없거나 권한 문제일 수 있음): {}", oldFilePath.toAbsolutePath(), e);
+                    log.warn("기존 프로필 이미지 삭제 실패: {}", e.getMessage());
                 }
             }
         } else {
@@ -575,18 +575,41 @@ public class MemberService {
     }
     
     /**
-     * 사용자의 모든 콘텐츠 삭제
+     * 사용자의 모든 콘텐츠 삭제 (시설회원인 경우 관련 시설도 삭제)
      */
     @Transactional
     private void deleteAllUserContent(String userId) {
         try {
-            // 각 매퍼에서 사용자 콘텐츠 삭제
-            // boardMapper.deleteByUserId(userId);
-            // reviewMapper.deleteByUserId(userId);
-            // jobMapper.deleteByUserId(userId);
-            log.info("사용자 콘텐츠 삭제 완료: {}", userId);
+            MemberDTO member = memberMapper.findByUserId(userId);
+            if (member == null) {
+                throw new RuntimeException("회원 정보를 찾을 수 없습니다.");
+            }
+            
+            Long memberId = member.getMemberId();
+            
+            // 1. 시설회원인 경우 관련 시설 삭제
+            if (Constants.MEMBER_ROLE_FACILITY.equals(member.getRole())) {
+                // 시설의 구인공고 먼저 삭제
+                jobMapper.deleteByFacilityMemberId(memberId);
+                log.info("시설 구인공고 삭제 완료: memberId={}", memberId);
+                
+                // 시설 리뷰 삭제
+                reviewMapper.deleteByFacilityMemberId(memberId);
+                log.info("시설 리뷰 삭제 완료: memberId={}", memberId);
+                
+                // 시설 정보 삭제
+                facilityMapper.deleteByMemberId(memberId);
+                log.info("시설 정보 삭제 완료: memberId={}", memberId);
+            }
+            
+            // 2. 회원이 작성한 모든 콘텐츠 삭제
+            boardMapper.deleteByMemberId(memberId);
+            reviewMapper.deleteByMemberId(memberId);
+            jobMapper.deleteByMemberId(memberId);
+            
+            log.info("사용자 콘텐츠 삭제 완료: userId={}, memberId={}", userId, memberId);
         } catch (Exception e) {
-            log.error("사용자 콘텐츠 삭제 중 오류: {}", userId, e);
+            log.error("사용자 콘텐츠 삭제 중 오류: userId={}", userId, e);
             throw e;
         }
     }
@@ -601,6 +624,78 @@ public class MemberService {
             throw new RuntimeException("회원 탈퇴 처리 중 오류가 발생했습니다.");
         }
         log.info("회원 탈퇴 처리 완료: {}", userId);
+    }
+
+    /**
+     * 프로필 이미지 저장 메서드
+     */
+    private String saveProfileImage(MultipartFile file, String userId) {
+        try {
+            // 프로젝트 루트 경로 기반으로 절대 경로 설정
+            String projectRoot = System.getProperty("user.dir");
+            String uploadDir = projectRoot + "/src/main/resources/static/uploads/profile/";
+            File uploadDirFile = new File(uploadDir);
+            if (!uploadDirFile.exists()) {
+                boolean created = uploadDirFile.mkdirs();
+                log.info("프로필 이미지 업로드 디렉토리 생성: {} - {}", uploadDir, created ? "성공" : "실패");
+            }
+            
+            // 파일명 생성 (userId + UUID + 원본 확장자)
+            String originalFilename = file.getOriginalFilename();
+            String extension = "";
+            if (originalFilename != null && originalFilename.contains(".")) {
+                extension = originalFilename.substring(originalFilename.lastIndexOf("."));
+            }
+            String savedFilename = "profile_" + userId + "_" + UUID.randomUUID().toString() + extension;
+            
+            // 파일 저장
+            File savedFile = new File(uploadDir + savedFilename);
+            file.transferTo(savedFile);
+            log.info("프로필 이미지 저장 완료: {}", savedFile.getAbsolutePath());
+            
+            // 웹 경로 반환
+            return "/uploads/profile/" + savedFilename;
+            
+        } catch (IOException e) {
+            log.error("프로필 이미지 저장 중 오류 발생: userId={}", userId, e);
+            throw new RuntimeException("프로필 이미지 저장에 실패했습니다.", e);
+        }
+    }
+
+    /**
+     * 시설 이미지 저장 메서드
+     */
+    private String saveFacilityImage(MultipartFile file, String userId) {
+        try {
+            // 프로젝트 루트 경로 기반으로 절대 경로 설정
+            String projectRoot = System.getProperty("user.dir");
+            String uploadDir = projectRoot + "/src/main/resources/static/uploads/facility/";
+            File uploadDirFile = new File(uploadDir);
+            if (!uploadDirFile.exists()) {
+                boolean created = uploadDirFile.mkdirs();
+                log.info("시설 이미지 업로드 디렉토리 생성: {} - {}", uploadDir, created ? "성공" : "실패");
+            }
+            
+            // 파일명 생성 (userId + UUID + 원본 확장자)
+            String originalFilename = file.getOriginalFilename();
+            String extension = "";
+            if (originalFilename != null && originalFilename.contains(".")) {
+                extension = originalFilename.substring(originalFilename.lastIndexOf("."));
+            }
+            String savedFilename = "facility_" + userId + "_" + UUID.randomUUID().toString() + extension;
+            
+            // 파일 저장
+            File savedFile = new File(uploadDir + savedFilename);
+            file.transferTo(savedFile);
+            log.info("시설 이미지 저장 완료: {}", savedFile.getAbsolutePath());
+            
+            // 웹 경로 반환
+            return "/uploads/facility/" + savedFilename;
+            
+        } catch (IOException e) {
+            log.error("시설 이미지 저장 중 오류 발생: userId={}", userId, e);
+            throw new RuntimeException("시설 이미지 저장에 실패했습니다.", e);
+        }
     }
 
     /**
@@ -666,6 +761,97 @@ public class MemberService {
         } catch (Exception e) {
             log.error("회원 상태 변경 중 오류 발생: memberId={}", memberId, e);
             throw new RuntimeException("회원 상태 변경 중 오류가 발생했습니다.", e);
+        }
+    }
+
+    // ================== 관리자용 추가 메서드들 ==================
+
+    /**
+     * 전체 회원 수 조회 (관리자용)
+     */
+    @Transactional(readOnly = true)
+    public int getTotalMemberCount() {
+        try {
+            return memberMapper.getTotalCount();
+        } catch (Exception e) {
+            log.error("전체 회원 수 조회 중 오류 발생", e);
+            return 0;
+        }
+    }
+
+    /**
+     * 시설 회원 수 조회 (관리자용)
+     */
+    @Transactional(readOnly = true)
+    public int getFacilityMemberCount() {
+        try {
+            return memberMapper.getFacilityMemberCount();
+        } catch (Exception e) {
+            log.error("시설 회원 수 조회 중 오류 발생", e);
+            return 0;
+        }
+    }
+
+    /**
+     * 역할별 회원 목록 조회 (페이징 포함, 관리자용)
+     */
+    @Transactional(readOnly = true)
+    public List<MemberDTO> getMembersByRole(String role, int page, int pageSize) {
+        try {
+            MemberDTO searchDTO = new MemberDTO();
+            searchDTO.setRole("ALL".equals(role) ? null : role);
+            
+            // 페이징 계산
+            int offset = (page - 1) * pageSize;
+            // MyBatis에서 offset, limit 처리를 위한 추가 설정이 필요할 수 있음
+            
+            return memberMapper.findMembersByRole("ALL".equals(role) ? null : role);
+        } catch (Exception e) {
+            log.error("역할별 회원 목록 조회 중 오류 발생: role={}, page={}", role, page, e);
+            return new ArrayList<>();
+        }
+    }
+
+    /**
+     * 역할별 회원 수 조회 (관리자용)
+     */
+    @Transactional(readOnly = true)
+    public int getMemberCountByRole(String role) {
+        try {
+            if ("ALL".equals(role)) {
+                return memberMapper.getTotalCount();
+            } else if ("FACILITY".equals(role)) {
+                return memberMapper.getFacilityMemberCount();
+            } else if ("USER".equals(role)) {
+                return memberMapper.getUserMemberCount();
+            } else {
+                return memberMapper.getMemberCountByRole(role);
+            }
+        } catch (Exception e) {
+            log.error("역할별 회원 수 조회 중 오류 발생: role={}", role, e);
+            return 0;
+        }
+    }
+
+    /**
+     * 회원 활성화 상태 토글 (관리자용)
+     */
+    @Transactional
+    public boolean toggleMemberActive(Long memberId) {
+        try {
+            MemberDTO member = memberMapper.findById(memberId);
+            if (member == null) {
+                throw new RuntimeException("회원을 찾을 수 없습니다.");
+            }
+            
+            boolean newStatus = !Boolean.TRUE.equals(member.getIsActive());
+            memberMapper.updateMemberStatus(memberId, newStatus);
+            
+            log.info("회원 활성화 상태 토글 완료: memberId={}, newStatus={}", memberId, newStatus);
+            return true;
+        } catch (Exception e) {
+            log.error("회원 활성화 상태 토글 중 오류 발생: memberId={}", memberId, e);
+            return false;
         }
     }
 }

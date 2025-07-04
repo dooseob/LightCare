@@ -67,4 +67,14 @@ public interface JobMapper {
      * 특정 회원이 작성한 구인구직 게시글 목록 조회
      */
     List<JobDTO> findJobsByMemberId(@Param("memberId") Long memberId);
+
+    /**
+     * 회원 ID로 구인구직 게시글 삭제 (회원 탈퇴 시 사용)
+     */
+    int deleteByMemberId(@Param("memberId") Long memberId);
+
+    /**
+     * 시설 회원 ID로 구인구직 게시글 삭제 (시설 삭제 시 사용)
+     */
+    int deleteByFacilityMemberId(@Param("memberId") Long memberId);
 } 

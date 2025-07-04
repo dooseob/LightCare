@@ -228,6 +228,19 @@
                             </div>
 
                             <div class="mb-3">
+                                <label for="facilityImage" class="form-label">
+                                    <i class="fas fa-image me-1"></i>시설 대표 사진
+                                </label>
+                                <input type="file" class="form-control" id="facilityImage" name="facilityImageFile"
+                                       accept="image/*" onchange="previewFacilityImage(this)">
+                                <small class="form-text text-muted">JPG, PNG 파일만 업로드 가능 (최대 5MB)</small>
+                                <div id="facilityImagePreview" class="mt-2" style="display: none;">
+                                    <img id="facilityImagePreviewImg" src="" alt="시설 사진 미리보기" 
+                                         style="max-width: 200px; max-height: 150px; border-radius: 8px; border: 1px solid #dee2e6;">
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
                                 <label for="capacity" class="form-label">
                                     <i class="fas fa-users me-1"></i>수용 인원
                                 </label>

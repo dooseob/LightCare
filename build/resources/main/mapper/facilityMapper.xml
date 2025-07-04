@@ -182,4 +182,74 @@
         ORDER BY f.facility_name ASC
     </select>
 
+    <!-- 회원 ID로 시설 삭제 (회원 탈퇴 시 사용) -->
+    <delete id="deleteByMemberId" parameterType="long">
+        DELETE FROM facility WHERE registered_member_id = #{memberId}
+    </delete>
+
+    <!-- 회원 ID로 시설 목록 조회 -->
+    <select id="getFacilitiesByMemberId" parameterType="long" resultType="FacilityDTO">
+        SELECT 
+            facility_id as facilityId,
+            facility_name as facilityName,
+            facility_type as facilityType,
+            address,
+            detail_address as detailAddress,
+            phone,
+            latitude,
+            longitude,
+            description,
+            facility_image as facilityImage,
+            homepage,
+            capacity,
+            current_occupancy as currentOccupancy,
+            operating_hours as operatingHours,
+            features,
+            average_rating as averageRating,
+            review_count as reviewCount,
+            grade_rating as gradeRating,
+            registered_member_id as registeredMemberId,
+            is_approved as isApproved,
+            approval_status as approvalStatus,
+            created_at as createdAt,
+            updated_at as updatedAt,
+            is_deleted as isDeleted
+        FROM facility
+        WHERE registered_member_id = #{memberId} AND is_deleted = false
+        ORDER BY created_at DESC
+    </select>
+
+    <!-- 회원 ID로 시설 조회 (첫 번째 시설만) -->
+    <select id="getFacilityByMemberId" parameterType="long" resultType="FacilityDTO">
+        SELECT 
+            facility_id as facilityId,
+            facility_name as facilityName,
+            facility_type as facilityType,
+            address,
+            detail_address as detailAddress,
+            phone,
+            latitude,
+            longitude,
+            description,
+            facility_image as facilityImage,
+            homepage,
+            capacity,
+            current_occupancy as currentOccupancy,
+            operating_hours as operatingHours,
+            features,
+            average_rating as averageRating,
+            review_count as reviewCount,
+            grade_rating as gradeRating,
+            registered_member_id as registeredMemberId,
+            is_approved as isApproved,
+            approval_status as approvalStatus,
+            created_at as createdAt,
+            updated_at as updatedAt,
+            is_deleted as isDeleted
+        FROM facility
+        WHERE registered_member_id = #{memberId} AND is_deleted = false
+        ORDER BY created_at DESC
+        LIMIT 1
+    </select>
+
 </mapper>
