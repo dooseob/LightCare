@@ -125,6 +125,14 @@ public class BoardController {
             return "redirect:/member/login";
         }
         
+        // 권한 체크 - 공지사항과 FAQ는 관리자만 작성 가능
+        MemberDTO loginMember = (MemberDTO) session.getAttribute("loginMember");
+        if (("notice".equals(type) || "faq".equals(type)) && 
+            (loginMember == null || !"ADMIN".equals(loginMember.getRole()))) {
+            redirectAttributes.addFlashAttribute("error", "해당 게시판에 글을 작성할 권한이 없습니다.");
+            return "redirect:/board?type=" + type;
+        }
+        
         BoardDTO boardDTO = new BoardDTO();
         boardDTO.setMemberId(memberId); // 세션에서 가져온 사용자 ID 설정
         
@@ -168,6 +176,14 @@ public class BoardController {
             if (memberId == null) {
                 redirectAttributes.addFlashAttribute("error", "로그인이 필요합니다.");
                 return "redirect:/member/login";
+            }
+            
+            // 권한 체크 - 공지사항과 FAQ는 관리자만 작성 가능
+            MemberDTO loginMember = (MemberDTO) session.getAttribute("loginMember");
+            if (("notice".equals(type) || "faq".equals(type)) && 
+                (loginMember == null || !"ADMIN".equals(loginMember.getRole()))) {
+                redirectAttributes.addFlashAttribute("error", "해당 게시판에 글을 작성할 권한이 없습니다.");
+                return "redirect:/board?type=" + type;
             }
             
             // 세션에서 가져온 사용자 ID 설정 (보안 강화)
@@ -269,8 +285,20 @@ public class BoardController {
             
             log.info("수정 페이지 접근 - 게시글 ID: {}, 작성자 ID: {}, 요청자 ID: {}", id, board.getMemberId(), memberId);
             
-            // 작성자 본인 확인 - 보안상 중요!
-            if (!board.getMemberId().equals(memberId)) {
+            // 권한 체크
+            MemberDTO loginMember = (MemberDTO) session.getAttribute("loginMember");
+            boolean isAdmin = loginMember != null && "ADMIN".equals(loginMember.getRole());
+            boolean isAuthor = board.getMemberId().equals(memberId);
+            
+            // 공지사항과 FAQ는 관리자만 수정 가능
+            if (("NOTICE".equals(board.getCategory()) || "FAQ".equals(board.getCategory())) && !isAdmin) {
+                log.warn("권한 없는 수정 시도 - 공지사항/FAQ 수정 권한 없음. 요청자: {}", memberId);
+                redirectAttributes.addFlashAttribute("error", "해당 게시글을 수정할 권한이 없습니다.");
+                return "redirect:/board/detail/" + id + "?type=" + (type != null ? type : "all");
+            }
+            
+            // 일반 게시글은 작성자 본인 또는 관리자만 수정 가능
+            if (!isAuthor && !isAdmin) {
                 log.warn("권한 없는 수정 시도 - 게시글 작성자: {}, 요청자: {}", board.getMemberId(), memberId);
                 redirectAttributes.addFlashAttribute("error", "작성자만 수정할 수 있습니다.");
                 return "redirect:/board/detail/" + id + "?type=" + (type != null ? type : "all");
@@ -324,10 +352,22 @@ public class BoardController {
             
             log.info("수정 요청 - 게시글 ID: {}, 작성자 ID: {}, 요청자 ID: {}", id, existingBoard.getMemberId(), memberId);
             
-            // 작성자 또는 관리자 권한 확인 - 보안상 중요!
-            if (!hasEditPermission(session, existingBoard.getMemberId())) {
+            // 권한 체크
+            MemberDTO loginMember = (MemberDTO) session.getAttribute("loginMember");
+            boolean isAdmin = loginMember != null && "ADMIN".equals(loginMember.getRole());
+            boolean isAuthor = existingBoard.getMemberId().equals(memberId);
+            
+            // 공지사항과 FAQ는 관리자만 수정 가능
+            if (("NOTICE".equals(existingBoard.getCategory()) || "FAQ".equals(existingBoard.getCategory())) && !isAdmin) {
+                log.warn("권한 없는 수정 시도 - 공지사항/FAQ 수정 권한 없음. 요청자: {}", memberId);
+                redirectAttributes.addFlashAttribute("error", "해당 게시글을 수정할 권한이 없습니다.");
+                return "redirect:/board/detail/" + id + "?type=" + type;
+            }
+            
+            // 일반 게시글은 작성자 본인 또는 관리자만 수정 가능
+            if (!isAuthor && !isAdmin) {
                 log.warn("권한 없는 수정 시도 - 게시글 작성자: {}, 요청자: {}", existingBoard.getMemberId(), memberId);
-                redirectAttributes.addFlashAttribute("error", "작성자 또는 관리자만 수정할 수 있습니다.");
+                redirectAttributes.addFlashAttribute("error", "작성자만 수정할 수 있습니다.");
                 return "redirect:/board/detail/" + id + "?type=" + type;
             }
             
@@ -395,10 +435,22 @@ public class BoardController {
             log.info("🔍 권한 체크 - 게시글 작성자: {}, 요청자: {}", board.getMemberId(), memberId);
             log.info("삭제 요청 - 게시글 ID: {}, 작성자 ID: {}, 요청자 ID: {}", id, board.getMemberId(), memberId);
             
-            // 작성자 또는 관리자 권한 확인 - 보안상 중요!
-            if (!hasEditPermission(session, board.getMemberId())) {
+            // 권한 체크
+            MemberDTO loginMember = (MemberDTO) session.getAttribute("loginMember");
+            boolean isAdmin = loginMember != null && "ADMIN".equals(loginMember.getRole());
+            boolean isAuthor = board.getMemberId().equals(memberId);
+            
+            // 공지사항과 FAQ는 관리자만 삭제 가능
+            if (("NOTICE".equals(board.getCategory()) || "FAQ".equals(board.getCategory())) && !isAdmin) {
+                log.warn("❌ 권한 없는 삭제 시도 - 공지사항/FAQ 삭제 권한 없음. 요청자: {}", memberId);
+                redirectAttributes.addFlashAttribute("error", "해당 게시글을 삭제할 권한이 없습니다.");
+                return getRedirectUrl(type);
+            }
+            
+            // 일반 게시글은 작성자 본인 또는 관리자만 삭제 가능
+            if (!isAuthor && !isAdmin) {
                 log.warn("❌ 권한 없는 삭제 시도 - 게시글 작성자: {}, 요청자: {}", board.getMemberId(), memberId);
-                redirectAttributes.addFlashAttribute("error", "작성자 또는 관리자만 삭제할 수 있습니다.");
+                redirectAttributes.addFlashAttribute("error", "작성자만 삭제할 수 있습니다.");
                 return getRedirectUrl(type);
             }
             

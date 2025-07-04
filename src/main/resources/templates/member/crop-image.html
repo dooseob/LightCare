@@ -56,8 +56,8 @@
                             <div class="upload-area text-center p-5 border border-2 border-dashed rounded">
                                 <i class="fas fa-cloud-upload-alt fa-3x text-muted mb-3"></i>
                                 <h5 class="text-muted">프로필 이미지를 업로드하세요</h5>
-                                <p class="text-muted mb-3">JPG, PNG 파일만 가능 (최대 5MB)</p>
-                                <input type="file" id="imageInput" accept="image/jpeg,image/png" style="display: none;">
+                                <p class="text-muted mb-3">JPG, PNG 파일만 가능 (SEO 최적화를 위해 자동 압축됩니다)</p>
+                                <input type="file" id="imageInput" accept="image/jpeg,image/png" style="display: none;" data-image-compressor='{"quality": 0.9, "maxWidth": 2048, "maxHeight": 2048}'>
                                 <button type="button" class="btn btn-primary" id="fileSelectBtn">
                                     <i class="fas fa-folder-open me-2"></i>파일 선택
                                 </button>
@@ -179,6 +179,9 @@
 
 <!-- 프로필 이미지 크롭 전용 JavaScript -->
 <script src="/js/crop-image.js"></script>
+<!-- 이미지 압축 라이브러리 -->
+<link rel="stylesheet" href="/css/image-compressor.css">
+<script src="/js/image-compressor.js"></script>
 
 <style>
 .progress-steps {

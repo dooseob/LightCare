@@ -27,6 +27,7 @@ public class FacilityDTO extends BaseDTO {
     private Double latitude; // DB: latitude
     private String description;
     private String facilityImage; // DB: facility_image
+    private String facilityImageAltText; // DB: facility_image_alt_text (SEO 최적화용)
     private String homepage;
     private Integer capacity;
     private Integer currentOccupancy;

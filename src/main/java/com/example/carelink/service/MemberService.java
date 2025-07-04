@@ -112,6 +112,9 @@ public class MemberService {
     @Transactional
     public void join(MemberDTO memberDTO, MultipartFile facilityImageFile) {
         try {
+            log.info("회원가입 처리 시작 - userId: {}, address: {}, detailAddress: {}", 
+                    memberDTO.getUserId(), memberDTO.getAddress(), memberDTO.getDetailAddress());
+            
             // 1. 아이디 중복 확인
             if (isUserIdDuplicate(memberDTO.getUserId())) {
                 throw new IllegalArgumentException("이미 사용중인 아이디입니다.");
@@ -147,6 +150,9 @@ public class MemberService {
             if (memberDTO.getAddress() != null && memberDTO.getAddress().isEmpty()) {
                 memberDTO.setAddress(null);
             }
+            if (memberDTO.getDetailAddress() != null && memberDTO.getDetailAddress().isEmpty()) {
+                memberDTO.setDetailAddress(null);
+            }
             memberDTO.setProfileImage(null); // 프로필 이미지는 폼에서 직접 받지 않는다면 null로 설정
 
             // lastLoginAt은 회원가입 시에는 null로 설정
@@ -158,11 +164,16 @@ public class MemberService {
             // memberDTO.setUpdatedAt(LocalDateTime.now());
 
 
+            log.info("DB 저장 전 memberDTO - address: {}, detailAddress: {}", 
+                    memberDTO.getAddress(), memberDTO.getDetailAddress());
+            
             // 5. Mapper를 통해 데이터베이스에 저장
             int result = memberMapper.insertMember(memberDTO);
             if (result == 0) { // insert 쿼리의 반환값(영향받은 행 수)이 0이면 실패
                 throw new RuntimeException("회원가입 데이터 저장에 실패했습니다. (영향받은 행 없음)");
             }
+            
+            log.info("회원가입 DB 저장 성공 - memberId: {}", memberDTO.getMemberId());
             
             // 6. 시설회원인 경우 시설 정보도 저장
             if (Constants.MEMBER_ROLE_FACILITY.equals(memberDTO.getRole()) && memberDTO.getFacilityName() != null) {

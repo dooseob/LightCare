@@ -12,7 +12,10 @@
         <result property="email" column="email"/>
         <result property="phone" column="phone"/>
         <result property="role" column="role"/>
-        <result property="address" column="address"/> <result property="profileImage" column="profile_image"/> <result property="isActive" column="is_active"/>
+        <result property="address" column="address"/>
+        <result property="detailAddress" column="detail_address"/>
+        <result property="profileImage" column="profile_image"/>
+        <result property="isActive" column="is_active"/>
         <result property="loginFailCount" column="login_fail_count"/>
         <result property="lastLoginAt" column="last_login_at"/>
         <result property="createdAt" column="created_at"/>
@@ -51,11 +54,12 @@
         phone,              <!-- 6 -->
         role,               <!-- 7 -->
         address,            <!-- 8 -->
-        profile_image,      <!-- 9 -->
-        is_active,          <!-- 10 -->
-        login_fail_count,   <!-- 11 -->
-        last_login_at,      <!-- 12 -->
-        is_deleted          <!-- 13 -->
+        detail_address,     <!-- 9 -->
+        profile_image,      <!-- 10 -->
+        is_active,          <!-- 11 -->
+        login_fail_count,   <!-- 12 -->
+        last_login_at,      <!-- 13 -->
+        is_deleted          <!-- 14 -->
         <!-- created_at, updated_at은 DB DEFAULT이므로 제외 -->
         ) VALUES (
         #{memberId},              <!-- DTO에 null 또는 0으로 설정 -->
@@ -66,6 +70,7 @@
         #{phone, jdbcType=VARCHAR},
         #{role, jdbcType=VARCHAR},
         #{address, jdbcType=VARCHAR},
+        #{detailAddress, jdbcType=VARCHAR},
         #{profileImage, jdbcType=VARCHAR},
         #{isActive, jdbcType=BOOLEAN},
         #{loginFailCount, jdbcType=INTEGER},
@@ -88,7 +93,10 @@
             name = #{name},
             email = #{email},
             phone = #{phone},
-            address = #{address},        profile_image = #{profileImage}, updated_at = NOW()
+            address = #{address},
+            detail_address = #{detailAddress},
+            profile_image = #{profileImage},
+            updated_at = NOW()
         WHERE member_id = #{memberId}
     </update>
 

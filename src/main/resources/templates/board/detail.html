@@ -95,8 +95,25 @@
                             </small>
                         </div>
                         <div class="col-md-6 text-end">
-                            <!-- 작성자 또는 관리자만 수정/삭제 가능 -->
-                            <div th:if="${session.loginMember != null and (session.loginMember.memberId == board.memberId or session.loginMember.role == 'ADMIN')}" 
+                            <!-- 수정/삭제 버튼 - 권한별 표시 -->
+                            <!-- 공지사항과 FAQ는 관리자만 수정/삭제 가능 -->
+                            <div th:if="${session.loginMember != null and (board.category == 'NOTICE' or board.category == 'FAQ') and session.loginMember.role == 'ADMIN'}" 
+                                 class="btn-group" role="group">
+                                <a th:href="@{/board/edit/{id}(id=${board.boardId}, type=${type})}" 
+                                   class="btn btn-outline-primary btn-sm">
+                                    <i class="fas fa-edit me-1"></i>수정
+                                </a>
+                                <button type="button" class="btn btn-outline-danger btn-sm" 
+                                        onclick="deleteBoard(event)" 
+                                        th:data-board-id="${board.boardId}"
+                                        th:data-type="${type}">
+                                    <i class="fas fa-trash me-1"></i>삭제
+                                </button>
+                                <span class="badge bg-warning text-dark ms-2">관리자</span>
+                            </div>
+                            
+                            <!-- 일반 게시글(INFO, QNA)은 작성자 또는 관리자만 수정/삭제 가능 -->
+                            <div th:if="${session.loginMember != null and (board.category == 'INFO' or board.category == 'QNA') and (session.loginMember.memberId == board.memberId or session.loginMember.role == 'ADMIN')}" 
                                  class="btn-group" role="group">
                                 <a th:href="@{/board/edit/{id}(id=${board.boardId}, type=${type})}" 
                                    class="btn btn-outline-primary btn-sm">
@@ -112,11 +129,21 @@
                                 <span th:if="${session.loginMember.role == 'ADMIN' and session.loginMember.memberId != board.memberId}" 
                                       class="badge bg-warning text-dark ms-2">관리자</span>
                             </div>
-                            <!-- 권한이 없는 경우 -->
-                            <div th:unless="${session.loginMember != null and (session.loginMember.memberId == board.memberId or session.loginMember.role == 'ADMIN')}">
+                            
+                            <!-- 권한이 없는 경우 안내 메시지 -->
+                            <div th:if="${session.loginMember == null}">
                                 <small class="text-muted">
-                                    <span th:if="${session.loginMember == null}">로그인 후 수정/삭제가 가능합니다.</span>
-                                    <span th:if="${session.loginMember != null and session.loginMember.memberId != board.memberId and session.loginMember.role != 'ADMIN'}">작성자 또는 관리자만 수정/삭제가 가능합니다.</span>
+                                    <i class="fas fa-info-circle me-1"></i>로그인 후 수정/삭제가 가능합니다.
+                                </small>
+                            </div>
+                            <div th:if="${session.loginMember != null and (board.category == 'NOTICE' or board.category == 'FAQ') and session.loginMember.role != 'ADMIN'}">
+                                <small class="text-muted">
+                                    <i class="fas fa-lock me-1"></i>관리자만 수정/삭제가 가능합니다.
+                                </small>
+                            </div>
+                            <div th:if="${session.loginMember != null and (board.category == 'INFO' or board.category == 'QNA') and session.loginMember.memberId != board.memberId and session.loginMember.role != 'ADMIN'}">
+                                <small class="text-muted">
+                                    <i class="fas fa-user-lock me-1"></i>작성자 또는 관리자만 수정/삭제가 가능합니다.
                                 </small>
                             </div>
                         </div>

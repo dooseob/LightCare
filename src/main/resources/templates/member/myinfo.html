@@ -89,14 +89,25 @@
 
                             <div class="mb-3">
                                 <label for="address" class="form-label">
-                                    <i class="fas fa-map-marker-alt me-1"></i>주소
+                                    <i class="fas fa-map-marker-alt me-1"></i>주소 (선택사항)
                                 </label>
-                                <textarea class="form-control"
-                                          th:classappend="${#fields.hasErrors('address')} ? 'is-invalid'"
-                                          id="address"
-                                          th:field="*{address}"
-                                          rows="3"
-                                          placeholder="주소를 입력하세요"></textarea>
+                                <div class="input-group mb-2">
+                                    <input type="text"
+                                           class="form-control"
+                                           th:classappend="${#fields.hasErrors('address')} ? 'is-invalid'"
+                                           id="address"
+                                           th:field="*{address}" 
+                                           placeholder="주소 검색 버튼을 클릭하세요"
+                                           readonly>
+                                    <button type="button" class="btn btn-outline-primary" onclick="openAddressSearch('address')">
+                                        <i class="fas fa-search me-1"></i>주소 검색
+                                    </button>
+                                </div>
+                                <input type="text" 
+                                       class="form-control" 
+                                       id="detailAddress" 
+                                       th:field="*{detailAddress}"
+                                       placeholder="상세 주소를 입력하세요 (예: 101동 201호, 2층)">
                                 <div class="invalid-feedback" th:if="${#fields.hasErrors('address')}" th:errors="*{address}"></div>
                             </div>
 
@@ -302,6 +313,35 @@
 <footer th:replace="~{layout/footer :: footer}"></footer>
 
 <div th:replace="~{layout/footer :: scripts}"></div>
+
+<!-- 다음 우편번호 서비스 -->
+<script src="//t1.daumcdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js"></script>
+
+<!-- 카카오 주소 검색 -->
+<script>
+function openAddressSearch(targetId) {
+    new daum.Postcode({
+        oncomplete: function(data) {
+            // 도로명 주소 우선, 없으면 지번 주소 사용
+            var addr = data.roadAddress || data.jibunAddress;
+            
+            // 선택된 주소를 해당 필드에 입력
+            document.getElementById(targetId).value = addr;
+            
+            // 상세주소 입력 필드에 포커스
+            if (targetId === 'address') {
+                document.getElementById('detailAddress').focus();
+            } else if (targetId === 'facilityAddress') {
+                document.getElementById('facilityDetailAddress').focus();
+            }
+        },
+        theme: {
+            searchBgColor: "#0d6efd",
+            queryTextColor: "#FFFFFF"
+        }
+    }).open();
+}
+</script>
 
 <!-- 내정보수정 전용 JavaScript (단순화) -->
 <script src="/js/myinfo.js"></script>

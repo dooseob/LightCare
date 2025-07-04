@@ -100,7 +100,7 @@ public class FacilityController {
      * 시설 상세 정보 페이지
      */
     @GetMapping("/detail/{facilityId}")
-    public String getFacilityDetail(@PathVariable Long facilityId, Model model) {
+    public String getFacilityDetail(@PathVariable Long facilityId, Model model, HttpSession session) {
         log.info("시설 상세 정보 페이지 접속 - facilityId: {}", facilityId);
         
         try {
@@ -120,13 +120,23 @@ public class FacilityController {
             // 시설의 평균 평점 조회
             Double averageRating = reviewService.getAverageRating(facilityId);
             
+            // 세션에서 사용자 정보 조회 (관리자 권한 체크용)
+            MemberDTO sessionMember = (MemberDTO) session.getAttribute(Constants.SESSION_MEMBER);
+            boolean isAdmin = sessionMember != null && "ADMIN".equals(sessionMember.getRole());
+            boolean isOwner = sessionMember != null && facility.getRegisteredMemberId() != null && 
+                             facility.getRegisteredMemberId().equals(sessionMember.getMemberId());
+            
             model.addAttribute("facility", facility);
             model.addAttribute("recentReviews", recentReviews);
             model.addAttribute("averageRating", averageRating);
             model.addAttribute("reviewCount", recentReviews.size());
             model.addAttribute("pageTitle", facility.getFacilityName() + " 상세정보");
+            model.addAttribute("sessionMember", sessionMember);
+            model.addAttribute("isAdmin", isAdmin);
+            model.addAttribute("isOwner", isOwner);
             
-            log.info("시설 상세 정보 조회 완료 - facilityId: {}, 리뷰 수: {}", facilityId, recentReviews.size());
+            log.info("시설 상세 정보 조회 완료 - facilityId: {}, 리뷰 수: {}, 관리자: {}, 소유자: {}", 
+                    facilityId, recentReviews.size(), isAdmin, isOwner);
             
             return "facility/detail";
         } catch (Exception e) {
