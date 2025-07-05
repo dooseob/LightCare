@@ -317,8 +317,13 @@
                                 <label for="altTextInput" class="form-label">
                                     <i class="fas fa-search me-1"></i>이미지 설명 (Alt 텍스트)
                                 </label>
-                                <textarea class="form-control" id="altTextInput" rows="2" 
-                                          placeholder="시설 이미지에 대한 설명을 입력하세요 (SEO 최적화용)"></textarea>
+                                <div class="input-group">
+                                    <textarea class="form-control" id="altTextInput" rows="2" 
+                                              placeholder="시설 이미지에 대한 설명을 입력하세요 (SEO 최적화용)"></textarea>
+                                    <button type="button" class="btn btn-outline-secondary" id="autoGenerateAltBtn">
+                                        <i class="fas fa-magic me-1"></i>자동 생성
+                                    </button>
+                                </div>
                                 <small class="text-muted">
                                     <i class="fas fa-lightbulb me-1"></i>
                                     검색 엔진 최적화를 위한 이미지 설명입니다

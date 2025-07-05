@@ -168,11 +168,9 @@ function handleImageFile(file) {
         return;
     }
     
-    // 파일 크기 검증 (5MB)
-    if (file.size > 5 * 1024 * 1024) {
-        alert('파일 크기는 5MB 이하여야 합니다.');
-        return;
-    }
+    // 파일 크기 검증 해제 (대용량 파일도 자동 압축)
+    // 용량 제한 없이 처리 - 압축을 통해 자동으로 용량 최적화
+    console.log(`📦 파일 크기: ${file.name} (${(file.size / 1024 / 1024).toFixed(2)}MB) - 제한 없음`);
     
     // 지원되는 형식 검증
     const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png'];
