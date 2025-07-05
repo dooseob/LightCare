@@ -18,7 +18,11 @@ public class Constants {
     public static final int DEFAULT_PAGE_BLOCK = 5;
     
     // 파일 업로드 관련 상수
-    public static final String UPLOAD_PATH = "/uploads/";
+    public static final String UPLOAD_BASE_PATH = "C:/carelink-uploads/";
+    public static final String FACILITY_UPLOAD_PATH = UPLOAD_BASE_PATH + "facility/";
+    public static final String PROFILE_UPLOAD_PATH = UPLOAD_BASE_PATH + "profile/";
+    public static final String TEMP_UPLOAD_PATH = UPLOAD_BASE_PATH + "temp/";
+    public static final String TEST_IMAGES_PATH = "/test-images/";
     public static final long MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
     
     // 구인구직 관련 상수

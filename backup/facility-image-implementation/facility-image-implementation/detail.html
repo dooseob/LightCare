@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="ko">
+<head th:replace="~{layout/header :: header}">
+    <title>시설 상세보기</title>
+</head>
+<body class="d-flex flex-column min-vh-100 pt-5">
+<nav th:replace="~{layout/header :: navbar}"></nav>
+
+<div th:replace="~{layout/header :: messages}"></div>
+
+<div class="container mt-4">
+    <!-- 브레드크럼 -->
+    <nav aria-label="breadcrumb" class="mb-4">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="/">홈</a></li>
+            <li class="breadcrumb-item"><a href="/facility/search">시설 찾기</a></li>
+            <li class="breadcrumb-item active" aria-current="page">시설 상세</li>
+        </ol>
+    </nav>
+    <!-- 4:6 비율로 배치 -->
+    <div class="row">
+        <!-- 왼쪽 40%: 시설 기본정보 + 시설정보, 시설현황, 연락처정보, 관련서비스 -->
+        <div class="col-md-5">
+            <!-- 시설 기본정보 -->
+            <div class="card mb-3 shadow-sm" style="min-height: 500px;">
+                <div class="card-header bg-light">
+                    <div class="d-flex align-items-center">
+                        <i class="fas fa-building text-primary me-2"></i>
+                        <h5 class="mb-0">시설 기본정보</h5>
+                    </div>
+                </div>
+                <div class="card-body d-flex flex-column">
+                    <!-- 세로 배치: 이미지 → 내용 → 버튼 -->
+                    
+                    <!-- 1. 시설 이미지 슬라이더 -->
+                    <div class="position-relative mb-4 flex-grow-1">
+                        <div id="facilityImageCarousel" class="carousel slide" data-bs-ride="carousel" data-bs-interval="5000">
+                            <div class="carousel-inner rounded shadow-sm" style="height: 250px;">
+                                <!-- 다중 이미지가 있는 경우 -->
+                                <div th:if="${facilityImages != null and #lists.size(facilityImages) > 0}">
+                                    <div th:each="image, iterStat : ${facilityImages}" 
+                                         th:class="${'carousel-item' + (iterStat.index == 0 ? ' active' : '')}">
+                                        <img th:src="${image.imagePath}"
+                                             class="d-block w-100 facility-carousel-img"
+                                             style="height: 250px; object-fit: cover; cursor: pointer;"
+                                             th:alt="${image.imageAltText}"
+                                             th:onclick="'openImageModal(' + ${iterStat.index} + ')'"
+                                             th:data-index="${iterStat.index}"
+                                             loading="lazy">
+                                        <!-- 이미지 순서 표시 -->
+                                        <div class="carousel-caption d-none d-md-block" 
+                                             style="background: rgba(0,0,0,0.5); border-radius: 5px; right: 10px; left: auto; bottom: 10px; width: auto; padding: 5px 10px;">
+                                            <small th:text="${iterStat.index + 1} + '/' + ${#lists.size(facilityImages)}">1/5</small>
+                                        </div>
+                                    </div>
+                                </div>
+                                <!-- 이미지가 없는 경우 기본 이미지 -->
+                                <div th:unless="${facilityImages != null and #lists.size(facilityImages) > 0}" 
+                                     class="carousel-item active">
+                                    <div class="d-flex align-items-center justify-content-center bg-light" style="height: 250px;">
+                                        <div class="text-center text-muted">
+                                            <i class="fas fa-image fa-3x mb-2" style="opacity: 0.3;"></i>
+                                            <p class="mb-0 small">등록된 시설 이미지가 없습니다</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- 이미지가 2개 이상일 때만 화살표 표시 -->
+                            <div th:if="${facilityImages != null and #lists.size(facilityImages) > 1}">
+                                <button class="carousel-control-prev" type="button" 
+                                        data-bs-target="#facilityImageCarousel" data-bs-slide="prev">
+                                    <span class="carousel-control-prev-icon" 
+                                          style="background-color: rgba(0,0,0,0.5); border-radius: 50%; width: 30px; height: 30px;"></span>
+                                    <span class="visually-hidden">이전</span>
+                                </button>
+                                <button class="carousel-control-next" type="button" 
+                                        data-bs-target="#facilityImageCarousel" data-bs-slide="next">
+                                    <span class="carousel-control-next-icon"
+                                          style="background-color: rgba(0,0,0,0.5); border-radius: 50%; width: 30px; height: 30px;"></span>
+                                    <span class="visually-hidden">다음</span>
+                                </button>
+                            </div>
+                            
+                            <!-- 이미지 인디케이터 (점) -->
+                            <div th:if="${facilityImages != null and #lists.size(facilityImages) > 1}" 
+                                 class="carousel-indicators" style="bottom: -30px;">
+                                <button th:each="image, iterStat : ${facilityImages}" 
+                                        type="button" 
+                                        data-bs-target="#facilityImageCarousel" 
+                                        th:data-bs-slide-to="${iterStat.index}"
+                                        th:class="${iterStat.index == 0 ? 'active' : ''}"
+                                        style="width: 8px; height: 8px; border-radius: 50%; background-color: #007bff;"></button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 2. 시설명, 등급, 별점 -->
+                    <div class="text-center mb-4">
+                        <h4 class="mb-3" th:text="${facility.facilityName}">시설명</h4>
+                        <div class="d-flex flex-wrap gap-2 justify-content-center mb-3">
+                            <span th:if="${facility.gradeRating != null and facility.gradeRating > 0}" 
+                                  class="badge grade-badge" 
+                                  th:data-grade="${facility.gradeRating}"
+                                  th:text="${facility.gradeRating} + '등급'">1등급</span>
+                            
+                            <!-- 평점 표시 -->
+                            <div class="d-flex align-items-center">
+                                <div class="rating me-2">
+                                    <span th:each="i : ${#numbers.sequence(1, 5)}" 
+                                          class="fas fa-star" 
+                                          th:classappend="${i <= (facility.averageRating ?: 0)} ? 'text-warning' : 'text-muted'"></span>
+                                </div>
+                                <span class="badge bg-warning text-dark" 
+                                      th:text="${facility.averageRating != null ? #numbers.formatDecimal(facility.averageRating, 1, 1) : '0.0'} + '/5.0'">4.5/5.0</span>
+                                <span class="text-muted small ms-2" 
+                                      th:text="'(' + ${facility.reviewCount ?: 0} + '개 리뷰)'">( 0개 리뷰)</span>
+                            </div>
+                        </div>
+                        
+                        <!-- 3. 연락 및 공유 버튼 그룹 -->
+                        <div class="row g-2">
+                            <div class="col-6">
+                                <button class="btn btn-success w-100 btn-sm" 
+                                        th:onclick="'callFacilityPhone(this)'" 
+                                        th:data-phone="${facility.phone}">
+                                    <i class="fas fa-phone"></i><br><small>전화하기</small>
+                                </button>
+                            </div>
+                            <div class="col-6">
+                                <button class="btn btn-primary w-100 btn-sm" onclick="writeReview()">
+                                    <i class="fas fa-edit"></i><br><small>리뷰작성</small>
+                                </button>
+                            </div>
+                            <div class="col-6">
+                                <button class="btn btn-outline-secondary w-100 btn-sm" onclick="shareToKakao()">
+                                    <i class="fas fa-share"></i><br><small>공유</small>
+                                </button>
+                            </div>
+                            <div class="col-6">
+                                <button class="btn btn-outline-primary w-100 btn-sm" onclick="searchNearbyJobs()">
+                                    <i class="fas fa-briefcase"></i><br><small>주변채용</small>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- 시설정보 -->
+            <div class="card mb-3 shadow-sm">
+                <div class="card-header bg-light">
+                    <h6 class="mb-0"><i class="fas fa-info-circle text-primary me-2"></i>시설정보</h6>
+                </div>
+                <div class="card-body">
+                    <div class="row small">
+                        <div class="col-12">
+                            <div class="info-item mb-2">
+                                <i class="fas fa-map-marker-alt text-danger me-2"></i>
+                                <span th:text="${facility.address}">주소</span>
+                            </div>
+                            <div class="info-item mb-2">
+                                <i class="fas fa-phone text-success me-2"></i>
+                                <span th:text="${facility.phone}">전화번호</span>
+                            </div>
+                            <div class="info-item mb-2">
+                                <i class="fas fa-user-tie text-primary me-2"></i>
+                                원장: <span th:text="${facility.registeredMemberName}">원장명</span>
+                            </div>
+                            <div class="info-item mb-2">
+                                <i class="fas fa-bed text-warning me-2"></i>
+                                정원: <span th:text="${facility.capacity}">정원</span>명
+                                <span th:if="${facility.currentOccupancy != null}" class="text-muted">
+                                    (현재: <span th:text="${facility.currentOccupancy}">0</span>명)
+                                </span>
+                            </div>
+                            <div class="info-item mb-2" th:if="${facility.homepage}">
+                                <i class="fas fa-globe text-info me-2"></i>
+                                <a th:href="${facility.homepage}" target="_blank" class="text-decoration-none">홈페이지</a>
+                            </div>
+                        </div>
+                    </div>
+                    <div th:if="${facility.description}" class="mt-3 pt-2 border-top">
+                        <p class="small mb-0" style="line-height: 1.4;" th:text="${facility.description}">시설 소개</p>
+                    </div>
+                    <div th:if="${facility.features}" class="mt-2">
+                        <div class="d-flex flex-wrap gap-1">
+                            <span th:each="feature : ${#strings.listSplit(facility.features, ',')}" 
+                                  class="badge bg-light text-dark border" 
+                                  th:text="${#strings.trim(feature)}">특징</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 시설현황 -->
+            <div class="card mb-3 shadow-sm">
+                <div class="card-header bg-light">
+                    <h6 class="mb-0"><i class="fas fa-chart-bar text-primary me-2"></i>시설현황</h6>
+                </div>
+                <div class="card-body">
+                    <div class="row text-center g-2">
+                        <div class="col-6">
+                            <div class="p-2 bg-light rounded">
+                                <h5 th:if="${facility.gradeRating != null and facility.gradeRating > 0}"
+                                    th:text="${facility.gradeRating} + '등급'"
+                                    class="grade-rating mb-1"
+                                    th:data-grade="${facility.gradeRating}">1등급</h5>
+                                <h5 th:unless="${facility.gradeRating != null and facility.gradeRating > 0}" class="text-muted mb-1">-</h5>
+                                <small class="text-muted">시설등급</small>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="p-2 bg-light rounded">
+                                <h5 class="mb-1" th:text="${facility.capacity ?: '-'}">-</h5>
+                                <small class="text-muted">정원</small>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="p-2 bg-light rounded">
+                                <h5 class="mb-1" th:text="${facility.currentOccupancy ?: '0'}">0</h5>
+                                <small class="text-muted">현재입소</small>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="p-2 bg-light rounded">
+                                <h5 th:if="${facility.averageRating != null and facility.averageRating > 0}"
+                                    th:text="${#numbers.formatDecimal(facility.averageRating, 1, 1)}"
+                                    class="text-warning mb-1">4.5</h5>
+                                <h5 th:unless="${facility.averageRating != null and facility.averageRating > 0}" class="text-muted mb-1">0.0</h5>
+                                <small class="text-muted">평균평점</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+
+        </div>
+
+        <!-- 오른쪽 60%: 지도와 리뷰 -->
+        <div class="col-md-7">
+            <!-- 위치 및 교통정보 -->
+            <div class="card mb-3 shadow-sm">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0"><i class="fas fa-map-marker-alt text-danger me-2"></i>위치 및 교통정보</h5>
+                </div>
+                <div class="card-body p-0">
+                    <div id="facilityMap" style="width:100%; height:400px;">
+                        <div class="d-flex align-items-center justify-content-center h-100 text-muted">
+                            <div class="text-center">
+                                <i class="fas fa-map fa-3x mb-3 text-primary"></i>
+                                <p class="fs-6">지도를 불러오는 중...</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="p-3 bg-light border-top">
+                        <div class="d-flex align-items-center mb-1">
+                            <i class="fas fa-map-marker-alt text-danger me-2"></i>
+                            <strong th:text="${facility.address}">주소가 여기에 표시됩니다</strong>
+                        </div>
+                        <small class="text-muted">
+                            <i class="fas fa-info-circle me-1"></i>
+                            지도를 클릭하거나 확대/축소하여 더 자세한 위치를 확인할 수 있습니다
+                        </small>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 시설리뷰 -->
+            <div class="card shadow-sm">
+                <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">
+                        <i class="fas fa-comments text-primary me-2"></i>시설리뷰 
+                        <span class="badge bg-primary ms-2" th:text="${reviewCount}">0</span>
+                    </h5>
+                    <button class="btn btn-sm btn-primary" onclick="writeReview()">
+                        <i class="fas fa-plus me-1"></i>리뷰 작성
+                    </button>
+                </div>
+                <div class="card-body">
+                    <div id="reviewList">
+                        <!-- 리뷰가 있는 경우 -->
+                        <div th:if="${not #lists.isEmpty(recentReviews)}">
+                            <div th:each="review : ${recentReviews}" class="review-item border-bottom pb-3 mb-3">
+                                <div class="d-flex justify-content-between align-items-start">
+                                    <div class="flex-grow-1">
+                                        <h6 class="mb-1" th:text="${review.title}">리뷰 제목</h6>
+                                        <div class="mb-2">
+                                            <span class="text-warning">
+                                                <i th:each="i : ${#numbers.sequence(1, 5)}" 
+                                                   th:class="${i <= review.rating} ? 'fas fa-star' : 'far fa-star'"></i>
+                                            </span>
+                                            <span class="ms-2 fw-bold" th:text="${review.rating} + '.0'">5.0</span>
+                                        </div>
+                                        <p class="text-muted small mb-2" th:text="${#strings.abbreviate(review.content, 100)}">리뷰 내용 미리보기</p>
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <small class="text-muted">
+                                                <i class="fas fa-user me-1"></i>
+                                                <span th:text="${review.memberName}">작성자</span>
+                                                <span class="mx-2">|</span>
+                                                <i class="fas fa-calendar me-1"></i>
+                                                <span th:text="${#temporals.format(review.createdAt, 'yyyy-MM-dd')}">작성일</span>
+                                            </small>
+                                            <a th:href="@{/review/detail/{id}(id=${review.reviewId})}" class="btn btn-sm btn-outline-secondary">
+                                                <i class="fas fa-eye me-1"></i>상세보기
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="text-center mt-3">
+                                <a th:href="@{/review(facilityId=${facility.facilityId})}" class="btn btn-outline-primary me-2">
+                                    <i class="fas fa-list me-1"></i>전체 리뷰 보기
+                                </a>
+                                <!-- 시설 소유자만 관리 버튼 표시 -->
+                                <a th:if="${session.loginMember != null and session.loginMember.memberId == facility.registeredMemberId}" 
+                                   th:href="@{/facility/manage}" class="btn btn-success">
+                                    <i class="fas fa-cogs me-1"></i>시설 관리
+                                </a>
+                            </div>
+                        </div>
+                        
+                        <!-- 리뷰가 없는 경우 -->
+                        <div th:if="${#lists.isEmpty(recentReviews)}" class="text-center text-muted py-4">
+                            <i class="fas fa-comments fa-2x mb-2"></i>
+                            <p>아직 리뷰가 없습니다.</p>
+                            <p class="small">첫 번째 리뷰를 작성해보세요!</p>
+                            <!-- 시설 소유자만 관리 버튼 표시 -->
+                            <div th:if="${session.loginMember != null and session.loginMember.memberId == facility.registeredMemberId}" class="mt-3">
+                                <a th:href="@{/facility/manage}" class="btn btn-success">
+                                    <i class="fas fa-cogs me-1"></i>시설 관리
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div th:replace="~{layout/footer :: footer}"></div>
+<div th:replace="~{layout/footer :: scripts}"></div>
+
+<!-- 카카오맵 API -->
+<script type="text/javascript" src="//dapi.kakao.com/v2/maps/sdk.js?appkey=3c4987cb946a721903add5fc474941a3&libraries=services,clusterer,drawing"></script>
+
+<!-- 시설 상세보기 전용 JavaScript -->
+<script src="/js/facility-detail.js"></script>
+<script src="/js/facility-detail-map.js"></script>
+
+<!-- Thymeleaf 데이터 전달 스크립트 -->
+<script th:inline="javascript">
+    /*<![CDATA[*/
+    
+    // 시설 데이터 초기화
+    const facilityDataFromServer = {
+        facilityId: /*[[${facility.facilityId}]]*/ 0,
+        name: /*[[${facility.facilityName}]]*/ '',
+        latitude: /*[[${facility.latitude}]]*/ 0,
+        longitude: /*[[${facility.longitude}]]*/ 0,
+        address: /*[[${facility.address}]]*/ '',
+        phone: /*[[${facility.phone}]]*/ '',
+        facilityImage: /*[[${facility.facilityImage}]]*/ ''
+    };
+    
+    // 시설 이미지 데이터 초기화
+    const facilityImagesFromServer = [
+        /*[# th:each="image, imageStat : ${facilityImages}"]*/
+        {
+            path: '[[${image.imagePath}]]',
+            alt: '[[${image.imageAltText != null ? image.imageAltText : "시설 이미지"}]]'
+        }/*[# th:unless="${imageStat.last}"],*//*[/]*/
+        /*[/]*/
+    ];
+
+    // DOM 로드 후 데이터 초기화
+    $(document).ready(function() {
+        console.log('🏢 시설 상세보기 페이지 초기화 시작');
+        
+        // 데이터 초기화
+        initializeFacilityData(facilityDataFromServer);
+        initializeFacilityImages(facilityImagesFromServer);
+        initializeFacilityMapData(facilityDataFromServer);
+        
+        // 지도 초기화
+        setTimeout(function() {
+            initializeFacilityDetailMap();
+        }, 500);
+        
+        console.log('✅ 시설 상세보기 페이지 초기화 완료');
+    });
+    
+    /*]]>*/
+</script>
+
+<!-- 이미지 확대 모달 -->
+<div class="modal fade" id="imageModal" tabindex="-1" aria-labelledby="imageModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-centered">
+        <div class="modal-content bg-dark">
+            <div class="modal-header border-0">
+                <h5 class="modal-title text-white" id="imageModalLabel">시설 이미지</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="닫기"></button>
+            </div>
+            <div class="modal-body p-0 position-relative">
+                <div id="modalCarousel" class="carousel slide" data-bs-ride="carousel" data-bs-interval="5000">
+                    <div class="carousel-inner" id="modalCarouselInner">
+                        <!-- 이미지들이 JavaScript로 동적 생성됨 -->
+                    </div>
+                    
+                    <!-- 모달 내 컨트롤 -->
+                    <button class="carousel-control-prev" type="button" data-bs-target="#modalCarousel" data-bs-slide="prev">
+                        <span class="carousel-control-prev-icon" style="width: 40px; height: 40px;"></span>
+                        <span class="visually-hidden">이전</span>
+                    </button>
+                    <button class="carousel-control-next" type="button" data-bs-target="#modalCarousel" data-bs-slide="next">
+                        <span class="carousel-control-next-icon" style="width: 40px; height: 40px;"></span>
+                        <span class="visually-hidden">다음</span>
+                    </button>
+                    
+                    <!-- 모달 내 인디케이터 -->
+                    <div class="carousel-indicators" id="modalCarouselIndicators">
+                        <!-- JavaScript로 동적 생성됨 -->
+                    </div>
+                </div>
+                
+                <!-- 이미지 정보 표시 -->
+                <div class="position-absolute bottom-0 start-0 end-0 bg-dark bg-opacity-75 text-white p-3">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <span id="modalImageCounter">1 / 5</span>
+                            <span class="ms-3" id="modalImageAlt">시설 이미지</span>
+                        </div>
+                        <div>
+                            <button class="btn btn-sm btn-outline-light me-2" onclick="toggleAutoSlide()">
+                                <i class="fas fa-play" id="autoSlideIcon"></i>
+                                <span id="autoSlideText">자동재생</span>
+                            </button>
+                            <button class="btn btn-sm btn-outline-light" onclick="downloadImage()">
+                                <i class="fas fa-download"></i> 다운로드
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="//developers.kakao.com/sdk/js/kakao.min.js"></script>
+<script>
+    // 새로운 App Key로 카카오톡 SDK 초기화
+    Kakao.init('3c4987cb946a721903add5fc474941a3');
+</script>
+</body>
+</html>

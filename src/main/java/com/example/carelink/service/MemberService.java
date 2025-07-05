@@ -34,7 +34,6 @@ import java.util.UUID; // UUID 유지 (파일 이름 생성)
 @Slf4j
 @Service
 @RequiredArgsConstructor
-@Transactional
 public class MemberService {
 
     private final MemberMapper memberMapper;
@@ -589,7 +588,7 @@ public class MemberService {
      * 사용자의 모든 콘텐츠 삭제 (시설회원인 경우 관련 시설도 삭제)
      */
     @Transactional
-    private void deleteAllUserContent(String userId) {
+    public void deleteAllUserContent(String userId) {
         try {
             MemberDTO member = memberMapper.findByUserId(userId);
             if (member == null) {
@@ -642,9 +641,8 @@ public class MemberService {
      */
     private String saveProfileImage(MultipartFile file, String userId) {
         try {
-            // 프로젝트 루트 경로 기반으로 절대 경로 설정
-            String projectRoot = System.getProperty("user.dir");
-            String uploadDir = projectRoot + "/src/main/resources/static/uploads/profile/";
+            // 로컬 업로드 디렉토리 사용
+            String uploadDir = Constants.PROFILE_UPLOAD_PATH;
             File uploadDirFile = new File(uploadDir);
             if (!uploadDirFile.exists()) {
                 boolean created = uploadDirFile.mkdirs();
@@ -678,9 +676,8 @@ public class MemberService {
      */
     private String saveFacilityImage(MultipartFile file, String userId) {
         try {
-            // 프로젝트 루트 경로 기반으로 절대 경로 설정
-            String projectRoot = System.getProperty("user.dir");
-            String uploadDir = projectRoot + "/src/main/resources/static/uploads/facility/";
+            // 로컬 업로드 디렉토리 사용
+            String uploadDir = Constants.FACILITY_UPLOAD_PATH;
             File uploadDirFile = new File(uploadDir);
             if (!uploadDirFile.exists()) {
                 boolean created = uploadDirFile.mkdirs();
