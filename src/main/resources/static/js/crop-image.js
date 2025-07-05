@@ -284,8 +284,13 @@ function setupSmartScroll() {
     
     console.log('🖱️ 스마트 스크롤 기능 활성화');
     
-    cropContainer.addEventListener('wheel', function(event) {
+    // 데스크탑 호환성을 위한 강화된 이벤트 리스너
+    const wheelHandler = function(event) {
         if (!cropper) return;
+        
+        // 모든 플랫폼에서 작동하도록 강제 preventDefault 적용
+        event.preventDefault();
+        event.stopPropagation();
         
         // 현재 줌 레벨 확인 (더 정확한 방식)
         const canvasData = cropper.getCanvasData();
@@ -304,12 +309,11 @@ function setupSmartScroll() {
         // 확대 시: 최대 줌 근처에서 페이지 스크롤 허용
         if (isZoomingIn && currentZoom >= maxThreshold) {
             updateZoomIndicator(currentZoom, '최대 확대');
-            console.log('📈 최대 확대 근처 - 페이지 스크롤 실행');
+            console.log('📈 최대 확대 근처 - 페이지 스크롤 아래로 실행');
             
-            // 페이지 스크롤을 더 부드럽게 실행
-            const scrollAmount = event.deltaY * 0.5; // 스크롤 강도 조절
+            // 최대 확대 상태에서 아래로 페이지 스크롤 (올바른 방향)
             window.scrollBy({
-                top: scrollAmount,
+                top: 100, // 항상 아래로 스크롤 (양수)
                 behavior: 'smooth'
             });
             return;
@@ -318,29 +322,31 @@ function setupSmartScroll() {
         // 축소 시: 최소 줌 근처에서 페이지 스크롤 허용  
         if (isZoomingOut && currentZoom <= minThreshold) {
             updateZoomIndicator(currentZoom, '최소 축소');
-            console.log('📉 최소 축소 근처 - 페이지 스크롤 실행');
+            console.log('📉 최소 축소 근처 - 페이지 스크롤 위로 실행');
             
-            // 페이지 스크롤을 더 부드럽게 실행
-            const scrollAmount = event.deltaY * 0.5; // 스크롤 강도 조절
+            // 최소 축소 상태에서 위로 페이지 스크롤 (올바른 방향)
             window.scrollBy({
-                top: scrollAmount,
+                top: -100, // 항상 위로 스크롤 (음수)
                 behavior: 'smooth'
             });
             return;
         }
         
-        // 이미지 확대/축소 범위 내에서는 기본 스크롤 차단하고 줌 적용
-        event.preventDefault();
-        event.stopPropagation();
-        
+        // 이미지 확대/축소 범위 내에서는 줌 적용
         const zoomDelta = isZoomingIn ? 0.1 : -0.1;
         cropper.zoom(zoomDelta);
         
         // 줌 표시기 업데이트
         const newZoom = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, currentZoom + zoomDelta));
         updateZoomIndicator(newZoom, isZoomingIn ? '확대' : '축소');
-        
-    }, { passive: false }); // passive: false로 설정해야 preventDefault 작동
+    };
+    
+    // 데스크탑 및 모바일 모두 지원하는 이벤트 등록
+    cropContainer.addEventListener('wheel', wheelHandler, { passive: false });
+    cropContainer.addEventListener('mousewheel', wheelHandler, { passive: false }); // IE/Edge 호환성
+    cropContainer.addEventListener('DOMMouseScroll', wheelHandler, { passive: false }); // Firefox 호환성
+    
+    console.log('✅ 데스크탑/모바일 스마트 스크롤 이벤트 등록 완료');
 }
 
 // 줌 표시기 업데이트

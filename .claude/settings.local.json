@@ -15,7 +15,11 @@
       "Bash(mv \"행복요양원.png\" \"행복요양원_개인공간.png\" \"행복요양원_내부라운지.png\" \"행복요양원_영양관리.png\" \"행복요양원_재활.png\" \"대전요양원.png\" \"팔달요양원.png\" facilities/)",
       "Bash(mv \"김철수.png\" \"박민수.png\" \"부산실버타운장.png\" \"서울요양원장.png\" \"이영희.png\" \"최지은.png\" profiles/)",
       "Bash(rm:*)",
-      "Bash(find:*)"
+      "Bash(find:*)",
+      "Bash(ls:*)",
+      "Bash(javac:*)",
+      "Bash(java:*)",
+      "Bash(mv:*)"
     ],
     "deny": []
   }

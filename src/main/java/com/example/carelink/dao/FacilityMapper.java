@@ -73,6 +73,13 @@ public interface FacilityMapper {
      * 회원 ID로 시설 조회 (단일 조회 - 하위 호환성 유지)
      */
     FacilityDTO getFacilityByMemberId(@Param("memberId") Long memberId);
+    
+    /**
+     * 시설 메인 이미지 정보 업데이트
+     */
+    int updateFacilityMainImage(@Param("facilityId") Long facilityId, 
+                               @Param("mainImagePath") String mainImagePath, 
+                               @Param("imageCount") Integer imageCount);
 
     // ================== 관리자용 메서드들 ==================
 

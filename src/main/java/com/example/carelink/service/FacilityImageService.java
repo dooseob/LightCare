@@ -1,6 +1,7 @@
 package com.example.carelink.service;
 
 import com.example.carelink.dao.FacilityImageMapper;
+import com.example.carelink.dao.FacilityMapper;
 import com.example.carelink.dto.FacilityImageDTO;
 import com.example.carelink.common.Constants;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -19,11 +20,13 @@ import java.util.UUID;
 public class FacilityImageService {
 
     private final FacilityImageMapper facilityImageMapper;
+    private final FacilityMapper facilityMapper;
     private static final Logger log = LoggerFactory.getLogger(FacilityImageService.class);
 
     @Autowired
-    public FacilityImageService(FacilityImageMapper facilityImageMapper) {
+    public FacilityImageService(FacilityImageMapper facilityImageMapper, FacilityMapper facilityMapper) {
         this.facilityImageMapper = facilityImageMapper;
+        this.facilityMapper = facilityMapper;
     }
 
     /**
@@ -138,14 +141,21 @@ public class FacilityImageService {
             FacilityImageDTO mainImage = facilityImageMapper.getMainImageByFacilityId(facilityId);
             String mainImagePath = mainImage != null ? mainImage.getImagePath() : null;
             
-            log.info("🔄 시설 테이블 메인 이미지 정보 업데이트 - facilityId: {}, imageCount: {}, mainImagePath: {}", 
+            log.info("🔄 시설 테이블 메인 이미지 정보 업데이트 시작 - facilityId: {}, imageCount: {}, mainImagePath: {}", 
                     facilityId, imageCount, mainImagePath);
             
-            // 여기서 FacilityMapper를 사용해 시설 테이블 업데이트
-            // FacilityService를 주입받지 않고 직접 매퍼 호출
+            // 시설 테이블의 facility_image, image_count 업데이트
+            int updateResult = facilityMapper.updateFacilityMainImage(facilityId, mainImagePath, imageCount);
+            
+            if (updateResult > 0) {
+                log.info("✅ 시설 테이블 업데이트 성공 - facilityId: {}, 업데이트된 행: {}", facilityId, updateResult);
+            } else {
+                log.warn("⚠️ 시설 테이블 업데이트 실패 - facilityId: {}, 업데이트된 행: {}", facilityId, updateResult);
+            }
             
         } catch (Exception e) {
             log.error("❌ 시설 테이블 메인 이미지 정보 업데이트 중 오류 - facilityId: {}", facilityId, e);
+            throw new RuntimeException("시설 메인 이미지 정보 업데이트에 실패했습니다.", e);
         }
     }
 
@@ -162,14 +172,33 @@ public class FacilityImageService {
                 log.info("업로드 디렉토리 생성: {} - {}", uploadDir, created ? "성공" : "실패");
             }
             
-            // 파일명 생성 (facilityId + index + UUID + 원본 확장자)
+            // 파일명 생성 (한글 파일명 영문 변환 포함)
             String originalFilename = file.getOriginalFilename();
             String extension = "";
+            String baseName = "";
+            
             if (originalFilename != null && originalFilename.contains(".")) {
                 extension = originalFilename.substring(originalFilename.lastIndexOf("."));
+                baseName = originalFilename.substring(0, originalFilename.lastIndexOf("."));
+            } else if (originalFilename != null) {
+                baseName = originalFilename;
             }
-            String savedFilename = String.format("facility_%s_%d_%s%s", 
-                    facilityId, index, UUID.randomUUID().toString(), extension);
+            
+            // 한글 파일명을 영문으로 변환
+            String englishBaseName = convertKoreanToEnglish(baseName);
+            String cleanBaseName = sanitizeFilename(englishBaseName);
+            
+            // 최종 파일명 생성
+            String savedFilename;
+            if (!cleanBaseName.isEmpty() && !cleanBaseName.equals("facility_image")) {
+                savedFilename = String.format("facility_%s_%d_%s_%s%s", 
+                        facilityId, index, cleanBaseName, UUID.randomUUID().toString().substring(0, 8), extension);
+            } else {
+                savedFilename = String.format("facility_%s_%d_%s%s", 
+                        facilityId, index, UUID.randomUUID().toString(), extension);
+            }
+            
+            log.info("📝 파일명 변환: '{}' → '{}'", originalFilename, savedFilename);
             
             // 파일 저장
             File savedFile = new File(uploadDir + savedFilename);
@@ -237,5 +266,116 @@ public class FacilityImageService {
     @Transactional(readOnly = true)
     public int getImageCountByFacilityId(Long facilityId) {
         return facilityImageMapper.countImagesByFacilityId(facilityId);
+    }
+    
+    /**
+     * 한글 파일명을 영문으로 변환
+     */
+    private String convertKoreanToEnglish(String korean) {
+        if (korean == null || korean.trim().isEmpty()) {
+            return "facility_image";
+        }
+        
+        // 한글 키워드를 영문으로 매핑
+        java.util.Map<String, String> koreanToEnglish = java.util.Map.ofEntries(
+            // 시설 관련
+            java.util.Map.entry("시설", "facility"),
+            java.util.Map.entry("요양원", "nursing_home"),
+            java.util.Map.entry("병원", "hospital"),
+            java.util.Map.entry("의료", "medical"),
+            java.util.Map.entry("건물", "building"),
+            
+            // 공간 관련
+            java.util.Map.entry("외관", "exterior"),
+            java.util.Map.entry("내부", "interior"),
+            java.util.Map.entry("로비", "lobby"),
+            java.util.Map.entry("복도", "corridor"),
+            java.util.Map.entry("방", "room"),
+            java.util.Map.entry("객실", "room"),
+            java.util.Map.entry("침실", "bedroom"),
+            java.util.Map.entry("식당", "dining"),
+            java.util.Map.entry("주방", "kitchen"),
+            java.util.Map.entry("화장실", "bathroom"),
+            java.util.Map.entry("정원", "garden"),
+            java.util.Map.entry("마당", "yard"),
+            java.util.Map.entry("주차장", "parking"),
+            java.util.Map.entry("엘리베이터", "elevator"),
+            java.util.Map.entry("계단", "stairs"),
+            
+            // 의료 관련
+            java.util.Map.entry("간호", "nursing"),
+            java.util.Map.entry("의무실", "medical_room"),
+            java.util.Map.entry("치료", "treatment"),
+            java.util.Map.entry("재활", "rehabilitation"),
+            java.util.Map.entry("물리치료", "physical_therapy"),
+            
+            // 기타
+            java.util.Map.entry("환경", "environment"),
+            java.util.Map.entry("시설물", "facilities"),
+            java.util.Map.entry("부대시설", "amenities"),
+            java.util.Map.entry("편의시설", "convenience"),
+            java.util.Map.entry("안전", "safety"),
+            java.util.Map.entry("보안", "security"),
+            
+            // 숫자
+            java.util.Map.entry("1", "one"),
+            java.util.Map.entry("2", "two"),
+            java.util.Map.entry("3", "three"),
+            java.util.Map.entry("4", "four"),
+            java.util.Map.entry("5", "five"),
+            java.util.Map.entry("첫번째", "first"),
+            java.util.Map.entry("두번째", "second"),
+            java.util.Map.entry("세번째", "third"),
+            java.util.Map.entry("네번째", "fourth"),
+            java.util.Map.entry("다섯번째", "fifth")
+        );
+        
+        String result = korean.toLowerCase().trim();
+        
+        // 한글 키워드 변환
+        for (java.util.Map.Entry<String, String> entry : koreanToEnglish.entrySet()) {
+            result = result.replace(entry.getKey(), entry.getValue());
+        }
+        
+        // 아직 한글이 남아있으면 일반적인 변환
+        if (containsKorean(result)) {
+            result = "facility_image_" + System.currentTimeMillis() % 10000;
+        }
+        
+        return result;
+    }
+    
+    /**
+     * 파일명 정리 (특수문자 제거, 영문자와 숫자만 유지)
+     */
+    private String sanitizeFilename(String filename) {
+        if (filename == null || filename.trim().isEmpty()) {
+            return "facility_image";
+        }
+        
+        // 영문자, 숫자, 하이픈, 언더스코어만 유지
+        String sanitized = filename.replaceAll("[^a-zA-Z0-9_-]", "_")
+                                  .replaceAll("_{2,}", "_")  // 연속된 언더스코어 제거
+                                  .replaceAll("^_+|_+$", ""); // 앞뒤 언더스코어 제거
+        
+        // 너무 길면 자르기 (최대 30자)
+        if (sanitized.length() > 30) {
+            sanitized = sanitized.substring(0, 30);
+        }
+        
+        // 비어있으면 기본값
+        if (sanitized.isEmpty()) {
+            sanitized = "facility_image";
+        }
+        
+        return sanitized;
+    }
+    
+    /**
+     * 문자열에 한글이 포함되어 있는지 확인
+     */
+    private boolean containsKorean(String text) {
+        if (text == null) return false;
+        return text.matches(".*[ㄱ-ㅎㅏ-ㅣ가-힣]+.*");
     }
 }

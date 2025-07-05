@@ -308,5 +308,15 @@
         WHERE is_deleted = false 
         AND approval_status = #{approvalStatus}
     </select>
+    
+    <!-- 시설 메인 이미지 정보 업데이트 -->
+    <update id="updateFacilityMainImage">
+        UPDATE facility 
+        SET 
+            facility_image = #{mainImagePath},
+            image_count = #{imageCount},
+            updated_at = NOW()
+        WHERE facility_id = #{facilityId}
+    </update>
 
 </mapper>
