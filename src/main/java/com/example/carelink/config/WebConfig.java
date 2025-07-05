@@ -12,30 +12,31 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 @Configuration
 public class WebConfig implements WebMvcConfigurer {
 
+    @Value("${file.upload-dir.facility}")
+    private String facilityUploadDir;
+    
     @Value("${file.upload-dir.profile}")
     private String profileUploadDir;
 
     /**
      * 정적 리소스 핸들러 추가
-     * 프로필 이미지 폴더를 웹에서 접근 가능하도록 매핑
+     * 로컬 업로드 디렉토리와 테스트 이미지 폴더 매핑
      */
     @Override
     public void addResourceHandlers(ResourceHandlerRegistry registry) {
-        // 프로필 이미지 정적 리소스 매핑
-        // URL: /profile_images/** → 실제 경로: C:/uploads/profile_images/
-        registry.addResourceHandler("/profile_images/**")
+        // 로컬 업로드 디렉토리 매핑 (실제 운영 이미지)
+        registry.addResourceHandler("/uploads/facility/**")
+                .addResourceLocations("file:" + facilityUploadDir);
+        
+        registry.addResourceHandler("/uploads/profile/**")
                 .addResourceLocations("file:" + profileUploadDir);
         
-        // 시설 이미지 정적 리소스 매핑
-        // URL: /uploads/facility/** → 실제 경로: src/main/resources/static/uploads/facility/
+        // 테스트 이미지 매핑 (Git 공유용)
         String projectRoot = System.getProperty("user.dir");
-        String facilityImagePath = "file:" + projectRoot + "/src/main/resources/static/uploads/facility/";
-        registry.addResourceHandler("/uploads/facility/**")
-                .addResourceLocations(facilityImagePath);
+        registry.addResourceHandler("/test-images/facilities/**")
+                .addResourceLocations("file:" + projectRoot + "/images/facilities/");
         
-        // 프로필 이미지 (static 폴더 내)
-        String profileImagePath = "file:" + projectRoot + "/src/main/resources/static/uploads/profile/";
-        registry.addResourceHandler("/uploads/profile/**")
-                .addResourceLocations(profileImagePath);
+        registry.addResourceHandler("/test-images/profiles/**")
+                .addResourceLocations("file:" + projectRoot + "/images/profiles/");
     }
 }

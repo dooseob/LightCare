@@ -2,6 +2,7 @@ package com.example.carelink.service;
 
 import com.example.carelink.dao.FacilityMapper;
 import com.example.carelink.dto.FacilityDTO;
+import com.example.carelink.common.Constants;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.slf4j.Logger;
@@ -239,9 +240,8 @@ public class FacilityService {
      */
     private String saveFacilityImage(MultipartFile file, String facilityId) {
         try {
-            // 프로젝트 루트 경로 기반으로 절대 경로 설정
-            String projectRoot = System.getProperty("user.dir");
-            String uploadDir = projectRoot + "/src/main/resources/static/uploads/facility/";
+            // 로컬 업로드 디렉토리 사용
+            String uploadDir = Constants.FACILITY_UPLOAD_PATH;
             File uploadDirFile = new File(uploadDir);
             if (!uploadDirFile.exists()) {
                 boolean created = uploadDirFile.mkdirs();

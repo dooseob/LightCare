@@ -67,7 +67,9 @@ logging:
     jdbc.sqltiming: INFO # 실제 쿼리 실행 시간 등을 보려면 INFO (혹은 DEBUG)
     com.zaxxer.hikari: DEBUG # DB 커넥션 풀 관련
 
-#사용자 프로필 사진을 서버 컴퓨터의 C:/uploads/profile_images/ 폴더에 저장
+# 파일 업로드 경로 설정 (로컬 디렉토리 - 프로젝트와 분리)
 file:
   upload-dir:
-    profile: C:/uploads/profile_images/
+    facility: C:/carelink-uploads/facility/
+    profile: C:/carelink-uploads/profile/
+    temp: C:/carelink-uploads/temp/
