@@ -220,6 +220,9 @@ function setupEventListeners() {
     // 압축 설정 컨트롤 설정
     setupCompressionControls();
     
+    // SEO 최적화 기능 설정
+    setupSEOFeatures();
+    
     // 키보드 단축키 (프로필과 동일)
     setupKeyboardShortcuts();
     
@@ -269,6 +272,167 @@ function setupCompressionControls() {
     }
     
     console.log('⚙️ 압축 컨트롤 설정 완료');
+}
+
+// SEO 최적화 기능 설정
+function setupSEOFeatures() {
+    console.log('🔍 SEO 최적화 기능 설정 시작');
+    
+    // 추천 키워드 버튼들
+    const keywordButtons = document.querySelectorAll('.keyword-btn');
+    keywordButtons.forEach(button => {
+        button.addEventListener('click', function() {
+            const keyword = this.getAttribute('data-keyword');
+            handleKeywordClick(keyword);
+        });
+    });
+    
+    // 이미지 파일명 입력 필드
+    const imageNameInput = document.getElementById('imageNameInput');
+    if (imageNameInput) {
+        imageNameInput.addEventListener('input', updateFileNamePreview);
+        imageNameInput.addEventListener('blur', updateFileNamePreview);
+    }
+    
+    // 파일명 미리보기 버튼
+    const previewFileNameBtn = document.getElementById('previewFileNameBtn');
+    if (previewFileNameBtn) {
+        previewFileNameBtn.addEventListener('click', updateFileNamePreview);
+    }
+    
+    console.log(`✅ SEO 기능 설정 완료 - 키워드 버튼 ${keywordButtons.length}개 등록됨`);
+}
+
+// 키워드 클릭 처리
+function handleKeywordClick(keyword) {
+    console.log('🏷️ 키워드 클릭됨:', keyword);
+    
+    const imageNameInput = document.getElementById('imageNameInput');
+    const altTextInput = document.getElementById('altTextInput');
+    
+    // 현재 시설명 가져오기 (전역 변수나 페이지에서)
+    const facilityName = getFacilityName();
+    
+    // 파일명에 키워드 추가
+    if (imageNameInput) {
+        const currentValue = imageNameInput.value.trim();
+        let newValue;
+        
+        if (currentValue === '') {
+            newValue = `${facilityName}-${keyword}`;
+        } else if (!currentValue.includes(keyword)) {
+            newValue = `${currentValue}-${keyword}`;
+        } else {
+            newValue = currentValue; // 이미 포함된 경우 변경하지 않음
+        }
+        
+        imageNameInput.value = newValue;
+        updateFileNamePreview();
+    }
+    
+    // Alt 텍스트에 키워드 추가
+    if (altTextInput) {
+        const currentAlt = altTextInput.value.trim();
+        let newAlt;
+        
+        if (currentAlt === '') {
+            newAlt = `${facilityName} ${keyword} 사진`;
+        } else if (!currentAlt.includes(keyword)) {
+            newAlt = `${currentAlt} ${keyword}`;
+        } else {
+            newAlt = currentAlt; // 이미 포함된 경우 변경하지 않음
+        }
+        
+        altTextInput.value = newAlt;
+    }
+    
+    // 버튼 일시적 하이라이트 효과
+    const button = document.querySelector(`[data-keyword="${keyword}"]`);
+    if (button) {
+        button.classList.add('btn-success');
+        button.classList.remove('btn-outline-primary', 'btn-outline-success', 'btn-outline-warning');
+        setTimeout(() => {
+            button.classList.remove('btn-success');
+            if (button.parentElement.parentElement.querySelector('small').textContent.includes('시설 구역')) {
+                button.classList.add('btn-outline-primary');
+            } else if (button.parentElement.parentElement.querySelector('small').textContent.includes('시설 종류')) {
+                button.classList.add('btn-outline-success');
+            } else {
+                button.classList.add('btn-outline-warning');
+            }
+        }, 500);
+    }
+}
+
+// 파일명 미리보기 업데이트
+function updateFileNamePreview() {
+    const imageNameInput = document.getElementById('imageNameInput');
+    const previewFileName = document.getElementById('previewFileName');
+    
+    if (!imageNameInput || !previewFileName) return;
+    
+    const inputValue = imageNameInput.value.trim();
+    let finalFileName;
+    
+    if (inputValue === '') {
+        finalFileName = `facility_${facilityId}_${currentImageIndex}_${new Date().getTime() % 10000}.jpg`;
+    } else {
+        // 한글을 영문으로 변환하는 시뮬레이션 (실제로는 서버에서 처리)
+        const englishName = convertKoreanToEnglishSimple(inputValue);
+        const sanitizedName = sanitizeFilenameSimple(englishName);
+        finalFileName = `facility_${facilityId}_${currentImageIndex}_${sanitizedName}_${new Date().getTime() % 10000}.jpg`;
+    }
+    
+    previewFileName.textContent = finalFileName;
+    console.log('📄 파일명 미리보기 업데이트:', finalFileName);
+}
+
+// 시설명 가져오기 (페이지의 시설 정보에서)
+function getFacilityName() {
+    // 페이지 제목이나 breadcrumb에서 시설명 추출
+    const breadcrumb = document.querySelector('.breadcrumb-item.active');
+    if (breadcrumb && breadcrumb.textContent.includes('시설')) {
+        return '시설'; // 기본값
+    }
+    
+    // URL이나 전역 변수에서 시설명 가져오기
+    return '요양원'; // 기본값
+}
+
+// 간단한 한글-영문 변환 (클라이언트 사이드)
+function convertKoreanToEnglishSimple(text) {
+    const simpleMap = {
+        '시설': 'facility',
+        '요양원': 'nursing_home', 
+        '외관': 'exterior',
+        '내부': 'interior',
+        '정원': 'garden',
+        '식당': 'dining',
+        '침실': 'bedroom',
+        '로비': 'lobby',
+        '복도': 'corridor',
+        '주차장': 'parking',
+        '의무실': 'medical_room',
+        '간호실': 'nursing_room'
+    };
+    
+    let result = text.toLowerCase();
+    for (const [korean, english] of Object.entries(simpleMap)) {
+        result = result.replace(new RegExp(korean, 'g'), english);
+    }
+    
+    // 남은 한글이 있으면 제거
+    result = result.replace(/[ㄱ-ㅎㅏ-ㅣ가-힣]/g, '');
+    
+    return result;
+}
+
+// 간단한 파일명 정리
+function sanitizeFilenameSimple(filename) {
+    return filename.replace(/[^a-zA-Z0-9_-]/g, '_')
+                  .replace(/_+/g, '_')
+                  .replace(/^_+|_+$/g, '')
+                  .substring(0, 20) || 'image';
 }
 
 // 이미지 업로드 처리 (프로필과 동일하되 다중 파일 지원)
@@ -484,8 +648,13 @@ function setupSmartScroll() {
     
     console.log('🖱️ 스마트 스크롤 기능 활성화');
     
-    cropContainer.addEventListener('wheel', function(event) {
+    // 데스크탑 호환성을 위한 강화된 이벤트 리스너
+    const wheelHandler = function(event) {
         if (!cropper) return;
+        
+        // 모든 플랫폼에서 작동하도록 강제 preventDefault 적용
+        event.preventDefault();
+        event.stopPropagation();
         
         // 현재 줌 레벨 확인 (프로필과 정확히 동일한 방식)
         const canvasData = cropper.getCanvasData();
@@ -504,12 +673,11 @@ function setupSmartScroll() {
         // 확대 시: 최대 줌 근처에서 페이지 스크롤 허용
         if (isZoomingIn && currentZoom >= maxThreshold) {
             updateZoomIndicator(currentZoom, '최대 확대');
-            console.log('📈 최대 확대 근처 - 페이지 스크롤 실행');
+            console.log('📈 최대 확대 근처 - 페이지 스크롤 위로 실행');
             
-            // 페이지 스크롤을 더 부드럽게 실행 (프로필과 정확히 동일)
-            const scrollAmount = event.deltaY * 0.5; // 스크롤 강도 조절
+            // 최대 확대 상태에서 위로 페이지 스크롤 (수정된 방향)
             window.scrollBy({
-                top: scrollAmount,
+                top: -100, // 위로 스크롤 (음수)
                 behavior: 'smooth'
             });
             return;
@@ -518,29 +686,31 @@ function setupSmartScroll() {
         // 축소 시: 최소 줌 근처에서 페이지 스크롤 허용  
         if (isZoomingOut && currentZoom <= minThreshold) {
             updateZoomIndicator(currentZoom, '최소 축소');
-            console.log('📉 최소 축소 근처 - 페이지 스크롤 실행');
+            console.log('📉 최소 축소 근처 - 페이지 스크롤 아래로 실행');
             
-            // 페이지 스크롤을 더 부드럽게 실행 (프로필과 정확히 동일)
-            const scrollAmount = event.deltaY * 0.5; // 스크롤 강도 조절
+            // 최소 축소 상태에서 아래로 페이지 스크롤 (수정된 방향)
             window.scrollBy({
-                top: scrollAmount,
+                top: 100, // 아래로 스크롤 (양수)
                 behavior: 'smooth'
             });
             return;
         }
         
-        // 이미지 확대/축소 범위 내에서는 기본 스크롤 차단하고 줌 적용
-        event.preventDefault();
-        event.stopPropagation();
-        
+        // 이미지 확대/축소 범위 내에서는 줌 적용
         const zoomDelta = isZoomingIn ? 0.1 : -0.1;
         cropper.zoom(zoomDelta);
         
         // 줌 표시기 업데이트
         const newZoom = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, currentZoom + zoomDelta));
         updateZoomIndicator(newZoom, isZoomingIn ? '확대' : '축소');
-        
-    }, { passive: false }); // passive: false로 설정해야 preventDefault 작동
+    };
+    
+    // 데스크탑 및 모바일 모두 지원하는 이벤트 등록
+    cropContainer.addEventListener('wheel', wheelHandler, { passive: false });
+    cropContainer.addEventListener('mousewheel', wheelHandler, { passive: false }); // IE/Edge 호환성
+    cropContainer.addEventListener('DOMMouseScroll', wheelHandler, { passive: false }); // Firefox 호환성
+    
+    console.log('✅ 데스크탑/모바일 스마트 스크롤 이벤트 등록 완료');
 }
 
 // 줌 표시기 업데이트 (프로필과 정확히 동일)
@@ -779,31 +949,128 @@ function updateCompressionPreview() {
     img.src = firstCroppedImage.croppedDataUrl;
 }
 
-// Alt 텍스트 자동 생성 (프로필에서 누락된 기능 추가)
+// Alt 텍스트 자동 생성 (다중 이미지 지원)
 function generateAltText() {
     const altInput = document.getElementById('altTextInput');
     if (!altInput) return;
     
     console.log('✨ Alt 텍스트 자동 생성 시작');
     
-    // 시설 이미지용 기본 Alt 텍스트 생성
-    let altText = '시설 대표 이미지';
+    // 현재 이미지에 대한 개별 Alt 텍스트 생성
+    const currentImage = originalImages[currentImageIndex];
+    if (!currentImage) return;
     
-    // 파일명에서 추가 정보 추출 (프로필과 동일한 로직)
-    if (originalImages.length > 0 && originalImages[0].name) {
-        const fileName = originalImages[0].name.replace(/\.[^/.]+$/, ''); // 확장자 제거
-        if (fileName.length > 0 && fileName !== 'image') {
-            altText += ` - ${fileName}`;
+    let altText = generateIndividualAltText(currentImage, currentImageIndex);
+    
+    altInput.value = altText;
+    console.log(`Alt 텍스트 자동 생성 완료 (${currentImageIndex + 1}/${originalImages.length}):`, altText);
+}
+
+// 개별 이미지의 고유한 Alt 텍스트 생성
+function generateIndividualAltText(image, index) {
+    let altText = '';
+    
+    // 이미지 순서에 따른 기본 역할 분류
+    if (index === 0) {
+        altText = '시설 메인 이미지';
+    } else {
+        const imageTypes = [
+            '시설 외관', '시설 내부', '시설 환경', '시설 부대시설', 
+            '시설 상세', '시설 추가 정보', '시설 기타'
+        ];
+        const typeIndex = Math.min(index - 1, imageTypes.length - 1);
+        altText = imageTypes[typeIndex];
+    }
+    
+    // 파일명에서 추가 정보 추출
+    if (image.name) {
+        const fileName = image.name.replace(/\.[^/.]+$/, '').toLowerCase();
+        
+        // 한글 키워드 인식
+        const koreanKeywords = {
+            '외관': '시설 외관',
+            '내부': '시설 내부', 
+            '로비': '시설 로비',
+            '복도': '시설 복도',
+            '방': '시설 객실',
+            '식당': '시설 식당',
+            '정원': '시설 정원',
+            '주차': '주차장',
+            '엘리베이터': '엘리베이터',
+            '화장실': '화장실',
+            '간호': '간호실',
+            '의무': '의무실'
+        };
+        
+        // 영문 키워드 인식
+        const englishKeywords = {
+            'exterior': '시설 외관',
+            'interior': '시설 내부',
+            'lobby': '시설 로비', 
+            'room': '시설 객실',
+            'dining': '시설 식당',
+            'garden': '시설 정원',
+            'parking': '주차장',
+            'elevator': '엘리베이터',
+            'bathroom': '화장실',
+            'nurse': '간호실',
+            'medical': '의무실'
+        };
+        
+        // 키워드 매칭하여 더 구체적인 Alt 텍스트 생성
+        let matchedKeyword = null;
+        
+        for (const [key, value] of Object.entries(koreanKeywords)) {
+            if (fileName.includes(key)) {
+                matchedKeyword = value;
+                break;
+            }
+        }
+        
+        if (!matchedKeyword) {
+            for (const [key, value] of Object.entries(englishKeywords)) {
+                if (fileName.includes(key)) {
+                    matchedKeyword = value;
+                    break;
+                }
+            }
+        }
+        
+        if (matchedKeyword) {
+            altText = matchedKeyword;
+        } else if (fileName.length > 0 && fileName !== 'image') {
+            // 특별한 키워드가 없으면 파일명 활용
+            const cleanFileName = fileName.replace(/[_-]/g, ' ').trim();
+            if (cleanFileName.length > 0) {
+                altText += ` - ${cleanFileName}`;
+            }
         }
     }
     
-    // 다중 이미지인 경우 추가 정보
-    if (originalImages.length > 1) {
-        altText += ` (${originalImages.length}장)`;
+    // 이미지 순서 정보 추가 (메인 이미지가 아닌 경우)
+    if (index > 0 && originalImages.length > 1) {
+        altText += ` (${index + 1}번째 사진)`;
     }
     
-    altInput.value = altText;
-    console.log('Alt 텍스트 자동 생성 완료:', altText);
+    return altText;
+}
+
+// 전체 이미지의 Alt 텍스트를 자동 생성하는 함수
+function generateAllAltTexts() {
+    console.log('🎯 모든 이미지의 Alt 텍스트 자동 생성 시작');
+    
+    const results = [];
+    originalImages.forEach((image, index) => {
+        const altText = generateIndividualAltText(image, index);
+        results.push({
+            index: index,
+            fileName: image.name,
+            altText: altText
+        });
+    });
+    
+    console.log('📋 생성된 Alt 텍스트 목록:', results);
+    return results;
 }
 
 // 모든 이미지 저장 기능 (프로필과 동일한 패턴)
@@ -847,6 +1114,8 @@ function saveAllImages() {
     // 크롭된 이미지들을 Blob으로 변환하여 추가 (프로필과 동일한 방식)
     const firstImage = croppedImages.find(img => img && img.croppedDataUrl);
     if (firstImage) {
+        console.log(`🔍 원본 이미지 정보 - 이름: ${firstImage.name}, Base64 길이: ${firstImage.croppedDataUrl.length}`);
+        
         // Base64를 Blob으로 변환
         const base64Data = firstImage.croppedDataUrl.split(',')[1];
         const byteCharacters = atob(base64Data);
@@ -861,6 +1130,20 @@ function saveAllImages() {
         formData.append('facilityImage', blob, `facility_image.${format}`);
         
         console.log(`📤 이미지 Blob 생성 완료: ${(blob.size / 1024).toFixed(2)}KB`);
+        console.log(`📋 FormData 구성 - altText: '${altText}', format: '${format}', quality: '${quality}'`);
+        
+        // FormData 내용 확인 (디버깅용)
+        for (let [key, value] of formData.entries()) {
+            if (value instanceof Blob) {
+                console.log(`📎 FormData[${key}]: Blob (${(value.size / 1024).toFixed(2)}KB, ${value.type})`);
+            } else {
+                console.log(`📎 FormData[${key}]: ${value}`);
+            }
+        }
+    } else {
+        console.error('❌ 크롭된 이미지를 찾을 수 없음!');
+        alert('크롭된 이미지가 없습니다. 다시 시도해주세요.');
+        return;
     }
     
     console.log(`📸 전송할 이미지 수: ${croppedImages.filter(img => img && img.croppedDataUrl).length}`);
@@ -1014,25 +1297,90 @@ function updateFinalImagesGrid() {
     const finalImagesGrid = document.getElementById('finalImagesGrid');
     if (!finalImagesGrid) return;
     
-    finalImagesGrid.innerHTML = '';
+    finalImagesGrid.innerHTML = '<div class="text-center"><i class="fas fa-spinner fa-spin"></i> 저장된 이미지 목록을 불러오는 중...</div>';
     
-    croppedImages.forEach((image, index) => {
-        if (image && image.croppedDataUrl) {
-            const imageElement = document.createElement('div');
-            imageElement.className = 'col-md-3 col-sm-4 col-6 mb-3';
-            imageElement.innerHTML = `
-                <div class="card">
-                    <img src="${image.croppedDataUrl}" class="card-img-top" style="height: 120px; object-fit: cover;">
-                    <div class="card-body p-2">
-                        <small class="text-muted">이미지 ${index + 1}</small>
+    // 서버에서 실제 저장된 이미지 목록을 가져와서 표시
+    fetch(`/facility/api/${facilityId}/images`)
+        .then(response => response.json())
+        .then(images => {
+            finalImagesGrid.innerHTML = '';
+            
+            if (images && images.length > 0) {
+                images.forEach((image, index) => {
+                    const imageElement = document.createElement('div');
+                    imageElement.className = 'col-md-3 col-sm-4 col-6 mb-3';
+                    imageElement.innerHTML = `
+                        <div class="card">
+                            <img src="${image.imagePath}" class="card-img-top" style="height: 120px; object-fit: cover;" 
+                                 alt="${image.imageAltText || '시설 이미지'}" onerror="this.src='/images/default_facility.jpg'">
+                            <div class="card-body p-2">
+                                <small class="text-success">
+                                    <i class="fas fa-check-circle me-1"></i>저장 완료 (ID: ${image.imageId})
+                                </small>
+                                <br>
+                                <small class="text-muted">${image.imageAltText || '시설 이미지'}</small>
+                                ${image.isMainImage ? '<br><span class="badge bg-primary">메인 이미지</span>' : ''}
+                            </div>
+                        </div>
+                    `;
+                    finalImagesGrid.appendChild(imageElement);
+                });
+                
+                console.log(`✅ 서버에서 가져온 이미지 수: ${images.length}개`);
+                
+                // 추가 정보 표시
+                const infoElement = document.createElement('div');
+                infoElement.className = 'col-12 mt-3';
+                infoElement.innerHTML = `
+                    <div class="alert alert-success">
+                        <h6><i class="fas fa-database me-2"></i>데이터베이스 저장 확인</h6>
+                        <p class="mb-0">✅ 총 <strong>${images.length}장</strong>의 이미지가 성공적으로 저장되었습니다.</p>
+                        <small class="text-muted">이미지는 /uploads/facility/ 디렉토리에 저장되고, facility_images 테이블에 등록됩니다.</small>
+                    </div>
+                `;
+                finalImagesGrid.appendChild(infoElement);
+                
+            } else {
+                finalImagesGrid.innerHTML = `
+                    <div class="col-12 text-center">
+                        <div class="alert alert-warning">
+                            <i class="fas fa-exclamation-triangle me-2"></i>
+                            저장된 이미지가 없습니다.
+                        </div>
+                    </div>
+                `;
+            }
+        })
+        .catch(error => {
+            console.error('❌ 저장된 이미지 목록을 가져오는 중 오류:', error);
+            finalImagesGrid.innerHTML = `
+                <div class="col-12">
+                    <div class="alert alert-info">
+                        <h6><i class="fas fa-info-circle me-2"></i>로컬 이미지 표시</h6>
+                        <p class="mb-2">서버 이미지 목록을 가져올 수 없어 로컬 크롭된 이미지를 표시합니다:</p>
+                        <div class="row" id="localImages"></div>
                     </div>
                 </div>
             `;
-            finalImagesGrid.appendChild(imageElement);
-        }
-    });
-    
-    console.log(`🖼️ 최종 이미지 그리드 업데이트: ${croppedImages.length}개`);
+            
+            // 로컬 이미지로 폴백
+            const localContainer = document.getElementById('localImages');
+            croppedImages.forEach((image, index) => {
+                if (image && image.croppedDataUrl) {
+                    const imageElement = document.createElement('div');
+                    imageElement.className = 'col-md-3 col-sm-4 col-6 mb-3';
+                    imageElement.innerHTML = `
+                        <div class="card">
+                            <img src="${image.croppedDataUrl}" class="card-img-top" style="height: 120px; object-fit: cover;">
+                            <div class="card-body p-2">
+                                <small class="text-muted">크롭된 이미지 ${index + 1}</small>
+                            </div>
+                        </div>
+                    `;
+                    localContainer.appendChild(imageElement);
+                }
+            });
+        });
 }
 
 // 드래그 앤 드롭 설정 (프로필과 동일)

@@ -309,25 +309,100 @@
                                 </div>
                             </div>
                             
-                            <!-- Alt 텍스트 -->
-                            <div class="alt-text-section mt-4">
+                            <!-- SEO 최적화 섹션 -->
+                            <div class="seo-optimization-section mt-4">
                                 <h6 class="mb-3">
-                                    <i class="fas fa-tag me-2"></i>SEO 최적화
+                                    <i class="fas fa-search me-2"></i>SEO 최적화 & 파일명 관리
                                 </h6>
-                                <label for="altTextInput" class="form-label">
-                                    <i class="fas fa-search me-1"></i>이미지 설명 (Alt 텍스트)
-                                </label>
-                                <div class="input-group">
-                                    <textarea class="form-control" id="altTextInput" rows="2" 
-                                              placeholder="시설 이미지에 대한 설명을 입력하세요 (SEO 최적화용)"></textarea>
-                                    <button type="button" class="btn btn-outline-secondary" id="autoGenerateAltBtn">
-                                        <i class="fas fa-magic me-1"></i>자동 생성
-                                    </button>
+                                
+                                <!-- 이미지 파일명 수정 -->
+                                <div class="mb-4">
+                                    <label for="imageNameInput" class="form-label">
+                                        <i class="fas fa-file-signature me-1"></i>이미지 파일명
+                                    </label>
+                                    <div class="input-group">
+                                        <input type="text" class="form-control" id="imageNameInput" 
+                                               placeholder="예: 해피케어요양원-외관사진">
+                                        <button type="button" class="btn btn-outline-info" id="previewFileNameBtn">
+                                            <i class="fas fa-eye me-1"></i>미리보기
+                                        </button>
+                                    </div>
+                                    <div class="mt-2">
+                                        <small class="text-info">
+                                            <i class="fas fa-info-circle me-1"></i>
+                                            실제 저장명: <span id="previewFileName" class="fw-bold">facility_1_image.jpg</span>
+                                        </small>
+                                    </div>
                                 </div>
-                                <small class="text-muted">
-                                    <i class="fas fa-lightbulb me-1"></i>
-                                    검색 엔진 최적화를 위한 이미지 설명입니다
-                                </small>
+
+                                <!-- 추천 키워드 -->
+                                <div class="mb-3">
+                                    <label class="form-label">
+                                        <i class="fas fa-tags me-1"></i>추천 키워드 (클릭하여 추가)
+                                    </label>
+                                    <div class="keyword-suggestions">
+                                        <div class="mb-2">
+                                            <small class="text-muted fw-bold">시설 구역:</small>
+                                            <div class="keyword-group">
+                                                <button type="button" class="btn btn-outline-primary btn-sm keyword-btn" data-keyword="외관">외관</button>
+                                                <button type="button" class="btn btn-outline-primary btn-sm keyword-btn" data-keyword="내부">내부</button>
+                                                <button type="button" class="btn btn-outline-primary btn-sm keyword-btn" data-keyword="로비">로비</button>
+                                                <button type="button" class="btn btn-outline-primary btn-sm keyword-btn" data-keyword="복도">복도</button>
+                                                <button type="button" class="btn btn-outline-primary btn-sm keyword-btn" data-keyword="정원">정원</button>
+                                            </div>
+                                        </div>
+                                        <div class="mb-2">
+                                            <small class="text-muted fw-bold">시설 종류:</small>
+                                            <div class="keyword-group">
+                                                <button type="button" class="btn btn-outline-success btn-sm keyword-btn" data-keyword="침실">침실</button>
+                                                <button type="button" class="btn btn-outline-success btn-sm keyword-btn" data-keyword="식당">식당</button>
+                                                <button type="button" class="btn btn-outline-success btn-sm keyword-btn" data-keyword="의무실">의무실</button>
+                                                <button type="button" class="btn btn-outline-success btn-sm keyword-btn" data-keyword="간호실">간호실</button>
+                                                <button type="button" class="btn btn-outline-success btn-sm keyword-btn" data-keyword="주차장">주차장</button>
+                                            </div>
+                                        </div>
+                                        <div class="mb-2">
+                                            <small class="text-muted fw-bold">촬영 관점:</small>
+                                            <div class="keyword-group">
+                                                <button type="button" class="btn btn-outline-warning btn-sm keyword-btn" data-keyword="전경">전경</button>
+                                                <button type="button" class="btn btn-outline-warning btn-sm keyword-btn" data-keyword="내부전망">내부전망</button>
+                                                <button type="button" class="btn btn-outline-warning btn-sm keyword-btn" data-keyword="상세모습">상세모습</button>
+                                                <button type="button" class="btn btn-outline-warning btn-sm keyword-btn" data-keyword="환경">환경</button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Alt 텍스트 -->
+                                <div class="mb-3">
+                                    <label for="altTextInput" class="form-label">
+                                        <i class="fas fa-tag me-1"></i>이미지 설명 (Alt 텍스트)
+                                    </label>
+                                    <div class="input-group">
+                                        <textarea class="form-control" id="altTextInput" rows="2" 
+                                                  placeholder="시설 이미지에 대한 설명을 입력하세요 (SEO 최적화용)"></textarea>
+                                        <button type="button" class="btn btn-outline-secondary" id="autoGenerateAltBtn">
+                                            <i class="fas fa-magic me-1"></i>자동 생성
+                                        </button>
+                                    </div>
+                                    <small class="text-muted">
+                                        <i class="fas fa-lightbulb me-1"></i>
+                                        검색 엔진 최적화를 위한 이미지 설명입니다
+                                    </small>
+                                </div>
+
+                                <!-- SEO 팁 -->
+                                <div class="seo-tips alert alert-info">
+                                    <h6 class="alert-heading">
+                                        <i class="fas fa-graduation-cap me-2"></i>SEO 최적화 팁
+                                    </h6>
+                                    <ul class="mb-0 small">
+                                        <li>시설명을 포함한 구체적인 설명 작성</li>
+                                        <li>지역명 추가로 지역 검색 최적화</li>
+                                        <li>예: "○○요양원 강남구 위치 외관 전경"</li>
+                                        <li>한글 키워드로 국내 검색에 최적화</li>
+                                    </ul>
+                                </div>
                             </div>
                             
                             <div class="compression-actions mt-4 text-center">
@@ -450,6 +525,77 @@ console.log('📚 facility-image-cropper.js가 메인 로직을 처리합니다.
         opacity: 1;
         transform: scale(1);
     }
+}
+
+/* SEO 최적화 기능 스타일 */
+.keyword-suggestions {
+    background: #f8f9fa;
+    border-radius: 8px;
+    padding: 15px;
+    margin-bottom: 15px;
+}
+
+.keyword-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 5px;
+}
+
+.keyword-btn {
+    font-size: 0.875rem;
+    padding: 5px 10px;
+    border-radius: 15px;
+    transition: all 0.2s ease;
+    cursor: pointer;
+}
+
+.keyword-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+}
+
+.keyword-btn.btn-success {
+    animation: keywordClick 0.5s ease;
+}
+
+@keyframes keywordClick {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.1); }
+    100% { transform: scale(1); }
+}
+
+.seo-optimization-section {
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    border-radius: 10px;
+    padding: 20px;
+    border: 1px solid #dee2e6;
+}
+
+.seo-tips {
+    border-left: 4px solid #17a2b8;
+    background: rgba(23, 162, 184, 0.1);
+}
+
+#imageNameInput {
+    border-radius: 8px;
+}
+
+#previewFileName {
+    color: #17a2b8;
+    background: rgba(23, 162, 184, 0.1);
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-family: 'Courier New', monospace;
+}
+
+.input-group .btn {
+    border-radius: 0 8px 8px 0;
+}
+
+.form-label {
+    font-weight: 600;
+    color: #495057;
 }
 </style>
 

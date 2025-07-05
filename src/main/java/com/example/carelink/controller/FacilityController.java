@@ -425,12 +425,20 @@ public class FacilityController {
         Map<String, Object> result = new HashMap<>();
         
         try {
+            log.info("🔥 시설 이미지 저장 시작 - facilityId: {}, 받은 파라미터들 확인", facilityId);
+            log.info("📋 altText: '{}', format: '{}', imageIndex: '{}'", altText, format, imageIndex);
+            log.info("📁 파일 정보 - 이름: '{}', 크기: {}bytes, 타입: '{}'", 
+                    facilityImageFile.getOriginalFilename(), facilityImageFile.getSize(), facilityImageFile.getContentType());
+            
             MemberDTO member = (MemberDTO) session.getAttribute(Constants.SESSION_MEMBER);
             if (member == null) {
+                log.error("❌ 로그인된 사용자가 없음");
                 result.put("success", false);
                 result.put("message", "로그인이 필요합니다.");
                 return result;
             }
+            
+            log.info("👤 로그인 사용자: {} (role: {})", member.getUserId(), member.getRole());
             
             // 시설 정보 조회 및 권한 확인
             FacilityDTO facility = facilityService.getFacilityById(facilityId);
@@ -486,8 +494,12 @@ public class FacilityController {
             
             // 다중 이미지 시스템으로 저장
             Integer orderIndex = imageIndex != null ? Integer.parseInt(imageIndex) : null;
+            log.info("🔧 서비스 호출 전 - facilityId: {}, orderIndex: {}, altText: '{}'", facilityId, orderIndex, finalAltText);
+            
             FacilityImageDTO savedImage = facilityImageService.saveSingleFacilityImage(
                 facilityId, facilityImageFile, finalAltText, orderIndex);
+            
+            log.info("✅ 서비스 호출 완료 - 저장된 이미지ID: {}, 경로: {}", savedImage.getImageId(), savedImage.getImagePath());
             
             result.put("success", true);
             result.put("message", "시설 이미지가 성공적으로 저장되었습니다.");
@@ -527,6 +539,8 @@ public class FacilityController {
         // 권한 확인 (시설 소유자, 관리자, 또는 모든 사용자에게 조회 허용)
         // 필요에 따라 권한 체크 로직 수정 가능
         
-        return facilityImageService.getImagesByFacilityId(facilityId);
+        List<FacilityImageDTO> images = facilityImageService.getImagesByFacilityId(facilityId);
+        log.info("📋 시설 이미지 목록 조회 - facilityId: {}, 이미지 수: {}", facilityId, images.size());
+        return images;
     }
 }
