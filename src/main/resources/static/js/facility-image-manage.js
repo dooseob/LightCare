@@ -5,17 +5,18 @@
 
 console.log('🛠️ 시설 이미지 관리 스크립트 로드됨');
 
-// 전역 변수
-let facilityId = null;
+// 전역 변수 (네임스페이스 사용으로 충돌 방지)
+window.facilityImageManage = window.facilityImageManage || {};
+window.facilityImageManage.facilityId = null;
 
 // 초기화
 document.addEventListener('DOMContentLoaded', function() {
     console.log('📋 시설 이미지 관리 초기화 시작');
     
-    // URL에서 facilityId 추출
+    // URL에서 facilityId 추출 (네임스페이스 사용)
     const pathParts = window.location.pathname.split('/');
-    facilityId = pathParts[pathParts.length - 1];
-    console.log('🏢 시설 ID:', facilityId);
+    window.facilityImageManage.facilityId = pathParts[pathParts.length - 1];
+    console.log('🏢 시설 ID:', window.facilityImageManage.facilityId);
     
     // 브라우저 환경 체크
     console.log('🌐 브라우저 환경:', {
@@ -48,6 +49,7 @@ function setupGlobalFunctions() {
     // 메인 이미지 설정 함수
     window.setMainImage = function(imageId) {
         console.log('⭐ 메인 이미지 설정 요청:', imageId);
+        console.log('🔍 함수 호출 스택:', new Error().stack);
         
         if (!imageId) {
             console.error('❌ imageId가 제공되지 않았습니다');
@@ -55,15 +57,29 @@ function setupGlobalFunctions() {
             return;
         }
         
+        if (!window.facilityImageManage.facilityId) {
+            console.error('❌ facilityId가 설정되지 않았습니다');
+            alert('시설 ID를 찾을 수 없습니다.');
+            return;
+        }
+        
+        console.log('📋 설정 파라미터:', {
+            imageId: imageId,
+            facilityId: window.facilityImageManage.facilityId,
+            imageIdType: typeof imageId,
+            facilityIdType: typeof window.facilityImageManage.facilityId
+        });
+        
         if (!confirm('이 이미지를 메인 이미지로 설정하시겠습니까?')) {
+            console.log('🚫 사용자가 메인 이미지 설정을 취소함');
             return;
         }
         
         // 버튼 비활성화 (중복 클릭 방지)
-        const buttons = document.querySelectorAll('[onclick*="setMainImage"]');
+        const buttons = document.querySelectorAll('.set-main-image-btn');
         buttons.forEach(btn => btn.disabled = true);
         
-        fetch(`/facility/api/images/${imageId}/set-main`, {
+        fetch(`/api/facility/images/${imageId}/set-main`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -113,6 +129,7 @@ function setupGlobalFunctions() {
     // 이미지 삭제 함수
     window.deleteImage = function(imageId) {
         console.log('🗑️ 이미지 삭제 요청:', imageId);
+        console.log('🔍 함수 호출 스택:', new Error().stack);
         
         if (!imageId) {
             console.error('❌ imageId가 제공되지 않았습니다');
@@ -120,15 +137,29 @@ function setupGlobalFunctions() {
             return;
         }
         
+        if (!window.facilityImageManage.facilityId) {
+            console.error('❌ facilityId가 설정되지 않았습니다');
+            alert('시설 ID를 찾을 수 없습니다.');
+            return;
+        }
+        
+        console.log('📋 삭제 파라미터:', {
+            imageId: imageId,
+            facilityId: window.facilityImageManage.facilityId,
+            imageIdType: typeof imageId,
+            facilityIdType: typeof window.facilityImageManage.facilityId
+        });
+        
         if (!confirm('이 이미지를 삭제하시겠습니까?\n삭제된 이미지는 복구할 수 없습니다.')) {
+            console.log('🚫 사용자가 이미지 삭제를 취소함');
             return;
         }
         
         // 버튼 비활성화 (중복 클릭 방지)
-        const buttons = document.querySelectorAll('[onclick*="deleteImage"]');
+        const buttons = document.querySelectorAll('.delete-image-btn');
         buttons.forEach(btn => btn.disabled = true);
         
-        fetch(`/facility/api/images/${imageId}`, {
+        fetch(`/api/facility/images/${imageId}`, {
             method: 'DELETE',
             headers: {
                 'Content-Type': 'application/json',
@@ -374,9 +405,9 @@ function showMessage(type, message) {
     }, 5000);
 }
 
-// 디버깅용 함수들
+// 디버깅용 함수들 (확장)
 window.facilityImageDebug = {
-    getFacilityId: () => facilityId,
+    getFacilityId: () => window.facilityImageManage.facilityId,
     testSetMainImage: (imageId) => {
         console.log('🧪 테스트 - 메인 이미지 설정:', imageId);
         window.setMainImage(imageId);
@@ -389,10 +420,213 @@ window.facilityImageDebug = {
         const dropdowns = document.querySelectorAll('[data-bs-toggle="dropdown"]');
         console.log('🔍 현재 페이지의 드롭다운 수:', dropdowns.length);
         dropdowns.forEach((dropdown, index) => {
-            console.log(`드롭다운 ${index + 1}:`, dropdown);
+            const menu = dropdown.nextElementSibling;
+            console.log(`드롭다운 ${index + 1}:`, {
+                toggle: dropdown,
+                menu: menu,
+                toggleClasses: Array.from(dropdown.classList),
+                menuClasses: menu ? Array.from(menu.classList) : 'null',
+                hasBootstrap: typeof bootstrap !== 'undefined',
+                bootstrapInstance: typeof bootstrap !== 'undefined' ? bootstrap.Dropdown.getInstance(dropdown) : 'null'
+            });
         });
+    },
+    checkManageSection: () => {
+        const manageSection = document.getElementById('manageSection');
+        const manageGrid = document.getElementById('manageImagesGrid');
+        console.log('🔍 관리 섹션 상태:', {
+            manageSection: !!manageSection,
+            manageSectionDisplay: manageSection ? manageSection.style.display : 'null',
+            manageGrid: !!manageGrid,
+            manageGridHTML: manageGrid ? manageGrid.innerHTML.length + ' chars' : 'null',
+            imageCards: document.querySelectorAll('[data-image-id]').length,
+            dropdownButtons: document.querySelectorAll('.set-main-image-btn, .delete-image-btn').length
+        });
+    },
+    forceDropdownOpen: (index = 0) => {
+        const dropdowns = document.querySelectorAll('[data-bs-toggle="dropdown"]');
+        if (dropdowns[index]) {
+            const dropdown = dropdowns[index];
+            const menu = dropdown.nextElementSibling;
+            if (menu) {
+                menu.classList.add('show');
+                console.log('🔧 강제로 드롭다운 열기:', index);
+            }
+        }
+    },
+    simulateClick: (selector) => {
+        const element = document.querySelector(selector);
+        if (element) {
+            console.log('🖱️ 클릭 시뮬레이션:', selector);
+            element.click();
+        } else {
+            console.error('❌ 요소를 찾을 수 없음:', selector);
+        }
+    },
+    checkAllEvents: () => {
+        console.log('🔍 이벤트 리스너 상태 점검');
+        const testElement = document.createElement('div');
+        testElement.className = 'test-dropdown';
+        testElement.innerHTML = `
+            <button class="btn btn-sm dropdown-toggle" data-bs-toggle="dropdown">테스트</button>
+            <ul class="dropdown-menu">
+                <li><button class="dropdown-item set-main-image-btn" data-image-id="999">테스트 메인</button></li>
+                <li><button class="dropdown-item delete-image-btn" data-image-id="999">테스트 삭제</button></li>
+            </ul>
+        `;
+        document.body.appendChild(testElement);
+        
+        setTimeout(() => {
+            console.log('🧪 테스트 요소 추가됨, 클릭해보세요.');
+        }, 100);
+    },
+    
+    checkHTMLStructure: () => {
+        console.log('🔍 현재 HTML 구조 상세 분석');
+        
+        const manageGrid = document.getElementById('manageImagesGrid');
+        if (!manageGrid) {
+            console.error('❌ manageImagesGrid를 찾을 수 없음');
+            return;
+        }
+        
+        // 전체 카드 수 확인
+        const allCards = manageGrid.querySelectorAll('.card[data-image-id]');
+        console.log(`📊 전체 카드 수: ${allCards.length}개`);
+        
+        // 이미지 ID별 그룹화
+        const imageGroups = {};
+        allCards.forEach((card, index) => {
+            const imageId = card.getAttribute('data-image-id');
+            if (!imageGroups[imageId]) {
+                imageGroups[imageId] = [];
+            }
+            imageGroups[imageId].push({
+                index: index + 1,
+                card: card,
+                hasSetMainBtn: !!card.querySelector('.set-main-image-btn'),
+                hasDeleteBtn: !!card.querySelector('.delete-image-btn'),
+                setMainBtnId: card.querySelector('.set-main-image-btn')?.getAttribute('data-image-id') || 'null',
+                deleteBtnId: card.querySelector('.delete-image-btn')?.getAttribute('data-image-id') || 'null'
+            });
+        });
+        
+        // 결과 출력
+        console.log('📋 이미지 ID별 카드 분석:');
+        Object.keys(imageGroups).forEach(imageId => {
+            const group = imageGroups[imageId];
+            console.log(`이미지 ID ${imageId}: ${group.length}개 카드`);
+            group.forEach(item => {
+                console.log(`  - 카드 ${item.index}: 메인버튼=${item.hasSetMainBtn}, 삭제버튼=${item.hasDeleteBtn}, 메인ID=${item.setMainBtnId}, 삭제ID=${item.deleteBtnId}`);
+            });
+        });
+        
+        // 중복 카드 감지
+        const duplicateIds = Object.keys(imageGroups).filter(id => imageGroups[id].length > 1);
+        if (duplicateIds.length > 0) {
+            console.warn(`⚠️ 중복 카드 발견: ${duplicateIds.join(', ')}`);
+        } else {
+            console.log('✅ 중복 카드 없음');
+        }
+        
+        return {
+            totalCards: allCards.length,
+            uniqueImages: Object.keys(imageGroups).length,
+            duplicateIds: duplicateIds,
+            imageGroups: imageGroups
+        };
+    },
+    
+    findNullButtons: () => {
+        console.log('🔍 null ID 버튼 찾기');
+        
+        const setMainBtns = document.querySelectorAll('.set-main-image-btn');
+        const deleteBtns = document.querySelectorAll('.delete-image-btn');
+        
+        console.log(`📊 메인 설정 버튼: ${setMainBtns.length}개`);
+        console.log(`📊 삭제 버튼: ${deleteBtns.length}개`);
+        
+        const nullSetMainBtns = Array.from(setMainBtns).filter(btn => !btn.getAttribute('data-image-id') || btn.getAttribute('data-image-id') === 'null');
+        const nullDeleteBtns = Array.from(deleteBtns).filter(btn => !btn.getAttribute('data-image-id') || btn.getAttribute('data-image-id') === 'null');
+        
+        console.log(`⚠️ null ID 메인 버튼: ${nullSetMainBtns.length}개`);
+        console.log(`⚠️ null ID 삭제 버튼: ${nullDeleteBtns.length}개`);
+        
+        nullSetMainBtns.forEach((btn, index) => {
+            console.log(`메인 버튼 ${index + 1}:`, btn.outerHTML.substring(0, 100) + '...');
+        });
+        
+        nullDeleteBtns.forEach((btn, index) => {
+            console.log(`삭제 버튼 ${index + 1}:`, btn.outerHTML.substring(0, 100) + '...');
+        });
+        
+        return {
+            totalSetMainBtns: setMainBtns.length,
+            totalDeleteBtns: deleteBtns.length,
+            nullSetMainBtns: nullSetMainBtns.length,
+            nullDeleteBtns: nullDeleteBtns.length
+        };
     }
 };
 
+// 페이지 완전 로드 후 상태 점검
+window.addEventListener('load', function() {
+    setTimeout(() => {
+        console.log('🔍 페이지 로드 완료 후 상태 점검:');
+        
+        // 기본 요소 확인
+        const manageSection = document.getElementById('manageSection');
+        const manageGrid = document.getElementById('manageImagesGrid');
+        
+        console.log('📋 DOM 요소 상태:', {
+            manageSection: !!manageSection,
+            manageSectionVisible: manageSection ? manageSection.style.display !== 'none' : false,
+            manageGrid: !!manageGrid,
+            manageGridContent: manageGrid ? manageGrid.innerHTML.length : 0
+        });
+        
+        // 드롭다운 버튼 확인
+        const dropdownToggles = document.querySelectorAll('[data-bs-toggle="dropdown"]');
+        const setMainButtons = document.querySelectorAll('.set-main-image-btn');
+        const deleteButtons = document.querySelectorAll('.delete-image-btn');
+        
+        console.log('📋 버튼 요소 상태:', {
+            dropdownToggles: dropdownToggles.length,
+            setMainButtons: setMainButtons.length,
+            deleteButtons: deleteButtons.length
+        });
+        
+        // 각 드롭다운의 상태 확인
+        dropdownToggles.forEach((toggle, index) => {
+            const menu = toggle.nextElementSibling;
+            const hasMenu = menu && menu.classList.contains('dropdown-menu');
+            
+            console.log(`드롭다운 ${index + 1} 상태:`, {
+                toggle: toggle,
+                hasMenu: hasMenu,
+                menuHTML: hasMenu ? menu.outerHTML.substring(0, 200) + '...' : 'null',
+                bootstrapInstance: typeof bootstrap !== 'undefined' ? bootstrap.Dropdown.getInstance(toggle) : 'null'
+            });
+        });
+        
+        // 전역 함수 확인
+        console.log('📋 전역 함수 상태:', {
+            setMainImage: typeof window.setMainImage,
+            deleteImage: typeof window.deleteImage,
+            facilityImageDebug: typeof window.facilityImageDebug
+        });
+        
+        console.log('✅ 상태 점검 완료');
+    }, 1000);
+});
+
 console.log('✅ 시설 이미지 관리 스크립트 로드 완료');
 console.log('🧪 디버깅: window.facilityImageDebug 객체를 사용하여 테스트 가능');
+console.log('📖 사용 가능한 디버깅 명령:');
+console.log('  - facilityImageDebug.checkDropdowns() : 드롭다운 상태 확인');
+console.log('  - facilityImageDebug.checkManageSection() : 관리 섹션 상태 확인');
+console.log('  - facilityImageDebug.forceDropdownOpen(0) : 첫 번째 드롭다운 강제 열기');
+console.log('  - facilityImageDebug.simulateClick("[data-bs-toggle=dropdown]") : 클릭 시뮬레이션');
+console.log('  - facilityImageDebug.checkAllEvents() : 테스트 요소 생성');
+console.log('  - facilityImageDebug.checkHTMLStructure() : HTML 구조 상세 분석');
+console.log('  - facilityImageDebug.findNullButtons() : null ID 버튼 찾기');
