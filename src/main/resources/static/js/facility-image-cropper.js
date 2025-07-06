@@ -36,6 +36,18 @@ document.addEventListener('DOMContentLoaded', function() {
     setupDragAndDrop();
     
     console.log('✅ 시설 이미지 크롭퍼 초기화 완료');
+    
+    // 디버깅: 버튼 상태 확인
+    setTimeout(() => {
+        const fileBtn = document.getElementById('fileSelectBtn');
+        const folderBtn = document.getElementById('folderSelectBtn');
+        console.log('🔍 버튼 상태 확인:', {
+            fileBtn: !!fileBtn,
+            folderBtn: !!folderBtn,
+            fileHandlers: fileBtn ? fileBtn.onclick : 'null',
+            folderHandlers: folderBtn ? folderBtn.onclick : 'null'
+        });
+    }, 1000);
 });
 
 // 이미지 로드 에러 처리 함수 (중복 요청 방지)
@@ -183,37 +195,69 @@ function setupEventListeners() {
         console.log('📁 파일 입력 이벤트 리스너 등록됨');
     }
     
-    // 파일 선택 버튼 (다중 이미지 지원)
+    // 파일 선택 버튼 (다중 이미지 지원) - 캡처링 단계에서 처리
     const fileSelectBtn = document.getElementById('fileSelectBtn');
     if (fileSelectBtn) {
-        fileSelectBtn.addEventListener('click', () => {
-            console.log('📁 파일 선택 버튼 클릭됨 (다중 선택 모드)');
-            if (elements.imageInput) {
+        // 기존 핸들러 제거
+        fileSelectBtn.removeEventListener('click', window.handleFileSelect);
+        
+        // 새 핸들러 정의 및 전역 저장
+        window.handleFileSelect = function(event) {
+            console.log('🎯 facility-image-cropper: 파일 선택 버튼 클릭됨 (다중 선택 모드)');
+            event.preventDefault();
+            event.stopPropagation();
+            
+            const imageInput = document.getElementById('imageInput');
+            if (imageInput) {
                 // 다중 선택 모드 활성화
-                elements.imageInput.multiple = true;
-                elements.imageInput.webkitdirectory = false;
-                elements.imageInput.click();
+                imageInput.multiple = true;
+                imageInput.webkitdirectory = false;
+                imageInput.directory = false;
+                console.log('📂 파일 입력 모드:', {
+                    multiple: imageInput.multiple,
+                    webkitdirectory: imageInput.webkitdirectory
+                });
+                imageInput.click();
             } else {
                 console.error('❌ imageInput 요소를 찾을 수 없습니다.');
             }
-        });
-        console.log('✅ 파일 선택 버튼 이벤트 등록 완료');
+        };
+        
+        // 캡처링 단계에서 이벤트 등록 (다른 핸들러보다 먼저 실행됨)
+        fileSelectBtn.addEventListener('click', window.handleFileSelect, true);
+        console.log('✅ 파일 선택 버튼 이벤트 등록 완료 (캡처링 모드)');
     } else {
         console.error('❌ fileSelectBtn 요소를 찾을 수 없습니다.');
     }
     
-    // 폴더 선택 버튼 (새로운 기능)
+    // 폴더 선택 버튼 (새로운 기능) - 캡처링 단계에서 처리
     const folderSelectBtn = document.getElementById('folderSelectBtn');
     const folderInput = document.getElementById('folderInput');
     if (folderSelectBtn && folderInput) {
-        folderSelectBtn.addEventListener('click', () => {
-            console.log('📂 폴더 선택 버튼 클릭됨');
-            folderInput.click();
-        });
+        // 기존 핸들러 제거
+        folderSelectBtn.removeEventListener('click', window.handleFolderSelect);
+        
+        // 새 핸들러 정의 및 전역 저장
+        window.handleFolderSelect = function(event) {
+            console.log('🎯 facility-image-cropper: 폴더 선택 버튼 클릭됨');
+            event.preventDefault();
+            event.stopPropagation();
+            
+            const folderInput = document.getElementById('folderInput');
+            if (folderInput) {
+                console.log('📂 폴더 입력 모드 활성화');
+                folderInput.click();
+            } else {
+                console.error('❌ folderInput 요소를 찾을 수 없습니다.');
+            }
+        };
+        
+        // 캡처링 단계에서 이벤트 등록 (다른 핸들러보다 먼저 실행됨)
+        folderSelectBtn.addEventListener('click', window.handleFolderSelect, true);
         
         // 폴더 선택 시 모달 표시
         folderInput.addEventListener('change', handleFolderSelection);
-        console.log('✅ 폴더 선택 버튼 이벤트 등록 완료');
+        console.log('✅ 폴더 선택 버튼 이벤트 등록 완료 (캡처링 모드)');
     } else {
         console.error('❌ folderSelectBtn 또는 folderInput 요소를 찾을 수 없습니다.');
     }
@@ -446,12 +490,17 @@ function handleKeywordClick(keyword) {
         button.classList.remove('btn-outline-primary', 'btn-outline-success', 'btn-outline-warning');
         setTimeout(() => {
             button.classList.remove('btn-success');
-            if (button.parentElement.parentElement.querySelector('small').textContent.includes('시설 구역')) {
-                button.classList.add('btn-outline-primary');
-            } else if (button.parentElement.parentElement.querySelector('small').textContent.includes('시설 종류')) {
-                button.classList.add('btn-outline-success');
+            const smallElement = button.parentElement.parentElement?.querySelector('small');
+            if (smallElement && smallElement.textContent) {
+                if (smallElement.textContent.includes('시설 구역')) {
+                    button.classList.add('btn-outline-primary');
+                } else if (smallElement.textContent.includes('시설 종류')) {
+                    button.classList.add('btn-outline-success');
+                } else {
+                    button.classList.add('btn-outline-warning');
+                }
             } else {
-                button.classList.add('btn-outline-warning');
+                button.classList.add('btn-outline-primary'); // 기본값
             }
         }, 500);
     }
@@ -565,13 +614,131 @@ function handleImageUpload(event) {
         alert(`${files.length - validFiles.length}개 파일이 형식 오류로 제외되었습니다.`);
     }
     
-    // 기존 이미지 초기화
-    originalImages = [];
-    croppedImages = [];
-    currentImageIndex = 0;
+    // 기존 이미지와 병합하거나 새로 시작
+    if (originalImages.length === 0) {
+        // 처음 선택하는 경우
+        originalImages = [];
+        croppedImages = [];
+        currentImageIndex = 0;
+    } else {
+        // 추가 선택하는 경우 - 기존 이미지와 병합
+        if (originalImages.length + validFiles.length > 5) {
+            alert(`현재 ${originalImages.length}장이 선택되어 있습니다. 최대 ${5 - originalImages.length}장만 더 추가할 수 있습니다.`);
+            const allowedCount = 5 - originalImages.length;
+            validFiles.splice(allowedCount);
+        }
+    }
     
     // 프로필 방식: 순차적 파일 처리
     processFilesSequentially(validFiles);
+}
+
+// 선택된 이미지 목록 표시
+function displayImageList() {
+    console.log('📋 이미지 리스트 표시');
+    
+    const imageListSection = elements.imageListSection;
+    const imageList = elements.imageList;
+    const imageCount = elements.imageCount;
+    
+    if (!imageListSection || !imageList || !imageCount) {
+        console.error('❌ 이미지 리스트 요소를 찾을 수 없습니다');
+        return;
+    }
+    
+    // 이미지 수 업데이트
+    imageCount.textContent = originalImages.length;
+    
+    // 이미지 카드 생성
+    let imageCards = '';
+    originalImages.forEach((image, index) => {
+        const croppedImage = croppedImages[index];
+        const isCropped = croppedImage && croppedImage.isCropped;
+        const displaySrc = isCropped ? croppedImage.croppedDataUrl : image.dataUrl;
+        
+        imageCards += `
+            <div class="col-md-3 col-sm-4 col-6 mb-3">
+                <div class="card image-item ${index === currentImageIndex ? 'active' : ''}" 
+                     onclick="selectImageForCrop(${index})" style="cursor: pointer;">
+                    <div class="position-relative">
+                        <img src="${displaySrc}" class="card-img-top" alt="${image.name}" 
+                             style="height: 120px; object-fit: cover;">
+                        <div class="position-absolute top-0 end-0 p-1">
+                            ${isCropped ? 
+                                '<span class="badge bg-success"><i class="fas fa-check"></i></span>' : 
+                                '<span class="badge bg-warning"><i class="fas fa-clock"></i></span>'
+                            }
+                        </div>
+                    </div>
+                    <div class="card-body p-2">
+                        <h6 class="card-title text-truncate mb-1" style="font-size: 0.8rem;">
+                            ${image.name}
+                        </h6>
+                        <small class="text-muted">
+                            ${(image.size / 1024 / 1024).toFixed(2)} MB
+                        </small>
+                    </div>
+                </div>
+            </div>
+        `;
+    });
+    
+    // 추가 선택 버튼
+    if (originalImages.length < 5) {
+        imageCards += `
+            <div class="col-md-3 col-sm-4 col-6 mb-3">
+                <div class="card border-dashed text-center" style="cursor: pointer; border: 2px dashed #dee2e6;">
+                    <div class="card-body d-flex flex-column align-items-center justify-content-center" 
+                         style="height: 120px;" onclick="addMoreImages()">
+                        <i class="fas fa-plus fa-2x text-muted mb-2"></i>
+                        <small class="text-muted">이미지 추가</small>
+                        <small class="text-muted">(${originalImages.length}/5)</small>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+    
+    imageList.innerHTML = imageCards;
+    imageListSection.style.display = 'block';
+    
+    // 크롭 단계로 이동 버튼 표시
+    const nextToCropBtn = document.getElementById('nextToCropBtn');
+    if (nextToCropBtn) {
+        nextToCropBtn.style.display = 'block';
+    }
+    
+    console.log(`✅ 이미지 리스트 표시 완료: ${originalImages.length}장`);
+}
+
+// 추가 이미지 선택
+function addMoreImages() {
+    console.log('➕ 추가 이미지 선택');
+    const imageInput = document.getElementById('imageInput');
+    if (imageInput) {
+        imageInput.multiple = true;
+        imageInput.webkitdirectory = false;
+        imageInput.click();
+    }
+}
+
+// 특정 이미지 선택 (크롭용)
+function selectImageForCrop(index) {
+    console.log(`🎯 이미지 ${index + 1} 선택됨`);
+    currentImageIndex = index;
+    
+    // 이미지 리스트에서 active 상태 업데이트
+    const imageItems = document.querySelectorAll('.image-item');
+    imageItems.forEach((item, i) => {
+        if (i === index) {
+            item.classList.add('active');
+        } else {
+            item.classList.remove('active');
+        }
+    });
+    
+    // 크롭 단계로 이동
+    goToCropStep();
 }
 
 // 이미지 파일 검증 (프로필과 동일)
@@ -2023,22 +2190,21 @@ function saveAllImages() {
                         if (originalImage) {
                             altText = originalImage.finalAltText || originalImage.generatedAltText || image.generatedAltText || '';
                             customFileName = originalImage.finalFileName || '';
+                            
+                            console.log(`📋 이미지 ${i + 1} 개별 설정:`, {
+                                customAltText: originalImage.customAltText,
+                                generatedAltText: originalImage.generatedAltText,
+                                customFileName: originalImage.customFileName,
+                                finalAltText: altText,
+                                finalFileName: customFileName
+                            });
+                        } else {
+                            // 폴백: 현재 화면의 입력값 사용
+                            const altTextInput = document.getElementById('altText');
+                            const imageNameInput = document.getElementById('seoFileName');
+                            altText = altTextInput ? altTextInput.value.trim() : '';
+                            customFileName = imageNameInput ? imageNameInput.value.trim() : '';
                         }
-                    }
-                        
-                        console.log(`📋 이미지 ${i + 1} 개별 설정:`, {
-                            customAltText: originalImage.customAltText,
-                            generatedAltText: originalImage.generatedAltText,
-                            customFileName: originalImage.customFileName,
-                            finalAltText: altText,
-                            finalFileName: customFileName
-                        });
-                    } else {
-                        // 폴백: 현재 화면의 입력값 사용
-                        const altTextInput = document.getElementById('altTextInput');
-                        const imageNameInput = document.getElementById('imageNameInput');
-                        altText = altTextInput ? altTextInput.value.trim() : '';
-                        customFileName = imageNameInput ? imageNameInput.value.trim() : '';
                     }
                     
                     // 최종 Alt 텍스트 설정 (기본값 처리)

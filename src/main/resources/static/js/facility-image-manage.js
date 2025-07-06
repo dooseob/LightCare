@@ -339,6 +339,13 @@ function setupEventDelegation() {
             return;
         }
         
+        // 파일 선택 버튼들은 facility-image-cropper.js에서 캡처링 단계에서 처리됨
+        if (target.id === 'fileSelectBtn' || target.id === 'folderSelectBtn') {
+            console.log(`📂 ${target.id} 클릭 - facility-image-cropper.js에서 이미 처리됨`);
+            // 이미 처리된 이벤트이므로 여기서는 무시
+            return;
+        }
+        
         // 일반 클릭 로그
         if (target.closest('.dropdown')) {
             console.log('📍 드롭다운 영역 내 클릭이지만 특정 버튼이 아님');
