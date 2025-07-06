@@ -56,4 +56,9 @@ public interface FacilityImageMapper {
      * 기존 메인 이미지 해제
      */
     int clearMainImages(@Param("facilityId") Long facilityId);
+    
+    /**
+     * 특정 이미지 ID로 이미지 조회
+     */
+    FacilityImageDTO getImageById(@Param("imageId") Long imageId);
 }
