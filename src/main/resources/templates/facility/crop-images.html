@@ -497,11 +497,15 @@
 <!-- 시설 이미지 크롭퍼 JavaScript (프로필 방식 기반) -->
 <script th:src="@{/js/facility-image-cropper.js}"></script>
 
-<!-- 기존 인라인 스크립트를 facility-image-cropper.js로 대체 -->
+<!-- 시설 이미지 관리 전용 JavaScript (Thymeleaf 충돌 방지용) -->
+<script th:src="@{/js/facility-image-manage.js}"></script>
+
+<!-- 기존 인라인 스크립트를 별도 파일로 대체 -->
 <script>
-// 기본 설정만 유지 (facility-image-cropper.js에서 처리)
+// 기본 설정만 유지 (별도 파일에서 모든 로직 처리)
 console.log('🎨 시설 이미지 크롭퍼 페이지 로드 완료');
 console.log('📚 facility-image-cropper.js가 메인 로직을 처리합니다.');
+console.log('🛠️ facility-image-manage.js가 관리 기능을 처리합니다.');
 </script>
 
 <style>

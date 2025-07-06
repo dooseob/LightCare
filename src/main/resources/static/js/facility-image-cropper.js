@@ -1960,13 +1960,13 @@ function updateManageImagesGrid() {
                                         <ul class="dropdown-menu dropdown-menu-end">
                                             ${!image.isMainImage ? `
                                                 <li>
-                                                    <button class="dropdown-item" onclick="setMainImage(${image.imageId})">
+                                                    <button class="dropdown-item set-main-image-btn" data-image-id="${image.imageId}">
                                                         <i class="fas fa-star text-warning me-2"></i>메인 이미지로 설정
                                                     </button>
                                                 </li>
                                             ` : ''}
                                             <li>
-                                                <button class="dropdown-item text-danger" onclick="deleteImage(${image.imageId})">
+                                                <button class="dropdown-item text-danger delete-image-btn" data-image-id="${image.imageId}">
                                                     <i class="fas fa-trash me-2"></i>이미지 삭제
                                                 </button>
                                             </li>
@@ -2197,38 +2197,7 @@ function updateFinalSummary() {
         });
 }
 
-// 메인 이미지 설정 함수 (전역 함수로 설정)
-window.setMainImage = function(imageId) {
-    if (!confirm('이 이미지를 메인 이미지로 설정하시겠습니까?')) {
-        return;
-    }
-    
-    console.log('⭐ 메인 이미지 설정 요청:', imageId);
-    
-    fetch(`/facility/api/images/${imageId}/set-main`, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json'
-        }
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            console.log('✅ 메인 이미지 설정 성공:', imageId);
-            
-            // 성공 메시지
-            alert('메인 이미지로 설정되었습니다.');
-            
-            // 이미지 목록 새로고침
-            updateFinalImagesGrid();
-            
-        } else {
-            console.error('❌ 메인 이미지 설정 실패:', data.message);
-            alert(data.message || '메인 이미지 설정에 실패했습니다.');
-        }
-    })
-    .catch(error => {
-        console.error('🚨 메인 이미지 설정 오류:', error);
-        alert('메인 이미지 설정 중 오류가 발생했습니다.');
-    });
-};
+// 전역 함수들은 facility-image-manage.js에서 처리됨 (Thymeleaf 충돌 방지)
+// window.setMainImage와 window.deleteImage는 별도 파일에서 정의하여 인라인 충돌 해결
+
+console.log('📋 facility-image-cropper.js 로드 완료 - 관리 기능은 별도 파일에서 처리됨');
