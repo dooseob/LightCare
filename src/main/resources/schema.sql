@@ -194,7 +194,7 @@ CREATE TABLE board (
 ) COMMENT='정보 게시판';
 
 -- ================================================
--- 인덱스 생성
+-- 인덱스 생성 (성능 최적화)
 -- ================================================
 
 -- 회원 테이블 인덱스
@@ -202,16 +202,21 @@ CREATE INDEX idx_member_user_id ON member(user_id);
 CREATE INDEX idx_member_email ON member(email);
 CREATE INDEX idx_member_role ON member(role);
 CREATE INDEX idx_member_created_at ON member(created_at);
+CREATE INDEX idx_member_is_deleted ON member(is_deleted);
 
 -- 시설 테이블 인덱스
 CREATE INDEX idx_facility_type ON facility(facility_type);
 CREATE INDEX idx_facility_location ON facility(latitude, longitude);
 CREATE INDEX idx_facility_member_id ON facility(registered_member_id);
 CREATE INDEX idx_facility_created_at ON facility(created_at);
+CREATE INDEX idx_facility_approval ON facility(is_approved, approval_status);
+CREATE INDEX idx_facility_rating ON facility(average_rating);
+CREATE INDEX idx_facility_is_deleted ON facility(is_deleted);
 
--- 시설 이미지 테이블 인덱스
-CREATE INDEX idx_facility_images_facility_id ON facility_images(facility_id);
-CREATE INDEX idx_facility_images_order ON facility_images(facility_id, image_order);
+-- 시설 이미지 테이블 인덱스 (다중 이미지 지원 강화)
+-- 주의: facility_images 테이블 생성 시 이미 정의된 인덱스는 제외
+CREATE INDEX idx_facility_images_upload_date ON facility_images(upload_date);
+CREATE INDEX idx_facility_images_alt_text ON facility_images(image_alt_text);
 
 -- 구인구직 테이블 인덱스
 CREATE INDEX idx_job_type ON job_posting(job_type);
@@ -219,20 +224,29 @@ CREATE INDEX idx_job_work_type ON job_posting(work_type);
 CREATE INDEX idx_job_member_id ON job_posting(member_id);
 CREATE INDEX idx_job_facility_id ON job_posting(facility_id);
 CREATE INDEX idx_job_created_at ON job_posting(created_at);
+CREATE INDEX idx_job_status ON job_posting(status);
+CREATE INDEX idx_job_location ON job_posting(work_location);
+CREATE INDEX idx_job_is_deleted ON job_posting(is_deleted);
 
 -- 리뷰 테이블 인덱스
 CREATE INDEX idx_review_facility_id ON review(facility_id);
 CREATE INDEX idx_review_member_id ON review(member_id);
 CREATE INDEX idx_review_created_at ON review(created_at);
+CREATE INDEX idx_review_rating ON review(rating);
+CREATE INDEX idx_review_status ON review(status);
+CREATE INDEX idx_review_is_deleted ON review(is_deleted);
 
 -- 게시판 테이블 인덱스
 CREATE INDEX idx_board_type ON board(board_type);
 CREATE INDEX idx_board_member_id ON board(member_id);
 CREATE INDEX idx_board_created_at ON board(created_at);
 CREATE INDEX idx_board_category ON board(category);
+CREATE INDEX idx_board_status ON board(status);
+CREATE INDEX idx_board_priority ON board(priority);
+CREATE INDEX idx_board_is_deleted ON board(is_deleted);
 
 -- ================================================
--- 기본 데이터 삽입 (테스트용)
+-- 기본 데이터 삽입 (테스트용) - 개선 반영
 -- ================================================
 INSERT INTO member (
     user_id,
@@ -256,13 +270,25 @@ INSERT INTO member (
     ('facility01', 'facility123', '서울요양원장', 'seoul.admin@example.com', '02-5555-6666', 'FACILITY', '서울시 서초구 서초대로 123', TRUE, 0, NOW(), NOW(), FALSE),
     ('facility02', 'facility123', '부산실버타운장', 'busan.admin@example.com', '051-7777-8888', 'FACILITY', '부산시 부산진구 서면로 456', TRUE, 0, NOW(), NOW(), FALSE);
 
--- 시설 데이터
-INSERT INTO facility (facility_name, facility_type, address, detail_address, phone, latitude, longitude, description, capacity, current_occupancy, operating_hours, features, average_rating, review_count, grade_rating, registered_member_id, is_approved, approval_status, created_at, updated_at, is_deleted) VALUES
-    ('서울 행복요양원', 'NURSING_HOME', '서울시 강남구 테헤란로 123', '2층 201호', '02-1111-2222', 37.500913, 127.037149, '24시간 전문 간병 서비스를 제공하는 프리미엄 요양원입니다.', 50, 35, '24시간 운영', '24시간 간병서비스, 물리치료실, 인지치료 프로그램', 4.5, 8, 1, 6, TRUE, 'APPROVED', NOW(), NOW(), FALSE),
-    ('부산 바다뷰 실버타운', 'NURSING_HOME', '부산시 해운대구 센텀중앙로 79', '1층', '051-3333-4444', 35.169188, 129.132800, '바다가 보이는 아름다운 환경의 실버타운입니다.', 80, 60, '08:00-22:00', '바다뷰, 실버카페, 도서관, 수영장', 4.2, 12, 2, 7, TRUE, 'APPROVED', NOW(), NOW(), FALSE),
-    ('대전 건강 데이케어센터', 'DAY_CARE', '대전시 유성구 과학로 123', 'B1층', '042-5555-6666', 36.350411, 127.384548, '주간보호 전문 센터로 다양한 프로그램을 운영합니다.', 30, 20, '09:00-18:00', '송영버스, 급식서비스, 건강관리 프로그램', 4.0, 6, 3, 6, TRUE, 'APPROVED', NOW(), NOW(), FALSE),
-    ('인천 평안 요양병원', 'HOSPITAL', '인천시 남동구 구월동 1234', '3-5층', '032-7777-8888', 37.456256, 126.731536, '의료진이 상주하는 전문 요양병원입니다.', 100, 75, '24시간 운영', '의료진 상주, 응급실, 재활치료실, 검사실', 4.3, 15, 1, 6, TRUE, 'APPROVED', NOW(), NOW(), FALSE),
-    ('경기 사랑 재가센터', 'DAY_CARE', '경기도 수원시 팔달구 중부대로 123', '1층', '031-9999-0000', 37.283897, 127.009121, '재가 요양 서비스 전문 센터입니다.', 25, 18, '08:00-20:00', '재가방문, 목욕서비스, 간병서비스', 3.8, 4, 4, 6, TRUE, 'APPROVED', NOW(), NOW(), FALSE);
+-- 시설 데이터 (다중 이미지 지원 반영)
+INSERT INTO facility (facility_name, facility_type, address, detail_address, phone, latitude, longitude, description, capacity, current_occupancy, operating_hours, features, average_rating, review_count, grade_rating, image_count, main_image_path, registered_member_id, is_approved, approval_status, created_at, updated_at, is_deleted) VALUES
+    ('서울 행복요양원', 'NURSING_HOME', '서울시 강남구 테헤란로 123', '2층 201호', '02-1111-2222', 37.500913, 127.037149, '24시간 전문 간병 서비스를 제공하는 프리미엄 요양원입니다.', 50, 35, '24시간 운영', '24시간 간병서비스, 물리치료실, 인지치료 프로그램', 4.5, 8, 1, 0, NULL, 6, TRUE, 'APPROVED', NOW(), NOW(), FALSE),
+    ('부산 바다뷰 실버타운', 'NURSING_HOME', '부산시 해운대구 센텀중앙로 79', '1층', '051-3333-4444', 35.169188, 129.132800, '바다가 보이는 아름다운 환경의 실버타운입니다.', 80, 60, '08:00-22:00', '바다뷰, 실버카페, 도서관, 수영장', 4.2, 12, 2, 0, NULL, 7, TRUE, 'APPROVED', NOW(), NOW(), FALSE),
+    ('대전 건강 데이케어센터', 'DAY_CARE', '대전시 유성구 과학로 123', 'B1층', '042-5555-6666', 36.350411, 127.384548, '주간보호 전문 센터로 다양한 프로그램을 운영합니다.', 30, 20, '09:00-18:00', '송영버스, 급식서비스, 건강관리 프로그램', 4.0, 6, 3, 0, NULL, 6, TRUE, 'APPROVED', NOW(), NOW(), FALSE),
+    ('인천 평안 요양병원', 'HOSPITAL', '인천시 남동구 구월동 1234', '3-5층', '032-7777-8888', 37.456256, 126.731536, '의료진이 상주하는 전문 요양병원입니다.', 100, 75, '24시간 운영', '의료진 상주, 응급실, 재활치료실, 검사실', 4.3, 15, 1, 0, NULL, 6, TRUE, 'APPROVED', NOW(), NOW(), FALSE),
+    ('경기 사랑 재가센터', 'DAY_CARE', '경기도 수원시 팔달구 중부대로 123', '1층', '031-9999-0000', 37.283897, 127.009121, '재가 요양 서비스 전문 센터입니다.', 25, 18, '08:00-20:00', '재가방문, 목욕서비스, 간병서비스', 3.8, 4, 4, 0, NULL, 6, TRUE, 'APPROVED', NOW(), NOW(), FALSE);
+
+-- 시설 이미지 샘플 데이터 (다중 이미지 시스템 테스트용)
+INSERT INTO facility_images (facility_id, image_path, image_alt_text, image_order, is_main_image, upload_date, updated_at) VALUES
+    (1, '/uploads/facility/facility_1_0_seoul_happy_exterior_sample.jpg', '서울 행복요양원 외관 전경', 0, TRUE, NOW(), NOW()),
+    (1, '/uploads/facility/facility_1_1_seoul_happy_lobby_sample.jpg', '서울 행복요양원 로비 내부', 1, FALSE, NOW(), NOW()),
+    (2, '/uploads/facility/facility_2_0_busan_silver_ocean_view_sample.jpg', '부산 바다뷰 실버타운 바다전망', 0, TRUE, NOW(), NOW()),
+    (3, '/uploads/facility/facility_3_0_daejeon_daycare_facility_sample.jpg', '대전 건강 데이케어센터 시설', 0, TRUE, NOW(), NOW());
+
+-- 시설 테이블의 메인 이미지 정보 업데이트 (샘플 데이터)
+UPDATE facility SET image_count = 2, main_image_path = '/uploads/facility/facility_1_0_seoul_happy_exterior_sample.jpg' WHERE facility_id = 1;
+UPDATE facility SET image_count = 1, main_image_path = '/uploads/facility/facility_2_0_busan_silver_ocean_view_sample.jpg' WHERE facility_id = 2;
+UPDATE facility SET image_count = 1, main_image_path = '/uploads/facility/facility_3_0_daejeon_daycare_facility_sample.jpg' WHERE facility_id = 3;
 
 -- 구인구직 데이터
 INSERT INTO job_posting (title, content, job_type, work_type, position, recruit_count, salary_type, salary_min, salary_max, salary_description, work_location, work_hours, experience, education, qualifications, benefits, start_date, end_date, contact_name, contact_phone, contact_email, status, member_id, facility_id, priority, is_highlight, created_at, updated_at, is_deleted) VALUES
