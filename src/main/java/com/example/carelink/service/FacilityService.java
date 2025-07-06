@@ -2,6 +2,7 @@ package com.example.carelink.service;
 
 import com.example.carelink.dao.FacilityMapper;
 import com.example.carelink.dto.FacilityDTO;
+import com.example.carelink.dto.FacilityImageDTO;
 import com.example.carelink.common.Constants;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -20,15 +21,17 @@ import java.util.UUID;
 public class FacilityService {
 
     private final FacilityMapper facilityMapper;
+    private final FacilityImageService facilityImageService;
     private static final Logger log = LoggerFactory.getLogger(FacilityService.class);
 
     @Autowired
-    public FacilityService(FacilityMapper facilityMapper) {
+    public FacilityService(FacilityMapper facilityMapper, FacilityImageService facilityImageService) {
         this.facilityMapper = facilityMapper;
+        this.facilityImageService = facilityImageService;
     }
 
     /**
-     * 시설 검색 서비스
+     * 시설 검색 서비스 (메인 이미지 포함)
      */
     public List<FacilityDTO> searchFacilities(FacilityDTO searchDTO) {
         log.info("시설 검색 서비스 호출 - facilityName: {}, address: {}, facilityType: {}", 
@@ -37,11 +40,24 @@ public class FacilityService {
         List<FacilityDTO> results = facilityMapper.searchFacilities(searchDTO);
         log.info("시설 검색 결과 - 총 {}개 시설 발견", results.size());
         
+        // 각 시설의 메인 이미지 설정
+        for (FacilityDTO facility : results) {
+            try {
+                FacilityImageDTO mainImage = facilityImageService.getMainImageByFacilityId(facility.getFacilityId());
+                if (mainImage != null && mainImage.getImagePath() != null) {
+                    facility.setFacilityImage(mainImage.getImagePath());
+                }
+            } catch (Exception e) {
+                log.warn("시설 검색 중 메인 이미지 조회 실패 - facilityId: {}", facility.getFacilityId(), e);
+                facility.setFacilityImage(null);
+            }
+        }
+        
         return results;
     }
 
     /**
-     * 시설 상세 정보 조회 서비스
+     * 시설 상세 정보 조회 서비스 (메인 이미지 포함)
      */
     @Transactional(readOnly = true)
     public FacilityDTO getFacilityById(Long facilityId) {
@@ -58,8 +74,23 @@ public class FacilityService {
             return null;
         }
         
-        log.info("시설 상세 정보 조회 완료 - facilityName: {}, status: {}", 
-                facility.getFacilityName(), facility.getStatus());
+        // 메인 이미지 정보 추가 조회
+        try {
+            FacilityImageDTO mainImage = facilityImageService.getMainImageByFacilityId(facilityId);
+            if (mainImage != null && mainImage.getImagePath() != null) {
+                facility.setFacilityImage(mainImage.getImagePath());
+                log.info("✅ 시설 메인 이미지 설정 완료 - imagePath: {}", mainImage.getImagePath());
+            } else {
+                log.info("⚠️ 시설 메인 이미지 없음 - facilityId: {}", facilityId);
+                facility.setFacilityImage(null); // 명시적으로 null 설정
+            }
+        } catch (Exception e) {
+            log.error("❌ 시설 메인 이미지 조회 중 오류 발생 - facilityId: {}", facilityId, e);
+            facility.setFacilityImage(null);
+        }
+        
+        log.info("시설 상세 정보 조회 완료 - facilityName: {}, status: {}, mainImage: {}", 
+                facility.getFacilityName(), facility.getStatus(), facility.getFacilityImage());
         return facility;
     }
 

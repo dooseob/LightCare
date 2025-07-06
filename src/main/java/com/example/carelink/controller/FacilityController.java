@@ -521,30 +521,8 @@ public class FacilityController {
         return result;
     }
     
-    /**
-     * 시설 이미지 목록 조회 API
-     */
-    @GetMapping("/api/{facilityId}/images")
-    @ResponseBody
-    public List<FacilityImageDTO> getFacilityImages(@PathVariable Long facilityId, HttpSession session) {
-        MemberDTO member = (MemberDTO) session.getAttribute(Constants.SESSION_MEMBER);
-        
-        if (member == null) {
-            throw new RuntimeException("로그인이 필요합니다.");
-        }
-        
-        FacilityDTO facility = facilityService.getFacilityById(facilityId);
-        if (facility == null) {
-            throw new RuntimeException("시설을 찾을 수 없습니다.");
-        }
-        
-        // 권한 확인 (시설 소유자, 관리자, 또는 모든 사용자에게 조회 허용)
-        // 필요에 따라 권한 체크 로직 수정 가능
-        
-        List<FacilityImageDTO> images = facilityImageService.getImagesByFacilityId(facilityId);
-        log.info("📋 시설 이미지 목록 조회 - facilityId: {}, 이미지 수: {}", facilityId, images.size());
-        return images;
-    }
+    // 이미지 목록 조회 API는 FacilityImageApiController로 이동됨 (/api/facility/{facilityId}/images)
+    // 중복 API 제거로 데이터 정합성 및 일관성 확보
     
     // 이미지 관리 API들은 FacilityImageApiController로 이동됨
     // Thymeleaf 인라인 자바스크립트 충돌 방지를 위해 별도 컨트롤러 사용

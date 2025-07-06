@@ -31,7 +31,7 @@
                             <p class="text-muted">시설 사진을 16:9 비율로 조정하여 등록하세요 (최대 5장)</p>
                         </div>
 
-                        <!-- 단계 표시기 -->
+                        <!-- 단계 표시기 (3단계로 간소화) -->
                         <div class="steps-indicator mb-4">
                             <div class="step-item active" id="step1">
                                 <div class="step-circle">
@@ -44,28 +44,14 @@
                                 <div class="step-circle">
                                     <i class="fas fa-crop-alt"></i>
                                 </div>
-                                <div class="step-label">비율 조절</div>
+                                <div class="step-label">편집 & 설정</div>
                             </div>
                             <div class="step-connector"></div>
                             <div class="step-item" id="step3">
                                 <div class="step-circle">
-                                    <i class="fas fa-compress-alt"></i>
-                                </div>
-                                <div class="step-label">압축 & SEO</div>
-                            </div>
-                            <div class="step-connector"></div>
-                            <div class="step-item" id="step4">
-                                <div class="step-circle">
                                     <i class="fas fa-cogs"></i>
                                 </div>
                                 <div class="step-label">이미지 관리</div>
-                            </div>
-                            <div class="step-connector"></div>
-                            <div class="step-item" id="step5">
-                                <div class="step-circle">
-                                    <i class="fas fa-check"></i>
-                                </div>
-                                <div class="step-label">완료</div>
                             </div>
                         </div>
 
@@ -96,12 +82,18 @@
                                             최대 5장까지 등록 가능
                                         </small>
                                     </div>
-                                    <button type="button" class="btn btn-primary btn-lg mt-3" id="fileSelectBtn">
-                                        <i class="fas fa-folder-open me-2"></i>파일 선택
-                                    </button>
+                                    <div class="d-flex gap-3 mt-3 justify-content-center">
+                                        <button type="button" class="btn btn-primary btn-lg" id="fileSelectBtn">
+                                            <i class="fas fa-images me-2"></i>파일 선택
+                                        </button>
+                                        <button type="button" class="btn btn-outline-primary btn-lg" id="folderSelectBtn">
+                                            <i class="fas fa-folder-open me-2"></i>폴더에서 선택
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
                             <input type="file" id="imageInput" accept="image/*" multiple style="display: none;">
+                            <input type="file" id="folderInput" webkitdirectory directory multiple style="display: none;">
                         </div>
 
                         <!-- 이미지 리스트 -->
@@ -198,6 +190,82 @@
                                                 </div>
                                             </div>
                                             
+                                            <!-- 압축 설정 -->
+                                            <div class="mt-3">
+                                                <h6 class="mb-3">
+                                                    <i class="fas fa-compress-alt me-2"></i>압축 설정
+                                                </h6>
+                                                
+                                                <!-- 포맷 선택 -->
+                                                <div class="mb-3">
+                                                    <label class="form-label small">이미지 포맷</label>
+                                                    <div class="btn-group-vertical w-100" role="group">
+                                                        <input type="radio" class="btn-check" name="imageFormat" id="formatAVIF" value="avif">
+                                                        <label class="btn btn-outline-success btn-sm" for="formatAVIF">
+                                                            <i class="fas fa-bolt me-1"></i>AVIF <small class="text-muted">(최고 압축)</small>
+                                                        </label>
+                                                        
+                                                        <input type="radio" class="btn-check" name="imageFormat" id="formatWebP" value="webp" checked>
+                                                        <label class="btn btn-outline-info btn-sm" for="formatWebP">
+                                                            <i class="fas fa-compress me-1"></i>WebP <small class="text-muted">(고효율)</small>
+                                                        </label>
+                                                        
+                                                        <input type="radio" class="btn-check" name="imageFormat" id="formatJPEG" value="jpeg">
+                                                        <label class="btn btn-outline-secondary btn-sm" for="formatJPEG">
+                                                            <i class="fas fa-check me-1"></i>JPEG <small class="text-muted">(범용)</small>
+                                                        </label>
+                                                    </div>
+                                                </div>
+                                                
+                                                <!-- 압축 품질 -->
+                                                <div class="mb-3">
+                                                    <label class="form-label small">
+                                                        품질: <span id="qualityPercent">80%</span>
+                                                    </label>
+                                                    <input type="range" class="form-range" id="qualitySlider" 
+                                                           min="0.3" max="1.0" step="0.1" value="0.8">
+                                                    <div class="d-flex justify-content-between small text-muted">
+                                                        <span>압축</span>
+                                                        <span>품질</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            
+                                            <!-- SEO 설정 -->
+                                            <div class="mt-3">
+                                                <h6 class="mb-3">
+                                                    <i class="fas fa-search me-2"></i>SEO 설정
+                                                </h6>
+                                                
+                                                <!-- Alt 텍스트 -->
+                                                <div class="mb-3">
+                                                    <label for="altText" class="form-label small">Alt 텍스트</label>
+                                                    <input type="text" class="form-control form-control-sm" id="altText" 
+                                                           placeholder="이미지 설명을 입력하세요">
+                                                    <small class="text-muted">검색 엔진 최적화용 이미지 설명</small>
+                                                </div>
+                                                
+                                                <!-- 파일명 -->
+                                                <div class="mb-3">
+                                                    <label for="seoFileName" class="form-label small">파일명</label>
+                                                    <input type="text" class="form-control form-control-sm" id="seoFileName" 
+                                                           placeholder="예: 시설-로비">
+                                                    <small class="text-muted">한글은 자동으로 영문으로 변환됩니다</small>
+                                                </div>
+                                                
+                                                <!-- 추천 키워드 -->
+                                                <div class="mb-3">
+                                                    <label class="form-label small">추천 키워드</label>
+                                                    <div class="keyword-suggestions">
+                                                        <button type="button" class="btn btn-outline-primary btn-sm keyword-btn me-1 mb-1" data-keyword="외관">외관</button>
+                                                        <button type="button" class="btn btn-outline-primary btn-sm keyword-btn me-1 mb-1" data-keyword="내부">내부</button>
+                                                        <button type="button" class="btn btn-outline-primary btn-sm keyword-btn me-1 mb-1" data-keyword="로비">로비</button>
+                                                        <button type="button" class="btn btn-outline-primary btn-sm keyword-btn me-1 mb-1" data-keyword="환경">환경</button>
+                                                        <button type="button" class="btn btn-outline-primary btn-sm keyword-btn me-1 mb-1" data-keyword="시설">시설</button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            
                                             <!-- 키보드 단축키 가이드 -->
                                             <div class="mt-3 p-2 bg-light rounded">
                                                 <h6 class="small mb-2">
@@ -231,200 +299,17 @@
                                             다음<i class="fas fa-chevron-right ms-1"></i>
                                         </button>
                                     </div>
-                                    <button type="button" class="btn btn-primary" id="cropCurrentBtn">
-                                        <i class="fas fa-crop me-2"></i>이 이미지 완료
+                                    <button type="button" class="btn btn-success" id="cropCurrentBtn">
+                                        <i class="fas fa-check me-2"></i>이 이미지 완료
+                                    </button>
+                                    <button type="button" class="btn btn-primary" id="goToManageBtn" style="display: none;">
+                                        <i class="fas fa-arrow-right me-2"></i>이미지 관리로 이동
                                     </button>
                                 </div>
                             </div>
                         </div>
 
-                        <!-- 3단계: 압축 및 SEO 최적화 -->
-                        <div id="compressionSection" class="compression-section" style="display: none;">
-                            <div class="row">
-                                <div class="col-md-6">
-                                    <div class="compression-settings">
-                                        <h6 class="mb-3">
-                                            <i class="fas fa-compress-alt me-2"></i>이미지 압축 설정
-                                        </h6>
-                                        
-                                        <!-- 이미지 형식 선택 -->
-                                        <div class="mb-3">
-                                            <label class="form-label">이미지 형식</label>
-                                            <div class="btn-group w-100" role="group">
-                                                <input type="radio" class="btn-check" name="imageFormat" id="formatAVIF" value="avif" checked>
-                                                <label class="btn btn-outline-success btn-sm" for="formatAVIF">
-                                                    <i class="fas fa-bolt me-1"></i>AVIF
-                                                    <small class="d-block text-muted">용량 최소 (권장)</small>
-                                                </label>
-                                                
-                                                <input type="radio" class="btn-check" name="imageFormat" id="formatWEBP" value="webp">
-                                                <label class="btn btn-outline-primary btn-sm" for="formatWEBP">
-                                                    <i class="fas fa-rocket me-1"></i>WebP
-                                                    <small class="d-block text-muted">빠른 로딩</small>
-                                                </label>
-                                                
-                                                <input type="radio" class="btn-check" name="imageFormat" id="formatJPEG" value="jpeg">
-                                                <label class="btn btn-outline-secondary btn-sm" for="formatJPEG">
-                                                    <i class="fas fa-check me-1"></i>JPEG
-                                                    <small class="d-block text-muted">범용 호환</small>
-                                                </label>
-                                            </div>
-                                        </div>
-                                        
-                                        <!-- 압축 품질 -->
-                                        <div class="mb-3">
-                                            <label class="form-label">
-                                                압축 품질: <span id="qualityPercent">80%</span>
-                                            </label>
-                                            <input type="range" class="form-range" id="qualitySlider" 
-                                                   min="0.3" max="1.0" step="0.1" value="0.8">
-                                            <div class="d-flex justify-content-between small text-muted">
-                                                <span>높은 압축</span>
-                                                <span>높은 품질</span>
-                                            </div>
-                                        </div>
-                                        
-                                        <!-- 자동 최적화 -->
-                                        <div class="form-check mb-3">
-                                            <input class="form-check-input" type="checkbox" id="autoOptimize" checked>
-                                            <label class="form-check-label" for="autoOptimize">
-                                                <i class="fas fa-magic me-1"></i>자동 최적화
-                                                <small class="d-block text-muted">브라우저별 최적 형식 자동 선택</small>
-                                            </label>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="col-md-6">
-                                    <div class="compression-preview">
-                                        <h6 class="mb-3">
-                                            <i class="fas fa-eye me-2"></i>압축 결과
-                                        </h6>
-                                        <div class="compression-info text-center mb-3">
-                                            <div class="compression-savings text-success fw-bold mb-2">
-                                                <span id="compressionSavings">계산 중...</span>
-                                            </div>
-                                            <small class="text-muted">
-                                                현재 형식: <span id="currentFormat" class="fw-bold">AVIF</span>
-                                            </small>
-                                        </div>
-                                        
-                                        <div class="final-preview-container">
-                                            <img id="finalPreviewImage" class="img-fluid rounded" 
-                                                 style="max-width: 100%; height: auto; border: 2px solid #dee2e6;">
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                            
-                            <!-- SEO 최적화 섹션 -->
-                            <div class="seo-optimization-section mt-4">
-                                <h6 class="mb-3">
-                                    <i class="fas fa-search me-2"></i>SEO 최적화 & 파일명 관리
-                                </h6>
-                                
-                                <!-- 이미지 파일명 수정 -->
-                                <div class="mb-4">
-                                    <label for="imageNameInput" class="form-label">
-                                        <i class="fas fa-file-signature me-1"></i>이미지 파일명
-                                    </label>
-                                    <div class="input-group">
-                                        <input type="text" class="form-control" id="imageNameInput" 
-                                               placeholder="예: 해피케어요양원-외관사진">
-                                        <button type="button" class="btn btn-outline-info" id="previewFileNameBtn">
-                                            <i class="fas fa-eye me-1"></i>미리보기
-                                        </button>
-                                    </div>
-                                    <div class="mt-2">
-                                        <small class="text-info">
-                                            <i class="fas fa-info-circle me-1"></i>
-                                            실제 저장명: <span id="previewFileName" class="fw-bold">facility_1_image.jpg</span>
-                                        </small>
-                                    </div>
-                                </div>
-
-                                <!-- 추천 키워드 -->
-                                <div class="mb-3">
-                                    <label class="form-label">
-                                        <i class="fas fa-tags me-1"></i>추천 키워드 (클릭하여 추가)
-                                    </label>
-                                    <div class="keyword-suggestions">
-                                        <div class="mb-2">
-                                            <small class="text-muted fw-bold">시설 구역:</small>
-                                            <div class="keyword-group">
-                                                <button type="button" class="btn btn-outline-primary btn-sm keyword-btn" data-keyword="외관">외관</button>
-                                                <button type="button" class="btn btn-outline-primary btn-sm keyword-btn" data-keyword="내부">내부</button>
-                                                <button type="button" class="btn btn-outline-primary btn-sm keyword-btn" data-keyword="로비">로비</button>
-                                                <button type="button" class="btn btn-outline-primary btn-sm keyword-btn" data-keyword="복도">복도</button>
-                                                <button type="button" class="btn btn-outline-primary btn-sm keyword-btn" data-keyword="정원">정원</button>
-                                            </div>
-                                        </div>
-                                        <div class="mb-2">
-                                            <small class="text-muted fw-bold">시설 종류:</small>
-                                            <div class="keyword-group">
-                                                <button type="button" class="btn btn-outline-success btn-sm keyword-btn" data-keyword="침실">침실</button>
-                                                <button type="button" class="btn btn-outline-success btn-sm keyword-btn" data-keyword="식당">식당</button>
-                                                <button type="button" class="btn btn-outline-success btn-sm keyword-btn" data-keyword="의무실">의무실</button>
-                                                <button type="button" class="btn btn-outline-success btn-sm keyword-btn" data-keyword="간호실">간호실</button>
-                                                <button type="button" class="btn btn-outline-success btn-sm keyword-btn" data-keyword="주차장">주차장</button>
-                                            </div>
-                                        </div>
-                                        <div class="mb-2">
-                                            <small class="text-muted fw-bold">촬영 관점:</small>
-                                            <div class="keyword-group">
-                                                <button type="button" class="btn btn-outline-warning btn-sm keyword-btn" data-keyword="전경">전경</button>
-                                                <button type="button" class="btn btn-outline-warning btn-sm keyword-btn" data-keyword="내부전망">내부전망</button>
-                                                <button type="button" class="btn btn-outline-warning btn-sm keyword-btn" data-keyword="상세모습">상세모습</button>
-                                                <button type="button" class="btn btn-outline-warning btn-sm keyword-btn" data-keyword="환경">환경</button>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                                
-                                <!-- Alt 텍스트 -->
-                                <div class="mb-3">
-                                    <label for="altTextInput" class="form-label">
-                                        <i class="fas fa-tag me-1"></i>이미지 설명 (Alt 텍스트)
-                                    </label>
-                                    <div class="input-group">
-                                        <textarea class="form-control" id="altTextInput" rows="2" 
-                                                  placeholder="시설 이미지에 대한 설명을 입력하세요 (SEO 최적화용)"></textarea>
-                                        <button type="button" class="btn btn-outline-secondary" id="autoGenerateAltBtn">
-                                            <i class="fas fa-magic me-1"></i>자동 생성
-                                        </button>
-                                    </div>
-                                    <small class="text-muted">
-                                        <i class="fas fa-lightbulb me-1"></i>
-                                        검색 엔진 최적화를 위한 이미지 설명입니다
-                                    </small>
-                                </div>
-
-                                <!-- SEO 팁 -->
-                                <div class="seo-tips alert alert-info">
-                                    <h6 class="alert-heading">
-                                        <i class="fas fa-graduation-cap me-2"></i>SEO 최적화 팁
-                                    </h6>
-                                    <ul class="mb-0 small">
-                                        <li>시설명을 포함한 구체적인 설명 작성</li>
-                                        <li>지역명 추가로 지역 검색 최적화</li>
-                                        <li>예: "○○요양원 강남구 위치 외관 전경"</li>
-                                        <li>한글 키워드로 국내 검색에 최적화</li>
-                                    </ul>
-                                </div>
-                            </div>
-                            
-                            <div class="compression-actions mt-4 text-center">
-                                <div class="d-flex justify-content-between">
-                                    <button type="button" class="btn btn-outline-secondary" id="backToCropBtn">
-                                        <i class="fas fa-arrow-left me-2"></i>크롭으로 돌아가기
-                                    </button>
-                                    <button type="button" class="btn btn-primary" id="goToManageBtn">
-                                        <i class="fas fa-arrow-right me-2"></i>다음 단계
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- 4단계: 이미지 관리 -->
+                        <!-- 3단계: 이미지 관리 -->
                         <div id="manageSection" class="manage-section" style="display: none;">
                             <div class="text-center mb-4">
                                 <h4 class="text-primary mb-3">
@@ -441,8 +326,8 @@
                             
                             <div class="manage-actions text-center">
                                 <div class="d-flex justify-content-between">
-                                    <button type="button" class="btn btn-outline-secondary" id="backToCompressionBtn">
-                                        <i class="fas fa-arrow-left me-2"></i>압축 설정으로 돌아가기
+                                    <button type="button" class="btn btn-outline-secondary" id="backToCropBtn">
+                                        <i class="fas fa-arrow-left me-2"></i>크롭으로 돌아가기
                                     </button>
                                     <button type="button" class="btn btn-success" id="finalCompleteBtn">
                                         <i class="fas fa-check me-2"></i>최종 완료
@@ -451,7 +336,7 @@
                             </div>
                         </div>
 
-                        <!-- 5단계: 최종 완료 -->
+                        <!-- 4단계: 최종 완료 -->
                         <div id="completeSection" class="complete-section text-center" style="display: none;">
                             <div class="completion-icon mb-3">
                                 <i class="fas fa-check-circle fa-5x text-success"></i>
@@ -484,6 +369,61 @@
         </div>
     </div>
 </main>
+
+<!-- 이미지 선택 모달 (폴더에서 선택 시 사용) -->
+<div class="modal fade" id="imageSelectionModal" tabindex="-1" aria-labelledby="imageSelectionModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="imageSelectionModalLabel">
+                    <i class="fas fa-images me-2"></i>이미지 선택 (최대 5장)
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row mb-3">
+                    <div class="col-md-8">
+                        <p class="text-muted mb-0">
+                            <i class="fas fa-info-circle me-1"></i>
+                            선택한 폴더에서 이미지 파일을 골라주세요. 이미지를 클릭하면 선택됩니다.
+                        </p>
+                    </div>
+                    <div class="col-md-4 text-end">
+                        <span class="badge bg-primary fs-6" id="selectedImageCount">0/5 선택됨</span>
+                    </div>
+                </div>
+                
+                <!-- 로딩 상태 -->
+                <div id="modalLoadingState" class="text-center py-5">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">로딩 중...</span>
+                    </div>
+                    <p class="text-muted mt-3">폴더의 이미지를 불러오는 중...</p>
+                </div>
+                
+                <!-- 이미지 그리드 -->
+                <div id="modalImageGrid" class="row g-3" style="display: none;">
+                    <!-- 동적으로 생성되는 이미지 카드들 -->
+                </div>
+                
+                <!-- 이미지가 없는 경우 -->
+                <div id="modalEmptyState" class="text-center py-5" style="display: none;">
+                    <i class="fas fa-folder-open fa-3x text-muted mb-3"></i>
+                    <h5 class="text-muted">선택한 폴더에 이미지가 없습니다</h5>
+                    <p class="text-muted">JPG, PNG, WebP 형식의 이미지 파일이 있는 폴더를 선택해주세요.</p>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="fas fa-times me-2"></i>취소
+                </button>
+                <button type="button" class="btn btn-primary" id="confirmImageSelection" disabled>
+                    <i class="fas fa-check me-2"></i>선택 완료
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
 
 <footer th:replace="~{layout/footer :: footer}"></footer>
 
@@ -628,6 +568,37 @@ console.log('🛠️ facility-image-manage.js가 관리 기능을 처리합니�
     padding: 2px 6px;
     border-radius: 4px;
     font-family: 'Courier New', monospace;
+}
+
+/* 이미지 선택 모달 스타일 */
+.image-selection-card {
+    cursor: pointer;
+    transition: all 0.3s ease;
+    border: 2px solid transparent;
+}
+
+.image-selection-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+}
+
+.image-selection-card.selected {
+    border-color: #007bff;
+    box-shadow: 0 4px 20px rgba(0,123,255,0.3);
+}
+
+.image-selection-card .selection-overlay {
+    border-radius: 0.375rem 0.375rem 0 0;
+}
+
+#imageSelectionModal .modal-body {
+    max-height: 70vh;
+    overflow-y: auto;
+}
+
+#modalImageGrid {
+    max-height: 60vh;
+    overflow-y: auto;
 }
 
 .input-group .btn {

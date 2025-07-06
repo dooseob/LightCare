@@ -286,64 +286,55 @@ function setupEventDelegation() {
             return;
         }
         
-        // Bootstrap 드롭다운 토글 (상세 디버깅 추가)
+        // Bootstrap 드롭다운 토글 (간소화된 방식)
         if (target.closest('[data-bs-toggle="dropdown"]')) {
             console.log('🔽 드롭다운 토글 클릭 감지');
             const dropdownToggle = target.closest('[data-bs-toggle="dropdown"]');
-            const dropdownMenu = dropdownToggle.nextElementSibling;
             
-            console.log('📋 드롭다운 요소 정보:', {
-                toggle: dropdownToggle,
-                toggleHTML: dropdownToggle.outerHTML,
-                menu: dropdownMenu,
-                menuHTML: dropdownMenu ? dropdownMenu.outerHTML : 'null',
-                menuClasses: dropdownMenu ? Array.from(dropdownMenu.classList) : 'null',
-                hasDropdownMenu: dropdownMenu && dropdownMenu.classList.contains('dropdown-menu')
-            });
+            event.preventDefault();
+            event.stopPropagation();
             
-            if (dropdownMenu && dropdownMenu.classList.contains('dropdown-menu')) {
-                event.preventDefault();
-                event.stopPropagation();
-                
-                console.log('🔄 드롭다운 메뉴 토글 실행');
-                
-                // 다른 열린 드롭다운 닫기
-                const otherMenus = document.querySelectorAll('.dropdown-menu.show');
-                console.log('🔍 다른 열린 드롭다운 수:', otherMenus.length);
-                otherMenus.forEach(menu => {
-                    if (menu !== dropdownMenu) {
-                        menu.classList.remove('show');
-                        console.log('🚫 다른 드롭다운 닫음:', menu);
+            // Bootstrap 5 Dropdown API 사용
+            if (typeof bootstrap !== 'undefined' && bootstrap.Dropdown) {
+                try {
+                    let dropdown = bootstrap.Dropdown.getInstance(dropdownToggle);
+                    if (!dropdown) {
+                        dropdown = new bootstrap.Dropdown(dropdownToggle);
                     }
-                });
-                
-                // 현재 드롭다운 토글
-                const wasOpen = dropdownMenu.classList.contains('show');
-                dropdownMenu.classList.toggle('show');
-                const isNowOpen = dropdownMenu.classList.contains('show');
-                
-                console.log('🔄 드롭다운 상태 변경:', {
-                    wasOpen: wasOpen,
-                    isNowOpen: isNowOpen,
-                    finalClasses: Array.from(dropdownMenu.classList)
-                });
-                
-                // Bootstrap 5 방식으로도 시도
-                if (typeof bootstrap !== 'undefined' && bootstrap.Dropdown) {
-                    try {
-                        const dropdown = bootstrap.Dropdown.getInstance(dropdownToggle) || new bootstrap.Dropdown(dropdownToggle);
-                        if (isNowOpen) {
-                            dropdown.show();
-                        } else {
-                            dropdown.hide();
-                        }
-                        console.log('✅ Bootstrap 드롭다운 API 호출 성공');
-                    } catch (error) {
-                        console.warn('⚠️ Bootstrap 드롭다운 API 오류:', error);
+                    dropdown.toggle();
+                    console.log('✅ Bootstrap 드롭다운 토글 성공');
+                } catch (error) {
+                    console.error('❌ Bootstrap 드롭다운 오류:', error);
+                    
+                    // 폴백: 수동 토글
+                    const dropdownMenu = dropdownToggle.nextElementSibling;
+                    if (dropdownMenu && dropdownMenu.classList.contains('dropdown-menu')) {
+                        dropdownMenu.classList.toggle('show');
+                        dropdownToggle.classList.toggle('show');
+                        console.log('🔄 수동 드롭다운 토글 완료');
                     }
                 }
             } else {
-                console.error('❌ 드롭다운 메뉴를 찾을 수 없음 또는 클래스 누락');
+                console.warn('⚠️ Bootstrap이 로드되지 않음 - 수동 토글');
+                const dropdownMenu = dropdownToggle.nextElementSibling;
+                if (dropdownMenu && dropdownMenu.classList.contains('dropdown-menu')) {
+                    // 다른 열린 드롭다운 닫기
+                    document.querySelectorAll('.dropdown-menu.show').forEach(menu => {
+                        if (menu !== dropdownMenu) {
+                            menu.classList.remove('show');
+                        }
+                    });
+                    document.querySelectorAll('[data-bs-toggle="dropdown"].show').forEach(toggle => {
+                        if (toggle !== dropdownToggle) {
+                            toggle.classList.remove('show');
+                        }
+                    });
+                    
+                    // 현재 드롭다운 토글
+                    dropdownMenu.classList.toggle('show');
+                    dropdownToggle.classList.toggle('show');
+                    console.log('🔄 수동 드롭다운 토글 완료');
+                }
             }
             return;
         }

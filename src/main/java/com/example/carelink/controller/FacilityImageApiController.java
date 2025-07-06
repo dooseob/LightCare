@@ -222,6 +222,43 @@ public class FacilityImageApiController {
     }
 
     /**
+     * 시설 기본 정보 조회 API (manage.html용)
+     */
+    @GetMapping("/{facilityId}/info")
+    public Map<String, Object> getFacilityInfo(@PathVariable Long facilityId, HttpSession session) {
+        Map<String, Object> result = new HashMap<>();
+        
+        try {
+            log.info("🔍 시설 기본 정보 조회 API 호출 - facilityId: {}", facilityId);
+            
+            // 권한 확인
+            if (!isAuthorized(session, facilityId, result)) {
+                return result;
+            }
+            
+            // 시설 정보 조회 (메인 이미지 포함)
+            FacilityDTO facility = facilityService.getFacilityById(facilityId);
+            if (facility == null) {
+                result.put("success", false);
+                result.put("message", "시설을 찾을 수 없습니다.");
+                return result;
+            }
+            
+            result.put("success", true);
+            result.put("facility", facility);
+            
+            log.info("✅ 시설 기본 정보 조회 성공 - facilityId: {}", facilityId);
+            
+        } catch (Exception e) {
+            log.error("❌ 시설 기본 정보 조회 중 오류 발생 - facilityId: {}", facilityId, e);
+            result.put("success", false);
+            result.put("message", "시설 정보 조회 중 오류가 발생했습니다.");
+        }
+        
+        return result;
+    }
+
+    /**
      * 이미지 정보 조회 API
      */
     @GetMapping("/images/{imageId}")

@@ -33,12 +33,23 @@
                     <!-- 세로 배치: 이미지 → 내용 → 버튼 -->
                     
                     <!-- 1. 시설 이미지 -->
-                    <div class="text-center mb-4 flex-grow-1">
-                        <img th:src="${facility.facilityImage != null ? facility.facilityImage : '/images/default_facility.jpg'}"
-                             src="/images/default_facility.jpg"
-                             class="img-fluid rounded shadow-sm"
-                             style="height: 250px; width: 100%; object-fit: cover;"
-                             alt="시설 이미지">
+                    <div class="text-center mb-4 flex-grow-1" id="facilityImageContainer">
+                        <div th:if="${facility.facilityImage != null and !#strings.isEmpty(facility.facilityImage)}">
+                            <img th:src="${facility.facilityImage}"
+                                 class="img-fluid rounded shadow-sm facility-detail-image"
+                                 style="height: 250px; width: 100%; object-fit: cover;"
+                                 alt="시설 이미지"
+                                 onerror="handleFacilityImageError(this)">
+                        </div>
+                        <div th:unless="${facility.facilityImage != null and !#strings.isEmpty(facility.facilityImage)}"
+                             class="bg-light rounded d-flex align-items-center justify-content-center"
+                             style="height: 250px; background-color: #f8f9fa;">
+                            <div class="text-center text-muted">
+                                <i class="fas fa-image fa-3x mb-2"></i>
+                                <br>
+                                <small>시설 이미지 준비 중</small>
+                            </div>
+                        </div>
                     </div>
                     
                     <!-- 2. 시설명, 등급, 별점 -->
@@ -418,6 +429,37 @@
         }
     });
 
+    // 시설 이미지 에러 처리 함수
+    function handleFacilityImageError(imgElement) {
+        console.warn('⚠️ 시설 이미지 로드 실패:', imgElement.src);
+        
+        // 이미 에러 처리되었는지 확인
+        if (imgElement.classList.contains('error-handled')) {
+            console.log('이미 에러 처리된 이미지입니다.');
+            return;
+        }
+        
+        // 에러 처리 완료 표시
+        imgElement.classList.add('error-handled');
+        
+        // 플레이스홀더로 교체
+        imgElement.style.display = 'none';
+        
+        const placeholder = document.createElement('div');
+        placeholder.className = 'bg-light rounded d-flex align-items-center justify-content-center';
+        placeholder.style.cssText = 'height: 250px; background-color: #f8f9fa;';
+        placeholder.innerHTML = `
+            <div class="text-center text-muted">
+                <i class="fas fa-image fa-3x mb-2"></i>
+                <br>
+                <small>시설 이미지 준비 중</small>
+            </div>
+        `;
+        
+        imgElement.parentNode.insertBefore(placeholder, imgElement);
+        console.log('✅ 시설 이미지 플레이스홀더 처리 완료');
+    }
+
     // 전화하기 버튼 클릭 이벤트 핸들러
     function callFacilityPhone(button) {
         const phone = button.getAttribute('data-phone');
@@ -444,7 +486,7 @@
         const facilityId = /*[[${facility.facilityId}]]*/ 0;
         const facilityName = /*[[${facility.facilityName}]]*/ '시설명';
         const address = /*[[${facility.address}]]*/ '주소';
-        const logoImageUrl = /*[[${facility.facilityImage}]]*/ '/images/default_facility.jpg';
+        const logoImageUrl = /*[[${facility.facilityImage ?: 'https://via.placeholder.com/300x200?text=시설이미지'}]]*/ 'https://via.placeholder.com/300x200?text=시설이미지';
 
         if (window.Kakao) {
             Kakao.Link.sendDefault({

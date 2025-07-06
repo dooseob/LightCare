@@ -1,6 +1,6 @@
 -- ================================================
 -- 시설 이미지 데이터만 초기화 (문제 해결용)
--- 실행 방법: mysql -u root -p carelink < reset_facility_images.sql
+-- 실행 방법: mysql -u root -p mysql < reset_facility_images.sql
 -- ================================================
 
 USE carelink;

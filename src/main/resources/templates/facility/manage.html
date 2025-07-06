@@ -238,9 +238,13 @@ $(document).ready(function() {
 });
 
 function loadFacilityDetail(facilityId) {
-    // AJAX로 시설 상세 정보 조회
-    $.get(`/facility/api/${facilityId}`, function(facility) {
-        updateFacilityDetail(facility);
+    // AJAX로 시설 상세 정보 조회 (통합된 API 사용)
+    $.get(`/api/facility/${facilityId}/info`, function(data) {
+        if (data.success) {
+            updateFacilityDetail(data.facility);
+        } else {
+            alert(data.message || '시설 정보를 불러올 수 없습니다.');
+        }
     }).fail(function() {
         alert('시설 정보를 불러오는데 실패했습니다.');
     });

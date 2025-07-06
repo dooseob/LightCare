@@ -185,34 +185,14 @@
                         <div id="compressionSection" class="compression-section" style="display: none;">
                             <div class="row">
                                 <div class="col-md-6">
-                                    <div class="final-preview-panel">
-                                        <h6 class="mb-3">
-                                            <i class="fas fa-check-circle text-success me-2"></i>최종 결과
-                                        </h6>
-                                        <div class="final-image-container">
-                                            <img id="finalPreviewImage" alt="최종 미리보기" class="final-image" style="width: 200px; height: 267px; border-radius: 8px; object-fit: cover;">
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="col-md-6">
-                                    <!-- 압축 설정 -->
                                     <div class="compression-settings">
                                         <h6 class="mb-3">
-                                            <i class="fas fa-compress-alt me-2"></i>이미지 최적화
+                                            <i class="fas fa-compress-alt me-2"></i>이미지 압축 설정
                                         </h6>
-                                        
-                                        <div class="compression-info mb-3">
-                                            <div class="compression-savings text-success fw-bold" id="compressionSavings">
-                                                계산 중...
-                                            </div>
-                                            <div class="format-info mt-2" id="formatInfo">
-                                                <small class="text-muted">형식: <span id="currentFormat">AVIF</span></small>
-                                            </div>
-                                        </div>
                                         
                                         <!-- 이미지 형식 선택 -->
                                         <div class="mb-3">
-                                            <label class="form-label small">이미지 형식 (SEO 최적화)</label>
+                                            <label class="form-label">이미지 형식</label>
                                             <div class="btn-group w-100" role="group">
                                                 <input type="radio" class="btn-check" name="imageFormat" id="formatAVIF" value="avif" checked>
                                                 <label class="btn btn-outline-success btn-sm" for="formatAVIF">
@@ -221,128 +201,157 @@
                                                 </label>
                                                 
                                                 <input type="radio" class="btn-check" name="imageFormat" id="formatWEBP" value="webp">
-                                                <label class="btn btn-outline-info btn-sm" for="formatWEBP">
-                                                    <i class="fas fa-feather me-1"></i>WebP
-                                                    <small class="d-block text-muted">균형적</small>
+                                                <label class="btn btn-outline-primary btn-sm" for="formatWEBP">
+                                                    <i class="fas fa-rocket me-1"></i>WebP
+                                                    <small class="d-block text-muted">빠른 로딩</small>
                                                 </label>
                                                 
                                                 <input type="radio" class="btn-check" name="imageFormat" id="formatJPEG" value="jpeg">
-                                                <label class="btn btn-outline-primary btn-sm" for="formatJPEG">
-                                                    <i class="fas fa-image me-1"></i>JPEG
-                                                    <small class="d-block text-muted">호환성 최고</small>
+                                                <label class="btn btn-outline-secondary btn-sm" for="formatJPEG">
+                                                    <i class="fas fa-check me-1"></i>JPEG
+                                                    <small class="d-block text-muted">범용 호환</small>
                                                 </label>
                                             </div>
-                                            <small class="form-text text-muted mt-1">
-                                                <i class="fas fa-info-circle me-1"></i>
-                                                AVIF: 최대 50% 더 작은 용량, WebP: 30% 더 작은 용량
+                                        </div>
+                                        
+                                        <!-- 압축 품질 -->
+                                        <div class="mb-3">
+                                            <label class="form-label">
+                                                압축 품질: <span id="qualityPercent">80%</span>
+                                            </label>
+                                            <input type="range" class="form-range" id="qualitySlider" 
+                                                   min="0.3" max="1.0" step="0.1" value="0.8">
+                                            <div class="d-flex justify-content-between small text-muted">
+                                                <span>높은 압축</span>
+                                                <span>높은 품질</span>
+                                            </div>
+                                        </div>
+                                        
+                                        <!-- 자동 최적화 -->
+                                        <div class="form-check mb-3">
+                                            <input class="form-check-input" type="checkbox" id="autoOptimize" checked>
+                                            <label class="form-check-label" for="autoOptimize">
+                                                <i class="fas fa-magic me-1"></i>자동 최적화
+                                                <small class="d-block text-muted">브라우저별 최적 형식 자동 선택</small>
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="compression-preview">
+                                        <h6 class="mb-3">
+                                            <i class="fas fa-eye me-2"></i>압축 결과
+                                        </h6>
+                                        <div class="compression-info text-center mb-3">
+                                            <div class="compression-savings text-success fw-bold mb-2">
+                                                <span id="compressionSavings">계산 중...</span>
+                                            </div>
+                                            <small class="text-muted">
+                                                현재 형식: <span id="currentFormat" class="fw-bold">AVIF</span>
                                             </small>
                                         </div>
                                         
-                                        <div class="mb-3">
-                                            <label class="form-label small">압축 품질 (<span id="qualityLabel">80</span>%)</label>
-                                            <input type="range" class="form-range" id="qualitySlider" 
-                                                   min="0.1" max="1" step="0.1" value="0.8">
-                                            <div class="d-flex justify-content-between">
-                                                <small class="text-muted">낮음 (용량↓)</small>
-                                                <small class="text-muted">높음 (화질↑)</small>
-                                            </div>
+                                        <div class="final-preview-container">
+                                            <img id="finalPreviewImage" class="img-fluid rounded" 
+                                                 style="max-width: 100%; height: auto; border: 2px solid #dee2e6;">
                                         </div>
-                                        
-                                        <div class="d-flex gap-2">
-                                            <button type="button" class="btn btn-sm btn-outline-primary flex-fill" id="recompressBtn">
-                                                <i class="fas fa-redo me-1"></i>다시 압축
-                                            </button>
-                                            <button type="button" class="btn btn-sm btn-outline-success" id="optimizeBtn">
-                                                <i class="fas fa-magic me-1"></i>자동 최적화
-                                            </button>
-                                        </div>
-                                    </div>
-
-                                    <!-- 파일명 변환 섹션 -->
-                                    <div class="filename-section mt-4">
-                                        <h6 class="mb-3">
-                                            <i class="fas fa-file-signature me-2"></i>파일명 설정 (한글→영문 변환)
-                                        </h6>
-                                        
-                                        <div class="mb-3">
-                                            <label for="profileNameInput" class="form-label">
-                                                <i class="fas fa-user me-1"></i>프로필 이미지 이름
-                                            </label>
-                                            <div class="input-group">
-                                                <input type="text" class="form-control" id="profileNameInput" 
-                                                       placeholder="예: 김철수-증명사진">
-                                                <button type="button" class="btn btn-outline-info" id="previewProfileNameBtn">
-                                                    <i class="fas fa-eye me-1"></i>미리보기
-                                                </button>
-                                            </div>
-                                            <div class="mt-2">
-                                                <small class="text-info">
-                                                    <i class="fas fa-info-circle me-1"></i>
-                                                    실제 저장명: <span id="previewProfileName" class="fw-bold">profile_user_photo.jpg</span>
-                                                </small>
-                                            </div>
-                                        </div>
-
-                                        <!-- 추천 키워드 -->
-                                        <div class="mb-3">
-                                            <label class="form-label">
-                                                <i class="fas fa-tags me-1"></i>추천 키워드 (클릭하여 추가)
-                                            </label>
-                                            <div class="keyword-suggestions">
-                                                <div class="mb-2">
-                                                    <small class="text-muted fw-bold">사진 종류:</small>
-                                                    <div class="keyword-group">
-                                                        <button type="button" class="btn btn-outline-primary btn-sm keyword-btn" data-keyword="증명사진">증명사진</button>
-                                                        <button type="button" class="btn btn-outline-primary btn-sm keyword-btn" data-keyword="프로필">프로필</button>
-                                                        <button type="button" class="btn btn-outline-primary btn-sm keyword-btn" data-keyword="정면사진">정면사진</button>
-                                                        <button type="button" class="btn btn-outline-primary btn-sm keyword-btn" data-keyword="여권사진">여권사진</button>
-                                                    </div>
-                                                </div>
-                                                <div class="mb-2">
-                                                    <small class="text-muted fw-bold">용도:</small>
-                                                    <div class="keyword-group">
-                                                        <button type="button" class="btn btn-outline-success btn-sm keyword-btn" data-keyword="이력서">이력서</button>
-                                                        <button type="button" class="btn btn-outline-success btn-sm keyword-btn" data-keyword="자격증">자격증</button>
-                                                        <button type="button" class="btn btn-outline-success btn-sm keyword-btn" data-keyword="신분증">신분증</button>
-                                                        <button type="button" class="btn btn-outline-success btn-sm keyword-btn" data-keyword="입사지원">입사지원</button>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <!-- Alt 텍스트 섹션 -->
-                                    <div class="alt-text-section mt-4">
-                                        <label class="form-label">
-                                            <i class="fas fa-tag me-1"></i>SEO 최적화 - 이미지 설명
-                                        </label>
-                                        <div class="input-group">
-                                            <input type="text" class="form-control" id="altTextInput" 
-                                                   placeholder="이미지에 대한 설명을 입력하세요" value="사용자 프로필 사진">
-                                            <button type="button" class="btn btn-outline-secondary" id="autoGenerateAltBtn">
-                                                <i class="fas fa-magic me-1"></i>자동 생성
-                                            </button>
-                                        </div>
-                                        <small class="form-text text-muted">
-                                            검색엔진 최적화를 위해 이미지를 설명하는 텍스트를 입력하세요
-                                        </small>
                                     </div>
                                 </div>
                             </div>
                             
-                            <div class="final-actions mt-4">
-                                <div class="d-flex justify-content-between">
-                                    <button type="button" class="btn btn-outline-secondary" id="backToCropBtn">
-                                        <i class="fas fa-arrow-left me-1"></i>크롭 다시하기
-                                    </button>
-                                    <div>
-                                        <button type="button" class="btn btn-outline-danger me-2" id="removeImageBtn">
-                                            <i class="fas fa-trash me-1"></i>이미지 제거
-                                        </button>
-                                        <button type="button" class="btn btn-success" id="saveImageBtn">
-                                            <i class="fas fa-save me-1"></i>완료
+                            <!-- SEO 최적화 섹션 -->
+                            <div class="seo-optimization-section mt-4">
+                                <h6 class="mb-3">
+                                    <i class="fas fa-search me-2"></i>SEO 최적화 & 파일명 관리
+                                </h6>
+                                
+                                <!-- 이미지 파일명 수정 -->
+                                <div class="mb-4">
+                                    <label for="profileNameInput" class="form-label">
+                                        <i class="fas fa-file-signature me-1"></i>이미지 파일명
+                                    </label>
+                                    <div class="input-group">
+                                        <input type="text" class="form-control" id="profileNameInput" 
+                                               placeholder="예: 김철수-증명사진">
+                                        <button type="button" class="btn btn-outline-info" id="previewProfileNameBtn">
+                                            <i class="fas fa-eye me-1"></i>미리보기
                                         </button>
                                     </div>
+                                    <div class="mt-2">
+                                        <small class="text-info">
+                                            <i class="fas fa-info-circle me-1"></i>
+                                            실제 저장명: <span id="previewProfileName" class="fw-bold">profile_user_photo.jpg</span>
+                                        </small>
+                                    </div>
+                                </div>
+
+                                <!-- 추천 키워드 -->
+                                <div class="mb-3">
+                                    <label class="form-label">
+                                        <i class="fas fa-tags me-1"></i>추천 키워드 (클릭하여 추가)
+                                    </label>
+                                    <div class="keyword-suggestions">
+                                        <div class="mb-2">
+                                            <small class="text-muted fw-bold">사진 종류:</small>
+                                            <div class="keyword-group">
+                                                <button type="button" class="btn btn-outline-primary btn-sm keyword-btn" data-keyword="증명사진">증명사진</button>
+                                                <button type="button" class="btn btn-outline-primary btn-sm keyword-btn" data-keyword="프로필">프로필</button>
+                                                <button type="button" class="btn btn-outline-primary btn-sm keyword-btn" data-keyword="정면사진">정면사진</button>
+                                                <button type="button" class="btn btn-outline-primary btn-sm keyword-btn" data-keyword="여권사진">여권사진</button>
+                                            </div>
+                                        </div>
+                                        <div class="mb-2">
+                                            <small class="text-muted fw-bold">용도:</small>
+                                            <div class="keyword-group">
+                                                <button type="button" class="btn btn-outline-success btn-sm keyword-btn" data-keyword="이력서">이력서</button>
+                                                <button type="button" class="btn btn-outline-success btn-sm keyword-btn" data-keyword="자격증">자격증</button>
+                                                <button type="button" class="btn btn-outline-success btn-sm keyword-btn" data-keyword="신분증">신분증</button>
+                                                <button type="button" class="btn btn-outline-success btn-sm keyword-btn" data-keyword="입사지원">입사지원</button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Alt 텍스트 -->
+                                <div class="mb-3">
+                                    <label for="altTextInput" class="form-label">
+                                        <i class="fas fa-tag me-1"></i>이미지 설명 (Alt 텍스트)
+                                    </label>
+                                    <div class="input-group">
+                                        <textarea class="form-control" id="altTextInput" rows="2" 
+                                                  placeholder="프로필 이미지에 대한 설명을 입력하세요 (SEO 최적화용)">사용자 프로필 사진</textarea>
+                                        <button type="button" class="btn btn-outline-secondary" id="autoGenerateAltBtn">
+                                            <i class="fas fa-magic me-1"></i>자동 생성
+                                        </button>
+                                    </div>
+                                    <small class="text-muted">
+                                        <i class="fas fa-lightbulb me-1"></i>
+                                        검색 엔진 최적화를 위한 이미지 설명입니다
+                                    </small>
+                                </div>
+
+                                <!-- SEO 팁 -->
+                                <div class="seo-tips alert alert-info">
+                                    <h6 class="alert-heading">
+                                        <i class="fas fa-graduation-cap me-2"></i>SEO 최적화 팁
+                                    </h6>
+                                    <ul class="mb-0 small">
+                                        <li>구체적인 프로필 사진 설명 작성</li>
+                                        <li>용도나 목적을 포함한 키워드 사용</li>
+                                        <li>예: "김철수 요양보호사 증명사진"</li>
+                                        <li>한글 키워드로 국내 검색에 최적화</li>
+                                    </ul>
+                                </div>
+                            </div>
+                            
+                            <div class="compression-actions mt-4 text-center">
+                                <div class="d-flex justify-content-between">
+                                    <button type="button" class="btn btn-outline-secondary" id="backToCropBtn">
+                                        <i class="fas fa-arrow-left me-2"></i>크롭으로 돌아가기
+                                    </button>
+                                    <button type="button" class="btn btn-success" id="saveImageBtn">
+                                        <i class="fas fa-save me-2"></i>완료
+                                    </button>
                                 </div>
                             </div>
                         </div>
@@ -1536,6 +1545,99 @@ function setButtonLoading(button, isLoading, loadingText = '처리 중...') {
 .step-item.active .step-label {
     color: #007bff;
     font-weight: 600;
+}
+
+/* SEO 최적화 기능 스타일 */
+.keyword-suggestions {
+    background: #f8f9fa;
+    border-radius: 8px;
+    padding: 15px;
+    margin-bottom: 15px;
+}
+
+.keyword-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 5px;
+}
+
+.keyword-btn {
+    font-size: 0.875rem;
+    padding: 5px 10px;
+    border-radius: 15px;
+    transition: all 0.2s ease;
+    cursor: pointer;
+}
+
+.keyword-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+}
+
+.keyword-btn.btn-success {
+    animation: keywordClick 0.5s ease;
+}
+
+@keyframes keywordClick {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.1); }
+    100% { transform: scale(1); }
+}
+
+.seo-optimization-section {
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    border-radius: 10px;
+    padding: 20px;
+    border: 1px solid #dee2e6;
+}
+
+.seo-tips {
+    border-left: 4px solid #17a2b8;
+    background: rgba(23, 162, 184, 0.1);
+}
+
+#profileNameInput {
+    border-radius: 8px;
+}
+
+#previewProfileName {
+    color: #17a2b8;
+    background: rgba(23, 162, 184, 0.1);
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-family: 'Courier New', monospace;
+}
+
+.input-group .btn {
+    border-radius: 0 8px 8px 0;
+}
+
+.form-label {
+    font-weight: 600;
+    color: #495057;
+}
+
+/* Cropper.js 가시성 개선 */
+.cropper-center::before,
+.cropper-center::after {
+    background-color: #007bff !important;
+    opacity: 0.8 !important;
+    box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.8) !important;
+}
+
+.cropper-line {
+    background-color: #007bff !important;
+    opacity: 0.6 !important;
+}
+
+.cropper-point {
+    background-color: #007bff !important;
+    opacity: 0.8 !important;
+    width: 8px !important;
+    height: 8px !important;
+    border-radius: 50% !important;
+    box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.8) !important;
 }
 
 .step-item.completed .step-label {
