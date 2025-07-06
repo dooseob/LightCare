@@ -25,6 +25,11 @@ public class Constants {
     public static final String TEST_IMAGES_PATH = "/test-images/";
     public static final long MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
     
+    // 이미지 관련 상수
+    public static final int MAX_FACILITY_IMAGES = 5; // 시설 이미지 최대 5장
+    public static final int MAX_PROFILE_IMAGES = 1;  // 프로필 이미지 최대 1장
+    public static final String[] ALLOWED_IMAGE_EXTENSIONS = {"jpg", "jpeg", "png", "webp"};
+    
     // 구인구직 관련 상수
     public static final String JOB_TYPE_RECRUIT = "RECRUIT"; // 구인
     public static final String JOB_TYPE_SEARCH = "SEARCH";   // 구직

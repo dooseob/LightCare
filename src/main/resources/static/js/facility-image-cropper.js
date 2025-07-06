@@ -403,17 +403,21 @@ function handleKeywordClick(keyword) {
     }
 }
 
-// 파일명 미리보기 업데이트
+// 파일명 미리보기 업데이트 (개별 이미지별 관리)
 function updateFileNamePreview() {
     const imageNameInput = document.getElementById('imageNameInput');
     const previewFileName = document.getElementById('previewFileName');
     
     if (!imageNameInput || !previewFileName) return;
     
+    const currentImage = originalImages[currentImageIndex];
+    if (!currentImage) return;
+    
     const inputValue = imageNameInput.value.trim();
     let finalFileName;
     
     if (inputValue === '') {
+        // 기본 파일명 생성 (이미지별 고유)
         finalFileName = `facility_${facilityId}_${currentImageIndex}_${new Date().getTime() % 10000}.jpg`;
     } else {
         // 한글을 영문으로 변환하는 시뮬레이션 (실제로는 서버에서 처리)
@@ -422,8 +426,12 @@ function updateFileNamePreview() {
         finalFileName = `facility_${facilityId}_${currentImageIndex}_${sanitizedName}_${new Date().getTime() % 10000}.jpg`;
     }
     
+    // 현재 이미지의 파일명 정보 저장
+    currentImage.customFileName = inputValue;
+    currentImage.finalFileName = finalFileName;
+    
     previewFileName.textContent = finalFileName;
-    console.log('📄 파일명 미리보기 업데이트:', finalFileName);
+    console.log(`📄 파일명 미리보기 업데이트 (${currentImageIndex + 1}/${originalImages.length}):`, finalFileName);
 }
 
 // 시설명 가져오기 (페이지의 시설 정보에서)
@@ -554,7 +562,13 @@ function processFilesSequentially(files) {
                 size: file.size,
                 type: file.type,
                 dataUrl: e.target.result,
-                originalFile: file
+                originalFile: file,
+                // 개별 이미지 설정 추가
+                customAltText: '', // 사용자 지정 alt 텍스트
+                customFileName: '', // 사용자 지정 파일명 (확장자 제외)
+                generatedAltText: '', // 자동 생성된 alt 텍스트
+                finalFileName: '', // 최종 생성될 파일명
+                imageOrder: index // 이미지 순서
             };
             
             originalImages.push(imageData);
@@ -606,9 +620,14 @@ function loadImageToCropper(imageData) {
     };
 }
 
-// 현재 이미지 정보 업데이트
+// 현재 이미지 정보 업데이트 (개별 설정 복원 포함)
 function updateCurrentImageInfo() {
     if (!originalImages.length) return;
+    
+    const currentImage = originalImages[currentImageIndex];
+    if (!currentImage) return;
+    
+    console.log(`🔄 이미지 전환: ${currentImageIndex + 1}/${originalImages.length} - ${currentImage.name}`);
     
     // 현재 이미지 번호 업데이트
     if (elements.currentImageNumber) {
@@ -617,8 +636,11 @@ function updateCurrentImageInfo() {
     
     // 파일명 업데이트
     if (elements.imageFileName) {
-        elements.imageFileName.textContent = originalImages[currentImageIndex]?.name || '';
+        elements.imageFileName.textContent = currentImage.name || '';
     }
+    
+    // 개별 이미지 설정 복원
+    restoreIndividualImageSettings(currentImage);
     
     // 네비게이션 버튼 표시/숨김
     if (elements.buttons.prevImage) {
@@ -627,6 +649,63 @@ function updateCurrentImageInfo() {
     if (elements.buttons.nextImage) {
         elements.buttons.nextImage.style.display = currentImageIndex < originalImages.length - 1 ? 'inline-block' : 'none';
     }
+}
+
+// 현재 이미지의 개별 설정을 저장
+function saveCurrentImageSettings() {
+    const currentImage = originalImages[currentImageIndex];
+    if (!currentImage) return;
+    
+    // Alt 텍스트 저장
+    const altInput = document.getElementById('altTextInput');
+    if (altInput) {
+        currentImage.customAltText = altInput.value.trim();
+    }
+    
+    // 파일명 저장
+    const imageNameInput = document.getElementById('imageNameInput');
+    if (imageNameInput) {
+        currentImage.customFileName = imageNameInput.value.trim();
+    }
+    
+    console.log(`💾 이미지 설정 저장 (${currentImageIndex + 1}/${originalImages.length}):`, {
+        altText: currentImage.customAltText,
+        fileName: currentImage.customFileName
+    });
+}
+
+// 개별 이미지 설정을 복원
+function restoreIndividualImageSettings(imageData) {
+    console.log(`🔄 이미지 설정 복원 중: ${imageData.name}`);
+    
+    // Alt 텍스트 복원
+    const altInput = document.getElementById('altTextInput');
+    if (altInput) {
+        if (imageData.customAltText && imageData.customAltText.trim() !== '') {
+            // 사용자가 설정한 alt 텍스트 우선 사용
+            altInput.value = imageData.customAltText;
+        } else if (imageData.generatedAltText && imageData.generatedAltText.trim() !== '') {
+            // 자동 생성된 alt 텍스트 사용
+            altInput.value = imageData.generatedAltText;
+        } else {
+            // alt 텍스트 자동 생성
+            generateAltText();
+        }
+    }
+    
+    // 파일명 복원
+    const imageNameInput = document.getElementById('imageNameInput');
+    if (imageNameInput) {
+        imageNameInput.value = imageData.customFileName || '';
+    }
+    
+    // 파일명 미리보기 업데이트
+    updateFileNamePreview();
+    
+    console.log(`✅ 이미지 설정 복원 완료:`, {
+        altText: altInput ? altInput.value : 'N/A',
+        fileName: imageNameInput ? imageNameInput.value : 'N/A'
+    });
 }
 
 // 크롭퍼 초기화 (16:9 비율, 프로필과 동일한 패턴)
@@ -1077,7 +1156,7 @@ function updateCompressionPreview() {
     img.src = firstCroppedImage.croppedDataUrl;
 }
 
-// Alt 텍스트 자동 생성 (다중 이미지 지원)
+// Alt 텍스트 자동 생성 (다중 이미지 지원 - 개별 관리)
 function generateAltText() {
     const altInput = document.getElementById('altTextInput');
     if (!altInput) return;
@@ -1089,6 +1168,14 @@ function generateAltText() {
     if (!currentImage) return;
     
     let altText = generateIndividualAltText(currentImage, currentImageIndex);
+    
+    // 생성된 alt 텍스트를 이미지 데이터에 저장
+    currentImage.generatedAltText = altText;
+    
+    // 사용자 지정 alt 텍스트가 있으면 우선 사용
+    if (currentImage.customAltText && currentImage.customAltText.trim() !== '') {
+        altText = currentImage.customAltText;
+    }
     
     altInput.value = altText;
     console.log(`Alt 텍스트 자동 생성 완료 (${currentImageIndex + 1}/${originalImages.length}):`, altText);
@@ -1616,19 +1703,27 @@ function resetCropper() {
     cropper.reset();
 }
 
-// 이전 이미지로 이동
+// 이전 이미지로 이동 (설정 저장 포함)
 function goToPreviousImage() {
+    // 현재 이미지의 설정을 저장 후 이동
+    saveCurrentImageSettings();
+    
     if (currentImageIndex > 0) {
         currentImageIndex--;
         loadImageToCropper(originalImages[currentImageIndex]);
+        console.log(`⬅️ 이전 이미지로 이동: ${currentImageIndex + 1}/${originalImages.length}`);
     }
 }
 
-// 다음 이미지로 이동
+// 다음 이미지로 이동 (설정 저장 포함)
 function goToNextImage() {
+    // 현재 이미지의 설정을 저장 후 이동
+    saveCurrentImageSettings();
+    
     if (currentImageIndex < originalImages.length - 1) {
         currentImageIndex++;
         loadImageToCropper(originalImages[currentImageIndex]);
+        console.log(`➡️ 다음 이미지로 이동: ${currentImageIndex + 1}/${originalImages.length}`);
     }
 }
 
@@ -1799,22 +1894,51 @@ function saveAllImages() {
                     const formatRadios = document.querySelectorAll('input[name="imageFormat"]:checked');
                     let format = formatRadios.length > 0 ? formatRadios[0].value : 'jpeg';
                     
-                    // Alt 텍스트 가져오기
-                    const altTextInput = document.getElementById('altTextInput');
-                    const imageNameInput = document.getElementById('imageNameInput');
-                    
+                    // 개별 이미지의 설정 가져오기
+                    const originalImage = originalImages[i];
                     let altText = '';
-                    if (altTextInput && altTextInput.value.trim()) {
-                        altText = altTextInput.value.trim();
-                    } else if (imageNameInput && imageNameInput.value.trim()) {
-                        altText = imageNameInput.value.trim() + ' 시설 이미지';
+                    let customFileName = '';
+                    
+                    if (originalImage) {
+                        // 개별 설정 우선 사용
+                        altText = originalImage.customAltText || originalImage.generatedAltText || '';
+                        customFileName = originalImage.customFileName || '';
+                        
+                        console.log(`📋 이미지 ${i + 1} 개별 설정:`, {
+                            customAltText: originalImage.customAltText,
+                            generatedAltText: originalImage.generatedAltText,
+                            customFileName: originalImage.customFileName,
+                            finalAltText: altText,
+                            finalFileName: customFileName
+                        });
                     } else {
+                        // 폴백: 현재 화면의 입력값 사용
+                        const altTextInput = document.getElementById('altTextInput');
+                        const imageNameInput = document.getElementById('imageNameInput');
+                        altText = altTextInput ? altTextInput.value.trim() : '';
+                        customFileName = imageNameInput ? imageNameInput.value.trim() : '';
+                    }
+                    
+                    // 최종 Alt 텍스트 설정 (기본값 처리)
+                    if (!altText || altText.trim() === '') {
                         altText = `시설 이미지 ${i + 1}`;
                     }
                     
-                    // 파일명 설정
+                    // 개별 파일명 설정 (사용자 지정명 우선)
                     const extension = format === 'jpeg' ? '.jpg' : `.${format}`;
-                    const fileName = `facility_${facilityId}_image_${i}${extension}`;
+                    let fileName;
+                    
+                    if (customFileName && customFileName.trim() !== '') {
+                        // 사용자가 지정한 파일명 사용 (한글 → 영문 변환 적용)
+                        const englishName = convertKoreanToEnglishSimple(customFileName);
+                        const sanitizedName = sanitizeFilenameSimple(englishName);
+                        fileName = `facility_${facilityId}_${i}_${sanitizedName}${extension}`;
+                        console.log(`📝 사용자 지정 파일명 적용: "${customFileName}" → "${fileName}"`);
+                    } else {
+                        // 기본 파일명 사용
+                        fileName = `facility_${facilityId}_image_${i}${extension}`;
+                        console.log(`📝 기본 파일명 사용: "${fileName}"`);
+                    }
                     
                     // Blob을 File로 변환
                     const file = new File([blob], fileName, { 
@@ -1825,6 +1949,7 @@ function saveAllImages() {
                     formData.append('altText', altText);
                     formData.append('format', format);
                     formData.append('imageIndex', i.toString());
+                    formData.append('customFileName', customFileName || ''); // 사용자 지정 파일명 전송
                     
                     console.log(`📤 이미지 ${i + 1} 업로드 중...`);
                     
@@ -1898,7 +2023,17 @@ function updateManageImagesGrid() {
         return;
     }
     
+    // 중복 호출 방지
+    if (window.managingGridUpdate) {
+        console.warn('⚠️ 이미 그리드 업데이트 진행 중 - 중복 호출 방지');
+        return;
+    }
+    window.managingGridUpdate = true;
+    
     console.log('🔄 관리 이미지 그리드 업데이트 시작');
+    
+    // 기존 내용 완전 초기화
+    manageImagesGrid.innerHTML = '';
     
     // 로딩 표시
     manageImagesGrid.innerHTML = `
@@ -1923,14 +2058,28 @@ function updateManageImagesGrid() {
         .then(images => {
             console.log(`📋 서버에서 가져온 이미지 수: ${images.length}개`);
             
+            // 다시 한번 완전 초기화
             manageImagesGrid.innerHTML = '';
             
             if (images && images.length > 0) {
+                // 중복 제거 - 이미지 ID 기준으로 유니크하게 처리
+                const uniqueImages = [];
+                const seenIds = new Set();
+                
+                images.forEach(image => {
+                    if (!seenIds.has(image.imageId)) {
+                        seenIds.add(image.imageId);
+                        uniqueImages.push(image);
+                    }
+                });
+                
+                console.log(`🔧 중복 제거 후 유니크 이미지 수: ${uniqueImages.length}개`);
+                
                 // 이미지 그리드 생성
                 const gridContainer = document.createElement('div');
                 gridContainer.className = 'row g-3';
                 
-                images.forEach((image, index) => {
+                uniqueImages.forEach((image, index) => {
                     const imageElement = document.createElement('div');
                     imageElement.className = 'col-md-4 col-sm-6 col-12';
                     imageElement.innerHTML = `
@@ -2010,15 +2159,50 @@ function updateManageImagesGrid() {
                 `;
                 manageImagesGrid.appendChild(infoElement);
                 
-                // Bootstrap 드롭다운 초기화
+                // Bootstrap 드롭다운 초기화 (상세 로그 추가)
                 setTimeout(() => {
                     const dropdowns = manageImagesGrid.querySelectorAll('[data-bs-toggle="dropdown"]');
-                    dropdowns.forEach(dropdown => {
-                        if (typeof bootstrap !== 'undefined' && bootstrap.Dropdown) {
-                            new bootstrap.Dropdown(dropdown);
+                    console.log('🔧 Bootstrap 드롭다운 초기화 시작:', {
+                        dropdownCount: dropdowns.length,
+                        bootstrapAvailable: typeof bootstrap !== 'undefined',
+                        bootstrapVersion: typeof bootstrap !== 'undefined' ? bootstrap.VERSION || 'unknown' : 'null'
+                    });
+                    
+                    dropdowns.forEach((dropdown, index) => {
+                        try {
+                            if (typeof bootstrap !== 'undefined' && bootstrap.Dropdown) {
+                                const instance = new bootstrap.Dropdown(dropdown);
+                                console.log(`✅ 드롭다운 ${index + 1} 초기화 성공:`, {
+                                    element: dropdown,
+                                    instance: instance,
+                                    menu: dropdown.nextElementSibling
+                                });
+                            } else {
+                                console.warn(`⚠️ Bootstrap을 사용할 수 없어 드롭다운 ${index + 1} 초기화 건너뜀`);
+                            }
+                        } catch (error) {
+                            console.error(`❌ 드롭다운 ${index + 1} 초기화 실패:`, error);
                         }
                     });
+                    
                     console.log(`🔧 Bootstrap 드롭다운 초기화 완료: ${dropdowns.length}개`);
+                    
+                    // 추가 검증: 실제 HTML 구조 확인
+                    console.log('🔍 생성된 HTML 구조 검증:');
+                    const imageCards = manageImagesGrid.querySelectorAll('[data-image-id]');
+                    imageCards.forEach((card, index) => {
+                        const imageId = card.getAttribute('data-image-id');
+                        const setMainBtn = card.querySelector('.set-main-image-btn');
+                        const deleteBtn = card.querySelector('.delete-image-btn');
+                        
+                        console.log(`이미지 카드 ${index + 1}:`, {
+                            imageId: imageId,
+                            hasSetMainBtn: !!setMainBtn,
+                            hasDeleteBtn: !!deleteBtn,
+                            setMainImageId: setMainBtn ? setMainBtn.getAttribute('data-image-id') : 'null',
+                            deleteImageId: deleteBtn ? deleteBtn.getAttribute('data-image-id') : 'null'
+                        });
+                    });
                 }, 100);
                 
             } else {
@@ -2035,6 +2219,10 @@ function updateManageImagesGrid() {
                     </div>
                 `;
             }
+            
+            // 작업 완료 후 플래그 해제
+            window.managingGridUpdate = false;
+            console.log('✅ 관리 이미지 그리드 업데이트 완료');
         })
         .catch(error => {
             console.error('❌ 이미지 목록을 가져오는 중 오류:', error);
@@ -2043,9 +2231,15 @@ function updateManageImagesGrid() {
                     <div class="alert alert-danger">
                         <h6><i class="fas fa-exclamation-triangle me-2"></i>오류 발생</h6>
                         <p class="mb-0">이미지 목록을 불러올 수 없습니다: ${error.message}</p>
+                        <button type="button" class="btn btn-outline-primary mt-2" onclick="updateManageImagesGrid()">
+                            <i class="fas fa-refresh me-2"></i>다시 시도
+                        </button>
                     </div>
                 </div>
             `;
+            
+            // 에러 시에도 플래그 해제
+            window.managingGridUpdate = false;
         });
 }
 

@@ -61,4 +61,9 @@ public interface FacilityImageMapper {
      * 특정 이미지 ID로 이미지 조회
      */
     FacilityImageDTO getImageById(@Param("imageId") Long imageId);
+    
+    /**
+     * 이미지 순서 업데이트 (데이터 정합성 보장)
+     */
+    int updateImageOrder(@Param("imageId") Long imageId, @Param("imageOrder") Integer imageOrder);
 }

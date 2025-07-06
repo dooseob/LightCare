@@ -127,4 +127,11 @@
         WHERE image_id = #{imageId}
     </select>
 
+    <!-- 이미지 순서 업데이트 (데이터 정합성 보장) -->
+    <update id="updateImageOrder">
+        UPDATE facility_images 
+        SET image_order = #{imageOrder}, updated_at = NOW()
+        WHERE image_id = #{imageId}
+    </update>
+
 </mapper>

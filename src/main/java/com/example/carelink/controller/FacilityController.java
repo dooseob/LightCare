@@ -421,12 +421,13 @@ public class FacilityController {
                                                 @RequestParam(value = "altText", required = false) String altText,
                                                 @RequestParam(value = "format", required = false) String format,
                                                 @RequestParam(value = "imageIndex", required = false) String imageIndex,
+                                                @RequestParam(value = "customFileName", required = false) String customFileName,
                                                 HttpSession session) {
         Map<String, Object> result = new HashMap<>();
         
         try {
             log.info("🔥 시설 이미지 저장 시작 - facilityId: {}, 받은 파라미터들 확인", facilityId);
-            log.info("📋 altText: '{}', format: '{}', imageIndex: '{}'", altText, format, imageIndex);
+            log.info("📋 altText: '{}', format: '{}', imageIndex: '{}', customFileName: '{}'", altText, format, imageIndex, customFileName);
             log.info("📁 파일 정보 - 이름: '{}', 크기: {}bytes, 타입: '{}'", 
                     facilityImageFile.getOriginalFilename(), facilityImageFile.getSize(), facilityImageFile.getContentType());
             
@@ -492,12 +493,13 @@ public class FacilityController {
                 }
             }
             
-            // 다중 이미지 시스템으로 저장
+            // 다중 이미지 시스템으로 저장 (사용자 지정 파일명 지원)
             Integer orderIndex = imageIndex != null ? Integer.parseInt(imageIndex) : null;
-            log.info("🔧 서비스 호출 전 - facilityId: {}, orderIndex: {}, altText: '{}'", facilityId, orderIndex, finalAltText);
+            log.info("🔧 서비스 호출 전 - facilityId: {}, orderIndex: {}, altText: '{}', customFileName: '{}'", 
+                facilityId, orderIndex, finalAltText, customFileName);
             
             FacilityImageDTO savedImage = facilityImageService.saveSingleFacilityImage(
-                facilityId, facilityImageFile, finalAltText, orderIndex);
+                facilityId, facilityImageFile, finalAltText, orderIndex, customFileName);
             
             log.info("✅ 서비스 호출 완료 - 저장된 이미지ID: {}, 경로: {}", savedImage.getImageId(), savedImage.getImagePath());
             
@@ -544,125 +546,6 @@ public class FacilityController {
         return images;
     }
     
-    /**
-     * 시설 이미지 삭제 API
-     */
-    @DeleteMapping("/api/images/{imageId}")
-    @ResponseBody
-    public Map<String, Object> deleteFacilityImage(@PathVariable Long imageId, HttpSession session) {
-        Map<String, Object> result = new HashMap<>();
-        
-        try {
-            MemberDTO member = (MemberDTO) session.getAttribute(Constants.SESSION_MEMBER);
-            if (member == null) {
-                result.put("success", false);
-                result.put("message", "로그인이 필요합니다.");
-                return result;
-            }
-            
-            // 이미지 정보 조회
-            FacilityImageDTO imageToDelete = facilityImageService.getImageById(imageId);
-            
-            if (imageToDelete == null) {
-                result.put("success", false);
-                result.put("message", "삭제할 이미지를 찾을 수 없습니다.");
-                return result;
-            }
-            
-            // 시설 권한 확인
-            FacilityDTO facility = facilityService.getFacilityById(imageToDelete.getFacilityId());
-            if (facility == null) {
-                result.put("success", false);
-                result.put("message", "시설을 찾을 수 없습니다.");
-                return result;
-            }
-            
-            if (!facility.getRegisteredMemberId().equals(member.getMemberId()) 
-                && !Constants.MEMBER_ROLE_ADMIN.equals(member.getRole())) {
-                result.put("success", false);
-                result.put("message", "해당 이미지를 삭제할 권한이 없습니다.");
-                return result;
-            }
-            
-            // 이미지 삭제
-            boolean deleted = facilityImageService.deleteFacilityImage(imageId);
-            
-            if (deleted) {
-                result.put("success", true);
-                result.put("message", "이미지가 성공적으로 삭제되었습니다.");
-                log.info("✅ 시설 이미지 삭제 성공: imageId={}, facilityId={}", imageId, imageToDelete.getFacilityId());
-            } else {
-                result.put("success", false);
-                result.put("message", "이미지 삭제에 실패했습니다.");
-            }
-            
-        } catch (Exception e) {
-            log.error("❌ 시설 이미지 삭제 중 오류 발생: imageId={}", imageId, e);
-            result.put("success", false);
-            result.put("message", "이미지 삭제 중 오류가 발생했습니다: " + e.getMessage());
-        }
-        
-        return result;
-    }
-    
-    /**
-     * 메인 이미지 설정 API
-     */
-    @PostMapping("/api/images/{imageId}/set-main")
-    @ResponseBody
-    public Map<String, Object> setMainImage(@PathVariable Long imageId, HttpSession session) {
-        Map<String, Object> result = new HashMap<>();
-        
-        try {
-            MemberDTO member = (MemberDTO) session.getAttribute(Constants.SESSION_MEMBER);
-            if (member == null) {
-                result.put("success", false);
-                result.put("message", "로그인이 필요합니다.");
-                return result;
-            }
-            
-            // 이미지 정보 조회
-            FacilityImageDTO targetImage = facilityImageService.getImageById(imageId);
-            
-            if (targetImage == null) {
-                result.put("success", false);
-                result.put("message", "설정할 이미지를 찾을 수 없습니다.");
-                return result;
-            }
-            
-            // 시설 권한 확인
-            FacilityDTO facility = facilityService.getFacilityById(targetImage.getFacilityId());
-            if (facility == null) {
-                result.put("success", false);
-                result.put("message", "시설을 찾을 수 없습니다.");
-                return result;
-            }
-            
-            if (!facility.getRegisteredMemberId().equals(member.getMemberId()) 
-                && !Constants.MEMBER_ROLE_ADMIN.equals(member.getRole())) {
-                result.put("success", false);
-                result.put("message", "해당 이미지를 설정할 권한이 없습니다.");
-                return result;
-            }
-            
-            // 메인 이미지 설정
-            boolean updated = facilityImageService.setMainImage(targetImage.getFacilityId(), imageId);
-            
-            if (updated) {
-                result.put("success", true);
-                result.put("message", "메인 이미지로 설정되었습니다.");
-                log.info("✅ 메인 이미지 설정 성공: imageId={}, facilityId={}", imageId, targetImage.getFacilityId());
-            } else {
-                result.put("success", false);
-                result.put("message", "메인 이미지 설정에 실패했습니다.");
-            }
-            
-        } catch (Exception e) {
-            log.error("❌ 메인 이미지 설정 중 오류 발생: imageId={}", imageId, e);
-            result.put("success", false);
-            result.put("message", "메인 이미지 설정 중 오류가 발생했습니다: " + e.getMessage());
-        }
-        
-        return result;
-    }
+    // 이미지 관리 API들은 FacilityImageApiController로 이동됨
+    // Thymeleaf 인라인 자바스크립트 충돌 방지를 위해 별도 컨트롤러 사용
 }

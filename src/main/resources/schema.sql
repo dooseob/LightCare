@@ -1,6 +1,6 @@
 -- ================================================
 -- 요양원 구인구직 사이트 데이터베이스 스키마
--- 4인 팀 프로젝트 전용
+-- 4인 팀 프로젝트 전용 (개선 반영 버전)
 -- ================================================
 
 -- 데이터베이스 생성 (필요 시)
@@ -43,7 +43,7 @@ CREATE TABLE facility (
     latitude DECIMAL(10, 8) COMMENT '위도',
     longitude DECIMAL(11, 8) COMMENT '경도',
     description TEXT COMMENT '시설 설명',
-    facility_image VARCHAR(255) COMMENT '시설 이미지 경로',
+    facility_image VARCHAR(255) COMMENT '시설 메인 이미지 경로 (레거시 호환성용)',
     facility_image_alt_text VARCHAR(255) COMMENT '시설 이미지 alt 텍스트 (SEO 최적화용)',
     homepage VARCHAR(255) COMMENT '홈페이지 URL',
     capacity INT COMMENT '수용 인원',
@@ -53,8 +53,8 @@ CREATE TABLE facility (
     average_rating FLOAT DEFAULT 0 COMMENT '평균 평점',
     review_count INT DEFAULT 0 COMMENT '리뷰 수',
     grade_rating INT COMMENT '시설 등급 (1-5등급, 1등급이 최고)',
-    image_count INT DEFAULT 0 COMMENT '시설 이미지 개수',
-    main_image_path VARCHAR(500) COMMENT '메인 이미지 경로',
+    image_count INT DEFAULT 0 COMMENT '시설 이미지 개수 (facility_images 테이블 기준)',
+    main_image_path VARCHAR(500) COMMENT '메인 이미지 경로 (다중 이미지 시스템)',
     registered_member_id BIGINT NOT NULL COMMENT '등록한 회원 ID',
     is_approved BOOLEAN NOT NULL DEFAULT FALSE COMMENT '승인 여부',
     approval_status VARCHAR(20) NOT NULL DEFAULT 'PENDING' COMMENT '승인 상태 (PENDING, APPROVED, REJECTED)',
@@ -65,19 +65,22 @@ CREATE TABLE facility (
 ) COMMENT='시설 정보';
 
 -- ================================================
--- 3. 시설 이미지 테이블 (다중 이미지 지원)
+-- 3. 시설 이미지 테이블 (다중 이미지 지원 - 최대 5장)
 -- ================================================
 CREATE TABLE facility_images (
     image_id BIGINT AUTO_INCREMENT PRIMARY KEY COMMENT '이미지 ID',
     facility_id BIGINT NOT NULL COMMENT '시설 ID',
     image_path VARCHAR(500) NOT NULL COMMENT '이미지 경로',
-    image_alt_text VARCHAR(200) COMMENT '이미지 alt 텍스트',
-    image_order INT DEFAULT 0 COMMENT '이미지 순서',
+    image_alt_text VARCHAR(200) COMMENT '이미지 alt 텍스트 (SEO 최적화용)',
+    image_order INT DEFAULT 0 COMMENT '이미지 순서 (0부터 시작)',
     is_main_image BOOLEAN DEFAULT FALSE COMMENT '메인 이미지 여부',
     upload_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP COMMENT '업로드일시',
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '수정일시',
-    FOREIGN KEY (facility_id) REFERENCES facility(facility_id) ON DELETE CASCADE
-) COMMENT='시설 이미지';
+    FOREIGN KEY (facility_id) REFERENCES facility(facility_id) ON DELETE CASCADE,
+    INDEX idx_facility_images_facility_id (facility_id),
+    INDEX idx_facility_images_main (facility_id, is_main_image),
+    INDEX idx_facility_images_order (facility_id, image_order)
+) COMMENT='시설 이미지 (최대 5장 지원)';
 
 -- ================================================
 -- 4. 구인구직 게시글 테이블 (팀원 C 담당)
