@@ -92,6 +92,7 @@ function initializeElements() {
     elements.compressionSavings = document.getElementById('compressionSavings');
     elements.qualitySlider = document.getElementById('qualitySlider');
     elements.qualityLabel = document.getElementById('qualityLabel');
+    elements.qualityPercent = document.getElementById('qualityPercent');
     elements.currentFormat = document.getElementById('currentFormat');
     elements.formatJPEG = document.getElementById('formatJPEG');
     elements.formatAVIF = document.getElementById('formatAVIF');
@@ -207,14 +208,22 @@ function setupEventListeners() {
     
     // 파일명 입력 시 실시간 미리보기
     if (elements.profileNameInput) {
-        elements.profileNameInput.addEventListener('input', updateProfileNamePreview);
+        elements.profileNameInput.addEventListener('input', function() {
+            updateProfileNamePreview();
+            console.log('🔄 실시간 파일명 변환:', this.value);
+        });
+        // 페이지 로드 시 초기 미리보기 설정
+        updateProfileNamePreview();
     }
     
     // 압축 품질 슬라이더
     if (elements.qualitySlider) {
         elements.qualitySlider.addEventListener('input', (e) => {
             const quality = Math.round(e.target.value * 100);
-            elements.qualityLabel.textContent = quality;
+            const qualityPercent = document.getElementById('qualityPercent');
+            if (qualityPercent) {
+                qualityPercent.textContent = quality + '%';
+            }
             updateCompression();
         });
     }
@@ -227,18 +236,18 @@ function setupEventListeners() {
         }
     });
     
-    // 키워드 버튼 클릭 이벤트
-    document.querySelectorAll('.keyword-btn').forEach(btn => {
-        btn.addEventListener('click', function() {
-            const keyword = this.getAttribute('data-keyword');
+    // 키워드 버튼 클릭 이벤트 - 동적으로 추가된 버튼도 처리
+    document.addEventListener('click', function(e) {
+        if (e.target.classList.contains('keyword-btn')) {
+            const keyword = e.target.getAttribute('data-keyword');
             addKeywordToInput(keyword);
             
             // 클릭 애니메이션
-            this.classList.add('btn-success');
+            e.target.classList.add('btn-success');
             setTimeout(() => {
-                this.classList.remove('btn-success');
+                e.target.classList.remove('btn-success');
             }, 500);
-        });
+        }
     });
     
     // 파일 선택 버튼
@@ -376,6 +385,20 @@ function convertKoreanToEnglish(korean) {
 function containsKorean(text) {
     if (!text) return false;
     return /[ㄱ-ㅎㅏ-ㅣ가-힣]/.test(text);
+}
+
+// 선택된 이미지 형식 가져오기
+function getSelectedImageFormat() {
+    const avif = document.getElementById('formatAVIF');
+    const webp = document.getElementById('formatWEBP');
+    const jpeg = document.getElementById('formatJPEG');
+    
+    if (avif && avif.checked) return 'avif';
+    if (webp && webp.checked) return 'webp';
+    if (jpeg && jpeg.checked) return 'jpeg';
+    
+    // 기본값
+    return 'jpeg';
 }
 
 // 드래그 오버 처리

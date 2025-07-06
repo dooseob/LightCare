@@ -38,6 +38,40 @@ document.addEventListener('DOMContentLoaded', function() {
     console.log('✅ 시설 이미지 크롭퍼 초기화 완료');
 });
 
+// 이미지 로드 에러 처리 함수 (중복 요청 방지)
+function handleImageError(imgElement, imageId) {
+    console.warn(`⚠️ 이미지 로드 실패: ${imageId}, 원본 경로: ${imgElement.dataset.originalSrc || imgElement.src}`);
+    
+    // 이미 에러 처리되었는지 확인
+    if (imgElement.classList.contains('error-handled')) {
+        console.log('이미 에러 처리된 이미지입니다.');
+        return;
+    }
+    
+    // 에러 처리 완료 표시
+    imgElement.classList.add('error-handled');
+    
+    // 기본 이미지로 교체하지 않고 플레이스홀더 표시
+    imgElement.style.display = 'none';
+    
+    // 부모 컨테이너에 플레이스홀더 추가
+    const placeholder = document.createElement('div');
+    placeholder.className = 'bg-light rounded d-flex align-items-center justify-content-center';
+    placeholder.style.cssText = 'height: 200px; background-color: #f8f9fa;';
+    placeholder.innerHTML = `
+        <div class="text-center text-muted">
+            <i class="fas fa-image fa-3x mb-2"></i>
+            <br>
+            <small>이미지를 불러올 수 없습니다</small>
+        </div>
+    `;
+    
+    // 이미지 대신 플레이스홀더 삽입
+    imgElement.parentNode.insertBefore(placeholder, imgElement);
+    
+    console.log(`✅ 이미지 ${imageId}에 대한 플레이스홀더 처리 완료`);
+}
+
 // 포맷 지원 확인 (프로필에서 누락된 기능 추가)
 function checkFormatSupport() {
     console.log('🔍 브라우저 이미지 포맷 지원 확인');
@@ -149,12 +183,15 @@ function setupEventListeners() {
         console.log('📁 파일 입력 이벤트 리스너 등록됨');
     }
     
-    // 파일 선택 버튼 (프로필 방식 - 직접 참조)
+    // 파일 선택 버튼 (다중 이미지 지원)
     const fileSelectBtn = document.getElementById('fileSelectBtn');
     if (fileSelectBtn) {
         fileSelectBtn.addEventListener('click', () => {
-            console.log('📁 파일 선택 버튼 클릭됨');
+            console.log('📁 파일 선택 버튼 클릭됨 (다중 선택 모드)');
             if (elements.imageInput) {
+                // 다중 선택 모드 활성화
+                elements.imageInput.multiple = true;
+                elements.imageInput.webkitdirectory = false;
                 elements.imageInput.click();
             } else {
                 console.error('❌ imageInput 요소를 찾을 수 없습니다.');
@@ -163,6 +200,22 @@ function setupEventListeners() {
         console.log('✅ 파일 선택 버튼 이벤트 등록 완료');
     } else {
         console.error('❌ fileSelectBtn 요소를 찾을 수 없습니다.');
+    }
+    
+    // 폴더 선택 버튼 (새로운 기능)
+    const folderSelectBtn = document.getElementById('folderSelectBtn');
+    const folderInput = document.getElementById('folderInput');
+    if (folderSelectBtn && folderInput) {
+        folderSelectBtn.addEventListener('click', () => {
+            console.log('📂 폴더 선택 버튼 클릭됨');
+            folderInput.click();
+        });
+        
+        // 폴더 선택 시 모달 표시
+        folderInput.addEventListener('change', handleFolderSelection);
+        console.log('✅ 폴더 선택 버튼 이벤트 등록 완료');
+    } else {
+        console.error('❌ folderSelectBtn 또는 folderInput 요소를 찾을 수 없습니다.');
     }
     
     // 크롭 컨트롤 버튼들 (프로필과 동일)
@@ -232,11 +285,12 @@ function setupEventListeners() {
         });
     }
     
-    // 관리 단계 버튼들
-    if (elements.buttons.backToCompression) {
-        elements.buttons.backToCompression.addEventListener('click', () => {
-            console.log('🔙 압축 설정으로 돌아가기');
-            goToCompressionStep();
+    // 관리 단계 버튼들 (압축 단계 제거로 크롭으로 직접 이동)
+    const backToCropFromManageBtn = document.getElementById('backToCropBtn');
+    if (backToCropFromManageBtn) {
+        backToCropFromManageBtn.addEventListener('click', () => {
+            console.log('🔙 크롭 단계로 돌아가기 (관리에서)');
+            goToCropStep();
         });
     }
     
@@ -1013,14 +1067,25 @@ function cropCurrentImage() {
         if (canvas) {
             const croppedImageData = canvas.toDataURL('image/jpeg', 0.9);
             
-            // 크롭된 이미지 저장
+            // 현재 이미지의 alt 텍스트와 파일명 가져오기
+            const currentAltText = document.getElementById('altText')?.value || '';
+            const currentFileName = document.getElementById('seoFileName')?.value || '';
+            
+            // 크롭된 이미지 저장 (개별 설정 포함)
             croppedImages[currentImageIndex] = {
                 ...originalImages[currentImageIndex],
                 croppedDataUrl: croppedImageData,
-                isCropped: true
+                isCropped: true,
+                finalAltText: currentAltText, // 크롭 시점의 alt 텍스트 저장
+                finalFileName: currentFileName, // 크롭 시점의 파일명 저장
+                cropTimestamp: Date.now()
             };
             
-            console.log(`✅ 이미지 크롭 완료: ${currentImageIndex + 1}`);
+            console.log(`✅ 이미지 크롭 완료: ${currentImageIndex + 1}`, {
+                altText: currentAltText,
+                fileName: currentFileName,
+                hasCustomSettings: !!(currentAltText || currentFileName)
+            });
             
             // 다음 이미지로 자동 이동 또는 압축 단계로
             setTimeout(() => {
@@ -1517,20 +1582,45 @@ function updateFinalImagesGrid() {
     finalImagesGrid.innerHTML = '<div class="text-center"><i class="fas fa-spinner fa-spin"></i> 저장된 이미지 목록을 불러오는 중...</div>';
     
     // 서버에서 실제 저장된 이미지 목록을 가져와서 표시
-    fetch(`/facility/api/${facilityId}/images`)
-        .then(response => response.json())
-        .then(images => {
+    fetch(`/api/facility/${facilityId}/images`)
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            return response.json();
+        })
+        .then(data => {
+            console.log('📋 Final grid - 서버 응답 데이터:', data);
             finalImagesGrid.innerHTML = '';
             
+            // API 응답 구조 처리 (wrapped response)
+            const images = data.success ? data.images : data;
+            
             if (images && images.length > 0) {
-                images.forEach((image, index) => {
+                console.log(`📋 Final grid - 이미지 수: ${images.length}개`);
+                
+                // 유효한 이미지만 필터링
+                const validImages = images.filter(image => {
+                    if (!image || !image.imageId || !image.imagePath || 
+                        image.imagePath.includes('default_facility.jpg') ||
+                        image.imagePath === null || image.imagePath === undefined ||
+                        image.imagePath.trim() === '') {
+                        console.log(`❌ Final grid - 유효하지 않은 이미지 제외: ${JSON.stringify(image)}`);
+                        return false;
+                    }
+                    return true;
+                });
+                
+                console.log(`📋 Final grid - 유효한 이미지 수: ${validImages.length}개 (원본: ${images.length}개)`);
+                
+                validImages.forEach((image, index) => {
                     const imageElement = document.createElement('div');
                     imageElement.className = 'col-md-3 col-sm-4 col-6 mb-3';
                     imageElement.innerHTML = `
                         <div class="card" data-image-id="${image.imageId}">
                             <div class="position-relative">
                                 <img src="${image.imagePath}" class="card-img-top" style="height: 120px; object-fit: cover;" 
-                                     alt="${image.imageAltText || '시설 이미지'}" onerror="this.src='/images/default_facility.jpg'">
+                                     alt="${image.imageAltText || '시설 이미지'}" onerror="handleImageError(this, ${image.imageId})"
                                 <div class="position-absolute top-0 end-0 p-1">
                                     <div class="dropdown">
                                         <button class="btn btn-sm btn-light dropdown-toggle" type="button" 
@@ -1539,11 +1629,11 @@ function updateFinalImagesGrid() {
                                         </button>
                                         <ul class="dropdown-menu dropdown-menu-end">
                                             ${!image.isMainImage ? `
-                                                <li><button class="dropdown-item" onclick="setMainImage(${image.imageId})">
+                                                <li><button class="dropdown-item set-main-image-btn" data-image-id="${image.imageId}">
                                                     <i class="fas fa-star text-warning me-2"></i>메인 이미지로 설정
                                                 </button></li>
                                             ` : ''}
-                                            <li><button class="dropdown-item text-danger" onclick="deleteImage(${image.imageId})">
+                                            <li><button class="dropdown-item text-danger delete-image-btn" data-image-id="${image.imageId}">
                                                 <i class="fas fa-trash me-2"></i>이미지 삭제
                                             </button></li>
                                         </ul>
@@ -1563,7 +1653,7 @@ function updateFinalImagesGrid() {
                     finalImagesGrid.appendChild(imageElement);
                 });
                 
-                console.log(`✅ 서버에서 가져온 이미지 수: ${images.length}개`);
+                console.log(`✅ Final grid - 렌더링된 유효 이미지 수: ${validImages.length}개`);
                 
                 // Bootstrap 드롭다운 초기화 (동적으로 생성된 요소들을 위해)
                 setTimeout(() => {
@@ -1583,18 +1673,21 @@ function updateFinalImagesGrid() {
                 infoElement.innerHTML = `
                     <div class="alert alert-success">
                         <h6><i class="fas fa-database me-2"></i>데이터베이스 저장 확인</h6>
-                        <p class="mb-0">✅ 총 <strong>${images.length}장</strong>의 이미지가 성공적으로 저장되었습니다.</p>
+                        <p class="mb-0">✅ 총 <strong>${validImages.length}장</strong>의 이미지가 성공적으로 저장되었습니다.</p>
                         <small class="text-muted">이미지는 /uploads/facility/ 디렉토리에 저장되고, facility_images 테이블에 등록됩니다.</small>
                     </div>
                 `;
                 finalImagesGrid.appendChild(infoElement);
                 
             } else {
+                console.log(`⚠️ Final grid - 표시할 유효한 이미지가 없음`);
                 finalImagesGrid.innerHTML = `
                     <div class="col-12 text-center">
-                        <div class="alert alert-warning">
-                            <i class="fas fa-exclamation-triangle me-2"></i>
-                            저장된 이미지가 없습니다.
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle me-2"></i>
+                            아직 등록된 시설 이미지가 없습니다.
+                            <br>
+                            <small class="text-muted">이미지를 업로드하여 시설을 홍보해보세요!</small>
                         </div>
                     </div>
                 `;
@@ -1824,7 +1917,7 @@ window.deleteImage = function(imageId) {
     
     console.log('🗑️ 이미지 삭제 요청:', imageId);
     
-    fetch(`/facility/api/images/${imageId}`, {
+    fetch(`/api/facility/images/${imageId}`, {
         method: 'DELETE',
         headers: {
             'Content-Type': 'application/json'
@@ -1865,18 +1958,40 @@ function saveAllImages() {
     return new Promise(async (resolve, reject) => {
         try {
             let savedCount = 0;
-            let totalImages = croppedImages.filter(img => img && img.croppedDataUrl).length;
+            
+            // 크롭된 이미지와 크롭하지 않은 원본 이미지 모두 포함
+            const imagesToSave = [];
+            
+            for (let i = 0; i < originalImages.length; i++) {
+                const originalImg = originalImages[i];
+                const croppedImg = croppedImages[i];
+                
+                if (croppedImg && croppedImg.croppedDataUrl) {
+                    // 크롭된 이미지가 있으면 크롭된 것 사용
+                    imagesToSave.push({...croppedImg, index: i});
+                } else if (originalImg && originalImg.dataUrl) {
+                    // 크롭되지 않았으면 원본 사용
+                    imagesToSave.push({
+                        ...originalImg,
+                        croppedDataUrl: originalImg.dataUrl, // 원본을 크롭된 것으로 처리
+                        isCropped: false,
+                        index: i
+                    });
+                }
+            }
+            
+            const totalImages = imagesToSave.length;
             
             if (totalImages === 0) {
-                reject(new Error('저장할 크롭된 이미지가 없습니다.'));
+                reject(new Error('저장할 이미지가 없습니다.'));
                 return;
             }
             
-            console.log(`📊 저장할 이미지 수: ${totalImages}장`);
+            console.log(`📊 저장할 이미지 수: ${totalImages}장 (크롭된 이미지: ${croppedImages.filter(img => img && img.croppedDataUrl).length}장, 원본 이미지: ${totalImages - croppedImages.filter(img => img && img.croppedDataUrl).length}장)`);
             
-            // 크롭된 각 이미지를 서버에 저장
-            for (let i = 0; i < croppedImages.length; i++) {
-                const image = croppedImages[i];
+            // 각 이미지를 서버에 저장
+            for (let i = 0; i < imagesToSave.length; i++) {
+                const image = imagesToSave[i];
                 if (!image || !image.croppedDataUrl) continue;
                 
                 try {
@@ -1894,15 +2009,22 @@ function saveAllImages() {
                     const formatRadios = document.querySelectorAll('input[name="imageFormat"]:checked');
                     let format = formatRadios.length > 0 ? formatRadios[0].value : 'jpeg';
                     
-                    // 개별 이미지의 설정 가져오기
-                    const originalImage = originalImages[i];
+                    // 개별 이미지의 설정 가져오기 (크롭 시점 설정 우선)
                     let altText = '';
                     let customFileName = '';
                     
-                    if (originalImage) {
-                        // 개별 설정 우선 사용
-                        altText = originalImage.customAltText || originalImage.generatedAltText || '';
-                        customFileName = originalImage.customFileName || '';
+                    if (image.isCropped) {
+                        // 크롭된 이미지: 크롭 시점의 설정 사용
+                        altText = image.finalAltText || image.generatedAltText || '';
+                        customFileName = image.finalFileName || '';
+                    } else {
+                        // 크롭되지 않은 이미지: 원본 이미지의 저장된 설정 사용
+                        const originalImage = originalImages[image.index];
+                        if (originalImage) {
+                            altText = originalImage.finalAltText || originalImage.generatedAltText || image.generatedAltText || '';
+                            customFileName = originalImage.finalFileName || '';
+                        }
+                    }
                         
                         console.log(`📋 이미지 ${i + 1} 개별 설정:`, {
                             customAltText: originalImage.customAltText,
@@ -1932,11 +2054,11 @@ function saveAllImages() {
                         // 사용자가 지정한 파일명 사용 (한글 → 영문 변환 적용)
                         const englishName = convertKoreanToEnglishSimple(customFileName);
                         const sanitizedName = sanitizeFilenameSimple(englishName);
-                        fileName = `facility_${facilityId}_${i}_${sanitizedName}${extension}`;
+                        fileName = `facility_${facilityId}_${image.index}_${sanitizedName}${extension}`;
                         console.log(`📝 사용자 지정 파일명 적용: "${customFileName}" → "${fileName}"`);
                     } else {
                         // 기본 파일명 사용
-                        fileName = `facility_${facilityId}_image_${i}${extension}`;
+                        fileName = `facility_${facilityId}_image_${image.index}${extension}`;
                         console.log(`📝 기본 파일명 사용: "${fileName}"`);
                     }
                     
@@ -1948,10 +2070,10 @@ function saveAllImages() {
                     formData.append('facilityImage', file);
                     formData.append('altText', altText);
                     formData.append('format', format);
-                    formData.append('imageIndex', i.toString());
+                    formData.append('imageIndex', image.index.toString());
                     formData.append('customFileName', customFileName || ''); // 사용자 지정 파일명 전송
                     
-                    console.log(`📤 이미지 ${i + 1} 업로드 중...`);
+                    console.log(`📤 이미지 ${i + 1} 업로드 중... (원본 인덱스: ${image.index})`);
                     
                     // 서버에 업로드
                     const uploadResponse = await fetch(`/facility/crop-images/save/${facilityId}`, {
@@ -2004,6 +2126,9 @@ function goToManageStep() {
 function goToCompressionStep() {
     console.log('🔄 압축 단계로 돌아가기');
     
+    // 크롭하지 않은 이미지들의 현재 설정 저장
+    saveCurrentImageSettings();
+    
     hideAllSections();
     if (elements.compressionSection) {
         elements.compressionSection.style.display = 'block';
@@ -2013,6 +2138,29 @@ function goToCompressionStep() {
     
     // 압축 미리보기 업데이트
     updateCompressionPreview();
+}
+
+// 현재 이미지의 설정을 저장 (크롭하지 않은 이미지용)
+function saveCurrentImageSettings() {
+    if (currentImageIndex >= 0 && currentImageIndex < originalImages.length) {
+        const currentAltText = document.getElementById('altText')?.value || '';
+        const currentFileName = document.getElementById('seoFileName')?.value || '';
+        
+        // 크롭되지 않은 이미지인 경우에만 설정 저장
+        if (!croppedImages[currentImageIndex] || !croppedImages[currentImageIndex].isCropped) {
+            // 원본 이미지에 설정 저장
+            if (originalImages[currentImageIndex]) {
+                originalImages[currentImageIndex].finalAltText = currentAltText;
+                originalImages[currentImageIndex].finalFileName = currentFileName;
+                originalImages[currentImageIndex].settingsSaved = true;
+                
+                console.log(`💾 이미지 ${currentImageIndex + 1} 설정 저장 (크롭하지 않음):`, {
+                    altText: currentAltText,
+                    fileName: currentFileName
+                });
+            }
+        }
+    }
 }
 
 // 관리 이미지 그리드 업데이트
@@ -2047,33 +2195,54 @@ function updateManageImagesGrid() {
         </div>
     `;
     
-    // 서버에서 저장된 이미지 목록 가져오기
-    fetch(`/facility/api/${facilityId}/images`)
+    // 서버에서 저장된 이미지 목록 가져오기 (정합성 검증 포함)
+    fetch(`/api/facility/${facilityId}/images`)
         .then(response => {
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
             return response.json();
         })
-        .then(images => {
-            console.log(`📋 서버에서 가져온 이미지 수: ${images.length}개`);
+        .then(data => {
+            console.log('📋 서버 응답 데이터:', data);
             
             // 다시 한번 완전 초기화
             manageImagesGrid.innerHTML = '';
             
-            if (images && images.length > 0) {
-                // 중복 제거 - 이미지 ID 기준으로 유니크하게 처리
+            if (data.success && data.images && data.images.length > 0) {
+                const images = data.images;
+                console.log(`📋 서버에서 가져온 이미지 수: ${images.length}개`);
+                // 중복 제거 - 이미지 ID와 경로 모두 확인하여 유니크하게 처리
                 const uniqueImages = [];
                 const seenIds = new Set();
+                const seenPaths = new Set();
                 
-                images.forEach(image => {
-                    if (!seenIds.has(image.imageId)) {
+                console.log('🔍 원본 이미지 데이터:', images);
+                
+                images.forEach((image, index) => {
+                    // 유효한 이미지 데이터인지 검증
+                    if (!image || !image.imageId || !image.imagePath || 
+                        image.imagePath.includes('default_facility.jpg') ||
+                        image.imagePath === null || image.imagePath === undefined ||
+                        image.imagePath.trim() === '') {
+                        console.log(`❌ 유효하지 않은 이미지 데이터 제외: ${JSON.stringify(image)}`);
+                        return;
+                    }
+                    
+                    const imageKey = `${image.imageId}_${image.imagePath}`;
+                    console.log(`이미지 ${index}: ID=${image.imageId}, Path=${image.imagePath}, Key=${imageKey}`);
+                    
+                    if (!seenIds.has(image.imageId) && !seenPaths.has(image.imagePath)) {
                         seenIds.add(image.imageId);
+                        seenPaths.add(image.imagePath);
                         uniqueImages.push(image);
+                        console.log(`✅ 유니크 이미지 추가: ${image.imageId}`);
+                    } else {
+                        console.log(`❌ 중복 이미지 제외: ${image.imageId} (이미 존재함)`);
                     }
                 });
                 
-                console.log(`🔧 중복 제거 후 유니크 이미지 수: ${uniqueImages.length}개`);
+                console.log(`🔧 중복 제거 후 유니크 이미지 수: ${uniqueImages.length}개 (원본: ${images.length}개)`);
                 
                 // 이미지 그리드 생성
                 const gridContainer = document.createElement('div');
@@ -2088,7 +2257,8 @@ function updateManageImagesGrid() {
                                 <img src="${image.imagePath}" class="card-img-top" 
                                      style="height: 200px; object-fit: cover;" 
                                      alt="${image.imageAltText || '시설 이미지'}" 
-                                     onerror="this.src='/images/default_facility.jpg'">
+                                     onerror="handleImageError(this, '${image.imageId}')"
+                                     data-original-src="${image.imagePath}">
                                 
                                 <!-- 메인 이미지 배지 -->
                                 ${image.isMainImage ? `
@@ -2153,7 +2323,7 @@ function updateManageImagesGrid() {
                             <li>메인 이미지는 시설 목록에서 대표 이미지로 표시됩니다</li>
                             <li>불필요한 이미지는 삭제할 수 있습니다</li>
                             <li>최종 완료 후에는 시설 관리 페이지에서 수정 가능합니다</li>
-                            <li>현재 <strong>${images.length}장</strong>의 이미지가 등록되어 있습니다</li>
+                            <li>현재 <strong>${uniqueImages.length}장</strong>의 이미지가 등록되어 있습니다</li>
                         </ul>
                     </div>
                 `;
@@ -2206,7 +2376,8 @@ function updateManageImagesGrid() {
                 }, 100);
                 
             } else {
-                // 이미지가 없는 경우
+                // 이미지가 없는 경우 (API 응답 구조 고려)
+                console.log('이미지가 없습니다:', data);
                 manageImagesGrid.innerHTML = `
                     <div class="col-12 text-center">
                         <div class="alert alert-warning">
@@ -2299,7 +2470,7 @@ function updateFinalSummary() {
     `;
     
     // 서버에서 최종 이미지 정보 가져오기
-    fetch(`/facility/api/${facilityId}/images`)
+    fetch(`/api/facility/${facilityId}/images`)
         .then(response => response.json())
         .then(images => {
             const mainImage = images.find(img => img.isMainImage);
@@ -2391,7 +2562,252 @@ function updateFinalSummary() {
         });
 }
 
+// ================================================
+// 폴더 선택 및 이미지 선택 모달 기능
+// ================================================
+
+// 폴더 선택 처리
+function handleFolderSelection(event) {
+    console.log('📂 폴더 선택 이벤트 발생');
+    
+    const files = event.target.files;
+    if (!files || files.length === 0) {
+        console.log('❌ 선택된 파일이 없습니다');
+        return;
+    }
+    
+    console.log(`📋 폴더에서 발견된 파일 수: ${files.length}개`);
+    
+    // 이미지 파일만 필터링
+    const imageFiles = Array.from(files).filter(file => {
+        const isImage = file.type.startsWith('image/');
+        const supportedFormats = ['jpeg', 'jpg', 'png', 'webp'];
+        const fileExtension = file.name.split('.').pop().toLowerCase();
+        const isSupported = supportedFormats.includes(fileExtension);
+        
+        return isImage && isSupported;
+    });
+    
+    console.log(`🖼️ 이미지 파일 수: ${imageFiles.length}개`);
+    
+    if (imageFiles.length === 0) {
+        alert('선택한 폴더에 지원되는 이미지 파일이 없습니다.\nJPG, PNG, WebP 형식의 파일을 포함한 폴더를 선택해주세요.');
+        return;
+    }
+    
+    // 모달 표시 및 이미지 로드
+    showImageSelectionModal(imageFiles);
+}
+
+// 이미지 선택 모달 표시
+function showImageSelectionModal(imageFiles) {
+    console.log(`🎭 이미지 선택 모달 표시 (${imageFiles.length}개 파일)`);
+    
+    // 원본 파일들을 전역에 저장 (File 객체 보존)
+    window.modalOriginalFiles = imageFiles;
+    
+    const modal = new bootstrap.Modal(document.getElementById('imageSelectionModal'));
+    const modalLoadingState = document.getElementById('modalLoadingState');
+    const modalImageGrid = document.getElementById('modalImageGrid');
+    const modalEmptyState = document.getElementById('modalEmptyState');
+    const selectedImageCount = document.getElementById('selectedImageCount');
+    const confirmBtn = document.getElementById('confirmImageSelection');
+    
+    // 상태 초기화
+    modalLoadingState.style.display = 'block';
+    modalImageGrid.style.display = 'none';
+    modalEmptyState.style.display = 'none';
+    modalImageGrid.innerHTML = '';
+    selectedImageCount.textContent = '0/5 선택됨';
+    confirmBtn.disabled = true;
+    
+    // 선택된 이미지 추적
+    window.modalSelectedImages = [];
+    
+    // 모달 표시
+    modal.show();
+    
+    // 이미지 로드 및 카드 생성
+    if (imageFiles.length === 0) {
+        modalLoadingState.style.display = 'none';
+        modalEmptyState.style.display = 'block';
+        return;
+    }
+    
+    // 이미지 파일들을 카드로 변환
+    Promise.all(imageFiles.map(file => createImageCard(file)))
+        .then(cards => {
+            console.log(`✅ ${cards.length}개 이미지 카드 생성 완료`);
+            
+            modalLoadingState.style.display = 'none';
+            
+            if (cards.length === 0) {
+                modalEmptyState.style.display = 'block';
+            } else {
+                modalImageGrid.innerHTML = cards.join('');
+                modalImageGrid.style.display = 'block';
+                
+                // 이미지 카드 클릭 이벤트 등록
+                setupImageCardClickEvents();
+            }
+        })
+        .catch(error => {
+            console.error('❌ 이미지 카드 생성 오류:', error);
+            modalLoadingState.style.display = 'none';
+            modalEmptyState.style.display = 'block';
+        });
+}
+
+// 이미지 카드 생성
+function createImageCard(file) {
+    return new Promise((resolve) => {
+        const reader = new FileReader();
+        
+        reader.onload = function(e) {
+            const imageSrc = e.target.result;
+            const fileName = file.name;
+            const fileSize = (file.size / 1024 / 1024).toFixed(2); // MB 단위
+            
+            const cardHtml = `
+                <div class="col-md-3 col-sm-4 col-6">
+                    <div class="card image-selection-card" data-file-name="${fileName}" data-file-size="${file.size}">
+                        <div class="card-img-container position-relative">
+                            <img src="${imageSrc}" class="card-img-top" alt="${fileName}" 
+                                 style="height: 150px; object-fit: cover; cursor: pointer;">
+                            <div class="selection-overlay position-absolute top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center" 
+                                 style="background: rgba(0,123,255,0.8); display: none !important;">
+                                <i class="fas fa-check-circle fa-2x text-white"></i>
+                            </div>
+                        </div>
+                        <div class="card-body p-2">
+                            <h6 class="card-title text-truncate mb-1" style="font-size: 0.875rem;">${fileName}</h6>
+                            <small class="text-muted">${fileSize} MB</small>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            resolve(cardHtml);
+        };
+        
+        reader.onerror = function() {
+            console.error(`❌ 파일 읽기 오류: ${file.name}`);
+            resolve(''); // 오류 시 빈 문자열 반환
+        };
+        
+        reader.readAsDataURL(file);
+    });
+}
+
+// 이미지 카드 클릭 이벤트 설정
+function setupImageCardClickEvents() {
+    const imageCards = document.querySelectorAll('.image-selection-card');
+    
+    imageCards.forEach(card => {
+        card.addEventListener('click', function() {
+            const fileName = this.getAttribute('data-file-name');
+            const isSelected = this.classList.contains('selected');
+            
+            if (isSelected) {
+                // 선택 해제
+                this.classList.remove('selected');
+                this.querySelector('.selection-overlay').style.display = 'none';
+                window.modalSelectedImages = window.modalSelectedImages.filter(img => img.name !== fileName);
+                console.log(`❌ 이미지 선택 해제: ${fileName}`);
+            } else {
+                // 선택 가능 여부 확인 (최대 5장)
+                if (window.modalSelectedImages.length >= 5) {
+                    alert('최대 5장까지만 선택할 수 있습니다.');
+                    return;
+                }
+                
+                // 선택
+                this.classList.add('selected');
+                this.querySelector('.selection-overlay').style.display = 'flex';
+                
+                // 선택된 이미지 정보 저장 (File 객체 포함)
+                const img = this.querySelector('img');
+                const originalFile = window.modalOriginalFiles.find(f => f.name === fileName);
+                window.modalSelectedImages.push({
+                    name: fileName,
+                    src: img.src,
+                    size: parseInt(this.getAttribute('data-file-size')),
+                    file: originalFile // 실제 File 객체 저장
+                });
+                console.log(`✅ 이미지 선택: ${fileName}`);
+            }
+            
+            // 선택 상태 업데이트
+            updateModalSelectionState();
+        });
+    });
+}
+
+// 모달 선택 상태 업데이트
+function updateModalSelectionState() {
+    const selectedCount = window.modalSelectedImages.length;
+    const selectedImageCount = document.getElementById('selectedImageCount');
+    const confirmBtn = document.getElementById('confirmImageSelection');
+    
+    selectedImageCount.textContent = `${selectedCount}/5 선택됨`;
+    confirmBtn.disabled = selectedCount === 0;
+    
+    console.log(`📊 선택된 이미지: ${selectedCount}개`);
+}
+
+// 모달 확인 버튼 이벤트 설정
+document.addEventListener('DOMContentLoaded', function() {
+    const confirmBtn = document.getElementById('confirmImageSelection');
+    if (confirmBtn) {
+        confirmBtn.addEventListener('click', function() {
+            if (!window.modalSelectedImages || window.modalSelectedImages.length === 0) {
+                console.log('❌ 선택된 이미지가 없습니다');
+                return;
+            }
+            
+            console.log(`✅ ${window.modalSelectedImages.length}개 이미지 선택 확정`);
+            
+            // 선택된 이미지들을 메인 로직으로 전달
+            processSelectedImages(window.modalSelectedImages);
+            
+            // 모달 닫기
+            const modal = bootstrap.Modal.getInstance(document.getElementById('imageSelectionModal'));
+            modal.hide();
+        });
+    }
+});
+
+// 선택된 이미지들을 처리 (기존 이미지 업로드 로직과 동일하게)
+function processSelectedImages(selectedImages) {
+    console.log('🔄 선택된 이미지 처리 시작');
+    
+    // 기존 데이터 초기화
+    originalImages = [];
+    croppedImages = [];
+    currentImageIndex = 0;
+    
+    // 각 이미지를 originalImages에 추가
+    selectedImages.forEach((imageData, index) => {
+        const imageInfo = {
+            file: imageData.file, // 실제 File 객체 사용
+            dataUrl: imageData.src,
+            name: imageData.name,
+            size: imageData.size,
+            index: index
+        };
+        
+        originalImages.push(imageInfo);
+        console.log(`📋 이미지 ${index + 1} 추가: ${imageData.name}`);
+    });
+    
+    console.log(`✅ 총 ${originalImages.length}개 이미지 처리 준비 완료`);
+    
+    // 이미지 리스트 표시 및 크롭 단계로 이동
+    displayImageList();
+    goToCropStep();
+}
+
 // 전역 함수들은 facility-image-manage.js에서 처리됨 (Thymeleaf 충돌 방지)
 // window.setMainImage와 window.deleteImage는 별도 파일에서 정의하여 인라인 충돌 해결
 
-console.log('📋 facility-image-cropper.js 로드 완료 - 관리 기능은 별도 파일에서 처리됨');
+console.log('📋 facility-image-cropper.js 로드 완료 - 폴더 선택 및 관리 기능 포함');
