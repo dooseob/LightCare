@@ -112,4 +112,19 @@
         WHERE facility_id = #{facilityId} AND image_id = #{imageId}
     </update>
 
+    <!-- 특정 이미지 ID로 이미지 조회 -->
+    <select id="getImageById" resultMap="FacilityImageResultMap">
+        SELECT 
+            image_id,
+            facility_id,
+            image_path,
+            image_alt_text,
+            image_order,
+            is_main_image,
+            upload_date,
+            updated_at
+        FROM facility_images
+        WHERE image_id = #{imageId}
+    </select>
+
 </mapper>

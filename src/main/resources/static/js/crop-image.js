@@ -228,13 +228,21 @@ function initializeCropper() {
         viewMode: 1, // 크롭 박스를 캔버스 내부로 제한
         dragMode: 'move', // 드래그 모드
         autoCropArea: 0.8, // 자동 크롭 영역 크기
+        responsive: true, // 반응형 지원
         restore: false, // 크기 조정 시 크롭 박스 복원 안함
         guides: true, // 가이드 라인 표시
         center: true, // 중앙 표시자 표시
-        highlight: true, // 크롭 박스 하이라이트
+        highlight: false, // 크롭 박스 하이라이트 (시설과 동일하게)
         cropBoxMovable: true, // 크롭 박스 이동 가능
         cropBoxResizable: true, // 크롭 박스 크기 조정 가능
-        toggleDragModeOnDblclick: false, // 더블클릭으로 드래그 모드 토글 안함
+        toggleDragModeOnDblclick: true, // 더블클릭으로 드래그 모드 토글 (시설과 동일하게)
+        rotatable: true, // 회전 가능
+        scalable: true, // 스케일 조정 가능
+        zoomable: true, // 줌 가능
+        minContainerWidth: 200, // 최소 컨테이너 너비
+        minContainerHeight: 200, // 최소 컨테이너 높이
+        minCropBoxWidth: 90, // 3:4 비율에 맞춘 최소 너비
+        minCropBoxHeight: 120, // 3:4 비율에 맞춘 최소 높이
         
         // 초기화 완료 시
         ready: function() {
@@ -250,6 +258,11 @@ function initializeCropper() {
             
             // 초기 미리보기 업데이트
             updatePreview();
+            
+            // 스마트 스크롤 설정 (시설과 동일하게 ready 콜백에서 설정)
+            setTimeout(() => {
+                setupSmartScroll();
+            }, 100);
         },
         
         // 크롭 변경 시
@@ -266,9 +279,6 @@ function initializeCropper() {
             updatePreview();
         }
     });
-    
-    // 스마트 스크롤 기능 추가 (이미지 확대/축소 우선, 한계점에서 페이지 스크롤)
-    setupSmartScroll();
 }
 
 // 스마트 스크롤 기능
@@ -308,28 +318,36 @@ function setupSmartScroll() {
         
         // 확대 시: 최대 줌 근처에서 페이지 스크롤 허용
         if (isZoomingIn && currentZoom >= maxThreshold) {
-            updateZoomIndicator(currentZoom, '최대 확대');
-            console.log('📈 최대 확대 근처 - 페이지 스크롤 아래로 실행');
+            event.preventDefault();
+            event.stopPropagation();
+            event.stopImmediatePropagation();
             
-            // 최대 확대 상태에서 아래로 페이지 스크롤 (올바른 방향)
+            updateZoomIndicator(currentZoom, '최대 확대');
+            console.log('📈 최대 확대 제한 - 페이지 스크롤 위로 실행, 줌 차단');
+            
+            // 최대 확대 상태에서 위로 페이지 스크롤 (수정된 방향)
             window.scrollBy({
-                top: 100, // 항상 아래로 스크롤 (양수)
+                top: -100, // 위로 스크롤 (음수)
                 behavior: 'smooth'
             });
-            return;
+            return false;
         }
         
         // 축소 시: 최소 줌 근처에서 페이지 스크롤 허용  
         if (isZoomingOut && currentZoom <= minThreshold) {
-            updateZoomIndicator(currentZoom, '최소 축소');
-            console.log('📉 최소 축소 근처 - 페이지 스크롤 위로 실행');
+            event.preventDefault();
+            event.stopPropagation();
+            event.stopImmediatePropagation();
             
-            // 최소 축소 상태에서 위로 페이지 스크롤 (올바른 방향)
+            updateZoomIndicator(currentZoom, '최소 축소');
+            console.log('📉 최소 축소 제한 - 페이지 스크롤 아래로 실행, 줌 차단');
+            
+            // 최소 축소 상태에서 아래로 페이지 스크롤 (수정된 방향)
             window.scrollBy({
-                top: -100, // 항상 위로 스크롤 (음수)
+                top: 100, // 아래로 스크롤 (양수)
                 behavior: 'smooth'
             });
-            return;
+            return false;
         }
         
         // 이미지 확대/축소 범위 내에서는 줌 적용

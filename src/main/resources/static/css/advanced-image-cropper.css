@@ -85,6 +85,43 @@
     background: #28a745;
 }
 
+/* Cropper.js 중앙 십자가 가시성 개선 */
+.cropper-center {
+    opacity: 1 !important;
+}
+
+.cropper-center:before,
+.cropper-center:after {
+    background-color: #007bff !important;
+    box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.8) !important;
+    opacity: 1 !important;
+}
+
+/* Cropper.js 가이드라인 개선 */
+.cropper-line {
+    background-color: rgba(0, 123, 255, 0.4) !important;
+    opacity: 1 !important;
+}
+
+.cropper-dashed {
+    border-color: rgba(0, 123, 255, 0.6) !important;
+    opacity: 1 !important;
+}
+
+/* Cropper.js 핸들 개선 */
+.cropper-point {
+    background-color: #007bff !important;
+    border: 2px solid #fff !important;
+    box-shadow: 0 0 0 1px #007bff !important;
+    opacity: 1 !important;
+    width: 8px !important;
+    height: 8px !important;
+}
+
+.cropper-point.point-se {
+    cursor: nw-resize !important;
+}
+
 /* 업로드 영역 */
 .upload-area {
     border: 2px dashed #dee2e6;

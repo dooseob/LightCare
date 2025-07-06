@@ -113,7 +113,7 @@ public class FacilityImageService {
             imageDTO.setImagePath(imagePath);
             imageDTO.setImageAltText(altText);
             imageDTO.setImageOrder(imageOrder != null ? imageOrder : existingImageCount);
-            imageDTO.setIsMainImage(existingImageCount == 0); // 첫 번째 이미지면 메인으로 설정
+            imageDTO.setIsMainImage(false); // 자동으로 메인 이미지 설정하지 않음 - 사용자가 직접 선택
             
             facilityImageMapper.insertFacilityImage(imageDTO);
             log.info("✅ facility_images 테이블에 저장 완료 - imageId: {}, path: {}", imageDTO.getImageId(), imagePath);
@@ -240,23 +240,27 @@ public class FacilityImageService {
     }
 
     /**
-     * 시설 이미지 삭제
+     * 시설 이미지 삭제 (boolean 반환)
      */
     @Transactional
-    public void deleteFacilityImage(Long imageId) {
+    public boolean deleteFacilityImage(Long imageId) {
         try {
             log.info("시설 이미지 삭제 시작 - imageId: {}", imageId);
             
             int result = facilityImageMapper.deleteFacilityImage(imageId);
-            if (result == 0) {
-                throw new RuntimeException("시설 이미지 삭제에 실패했습니다.");
+            boolean success = result > 0;
+            
+            if (success) {
+                log.info("시설 이미지 삭제 완료 - imageId: {}", imageId);
+            } else {
+                log.warn("시설 이미지 삭제 실패 - imageId: {} (결과: {})", imageId, result);
             }
             
-            log.info("시설 이미지 삭제 완료 - imageId: {}", imageId);
+            return success;
             
         } catch (Exception e) {
             log.error("시설 이미지 삭제 중 오류 발생 - imageId: {}", imageId, e);
-            throw new RuntimeException("시설 이미지 삭제에 실패했습니다.", e);
+            return false;
         }
     }
 
@@ -266,6 +270,55 @@ public class FacilityImageService {
     @Transactional(readOnly = true)
     public int getImageCountByFacilityId(Long facilityId) {
         return facilityImageMapper.countImagesByFacilityId(facilityId);
+    }
+    
+    /**
+     * 메인 이미지 설정 (boolean 반환)
+     */
+    @Transactional
+    public boolean setMainImage(Long facilityId, Long imageId) {
+        try {
+            log.info("메인 이미지 설정 시작 - facilityId: {}, imageId: {}", facilityId, imageId);
+            
+            // 기존 메인 이미지 해제
+            facilityImageMapper.clearMainImages(facilityId);
+            
+            // 새 메인 이미지 설정
+            int result = facilityImageMapper.updateMainImage(facilityId, imageId);
+            boolean success = result > 0;
+            
+            if (success) {
+                log.info("메인 이미지 설정 완료 - facilityId: {}, imageId: {}", facilityId, imageId);
+            } else {
+                log.warn("메인 이미지 설정 실패 - facilityId: {}, imageId: {} (결과: {})", facilityId, imageId, result);
+            }
+            
+            return success;
+            
+        } catch (Exception e) {
+            log.error("메인 이미지 설정 중 오류 발생 - facilityId: {}, imageId: {}", facilityId, imageId, e);
+            return false;
+        }
+    }
+    
+    /**
+     * 특정 이미지 ID로 이미지 조회 (권한 확인용)
+     */
+    @Transactional(readOnly = true)
+    public FacilityImageDTO getImageById(Long imageId) {
+        log.info("시설 이미지 조회 - imageId: {}", imageId);
+        return facilityImageMapper.getImageById(imageId);
+    }
+    
+    /**
+     * 모든 이미지 조회 (임시 - 더 나은 방법으로 대체 예정)
+     */
+    @Transactional(readOnly = true)
+    public List<FacilityImageDTO> getAllImages() {
+        // 임시 구현: 실제로는 특정 시설의 이미지만 조회하는 것이 좋음
+        log.info("모든 시설 이미지 목록 조회 (임시)");
+        // 임시로 빈 리스트 반환하고 getImageById 사용
+        return java.util.Collections.emptyList();
     }
     
     /**

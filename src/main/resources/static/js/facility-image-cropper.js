@@ -87,6 +87,7 @@ function initializeElements() {
     elements.uploadSection = document.getElementById('uploadSection');
     elements.cropSection = document.getElementById('cropSection');
     elements.compressionSection = document.getElementById('compressionSection');
+    elements.manageSection = document.getElementById('manageSection');
     elements.completeSection = document.getElementById('completeSection');
     
     // 업로드 관련
@@ -114,7 +115,8 @@ function initializeElements() {
         step1: document.getElementById('step1'),
         step2: document.getElementById('step2'),
         step3: document.getElementById('step3'),
-        step4: document.getElementById('step4')
+        step4: document.getElementById('step4'),
+        step5: document.getElementById('step5')
     };
     
     // 버튼들
@@ -127,7 +129,10 @@ function initializeElements() {
         zoomOut: document.getElementById('zoomOutBtn'),
         rotateLeft: document.getElementById('rotateLeftBtn'),
         rotateRight: document.getElementById('rotateRightBtn'),
-        reset: document.getElementById('resetBtn')
+        reset: document.getElementById('resetBtn'),
+        goToManage: document.getElementById('goToManageBtn'),
+        backToCompression: document.getElementById('backToCompressionBtn'),
+        finalComplete: document.getElementById('finalCompleteBtn')
     };
     
     console.log('✅ DOM 요소 초기화 완료');
@@ -200,11 +205,45 @@ function setupEventListeners() {
         });
     }
     
-    const saveAllImagesBtn = document.getElementById('saveAllImagesBtn');
-    if (saveAllImagesBtn) {
-        saveAllImagesBtn.addEventListener('click', () => {
-            console.log('💾 모든 이미지 저장 시작');
-            saveAllImages();
+    // 관리 단계로 이동 버튼 (이미지 저장 후 관리 단계로 이동)
+    if (elements.buttons.goToManage) {
+        elements.buttons.goToManage.addEventListener('click', async () => {
+            console.log('📋 다음 단계 버튼 클릭 - 이미지 저장 후 관리 단계로 이동');
+            
+            // 버튼 로딩 상태 설정
+            setButtonLoading(elements.buttons.goToManage, true, '이미지 저장 중...');
+            
+            try {
+                // 모든 이미지를 서버에 저장
+                const savedCount = await saveAllImages();
+                console.log(`✅ ${savedCount}장의 이미지 저장 완료`);
+                
+                // 저장 성공 후 관리 단계로 이동
+                setTimeout(() => {
+                    setButtonLoading(elements.buttons.goToManage, false);
+                    goToManageStep();
+                }, 500);
+                
+            } catch (error) {
+                console.error('❌ 이미지 저장 중 오류:', error);
+                setButtonLoading(elements.buttons.goToManage, false);
+                alert(`이미지 저장 중 오류가 발생했습니다: ${error.message}`);
+            }
+        });
+    }
+    
+    // 관리 단계 버튼들
+    if (elements.buttons.backToCompression) {
+        elements.buttons.backToCompression.addEventListener('click', () => {
+            console.log('🔙 압축 설정으로 돌아가기');
+            goToCompressionStep();
+        });
+    }
+    
+    if (elements.buttons.finalComplete) {
+        elements.buttons.finalComplete.addEventListener('click', () => {
+            console.log('✅ 최종 완료 버튼 클릭');
+            finalComplete();
         });
     }
     
@@ -601,16 +640,29 @@ function initializeCropper() {
     
     // 기존 크롭퍼 정리
     if (cropper) {
+        // 윈도우 리사이즈 이벤트 리스너 제거
+        window.removeEventListener('resize', handleWindowResize);
+        
+        // 스마트 스크롤 이벤트 리스너 제거
+        const cropContainer = elements.cropImage?.parentElement;
+        if (cropContainer && cropContainer._smartScrollHandler) {
+            cropContainer.removeEventListener('wheel', cropContainer._smartScrollHandler);
+            cropContainer.removeEventListener('mousewheel', cropContainer._smartScrollHandler);
+            cropContainer.removeEventListener('DOMMouseScroll', cropContainer._smartScrollHandler);
+            cropContainer._smartScrollHandler = null;
+        }
+        
         cropper.destroy();
         cropper = null;
+        console.log('🧹 기존 크롭퍼 및 이벤트 리스너 정리 완료');
     }
     
     cropper = new Cropper(elements.cropImage, {
         aspectRatio: 16 / 9, // 시설 사진은 16:9 비율 (프로필과 유일한 차이점)
-        viewMode: 1,
+        viewMode: 1, // 크롭 박스를 캔버스 내부로 제한
         dragMode: 'move',
         autoCropArea: 0.8,
-        responsive: true,
+        responsive: true, // 작은 창에서 정상 작동하는 설정 유지
         restore: false,
         guides: true,
         center: true,
@@ -621,15 +673,21 @@ function initializeCropper() {
         rotatable: true,
         scalable: true,
         zoomable: true,
-        minCropBoxWidth: 200,
-        minCropBoxHeight: 112, // 16:9 비율에 맞춘 최소 높이
+        minContainerWidth: 200, // 작은 창에서도 작동하도록 더 작은 값
+        minContainerHeight: 150,
+        minCropBoxWidth: 160, // 작은 창에서도 작동하도록 더 작은 값
+        minCropBoxHeight: 90, // 16:9 비율에 맞춘 더 작은 최소 높이
         ready() {
             console.log('✅ 크롭퍼 준비 완료');
+            console.log('📐 컨테이너 크기:', cropper.getContainerData());
             updatePreview();
             // 프로필과 동일: 크롭퍼 준비 완료 후 스마트 스크롤 설정
             setTimeout(() => {
                 setupSmartScroll();
             }, 100);
+            
+            // 브라우저 창 크기 변경 대응
+            window.addEventListener('resize', handleWindowResize);
         },
         crop: updatePreview
     });
@@ -637,10 +695,25 @@ function initializeCropper() {
 
 // 스마트 스크롤 기능 (프로필과 정확히 동일)
 function setupSmartScroll() {
-    if (!cropper || !elements.cropImage) return;
+    if (!cropper || !elements.cropImage) {
+        console.warn('⚠️ setupSmartScroll: cropper 또는 cropImage가 없음');
+        return;
+    }
     
     const cropContainer = elements.cropImage.parentElement;
-    if (!cropContainer) return;
+    if (!cropContainer) {
+        console.warn('⚠️ setupSmartScroll: cropContainer를 찾을 수 없음');
+        return;
+    }
+    
+    // 기존 이벤트 리스너 제거 (중복 방지)
+    if (cropContainer._smartScrollHandler) {
+        cropContainer.removeEventListener('wheel', cropContainer._smartScrollHandler);
+        cropContainer.removeEventListener('mousewheel', cropContainer._smartScrollHandler);
+        cropContainer.removeEventListener('DOMMouseScroll', cropContainer._smartScrollHandler);
+    }
+    
+    console.log('🎯 setupSmartScroll: 컨테이너 찾음', cropContainer.className || cropContainer.tagName);
     
     // 최대/최소 줌 레벨 설정 (프로필과 정확히 동일)
     const MIN_ZOOM = 0.1;  // 최소 줌 (10%)
@@ -648,15 +721,11 @@ function setupSmartScroll() {
     
     console.log('🖱️ 스마트 스크롤 기능 활성화');
     
-    // 데스크탑 호환성을 위한 강화된 이벤트 리스너
+    // 최강 줌 리미트 차단 이벤트 리스너
     const wheelHandler = function(event) {
         if (!cropper) return;
         
-        // 모든 플랫폼에서 작동하도록 강제 preventDefault 적용
-        event.preventDefault();
-        event.stopPropagation();
-        
-        // 현재 줌 레벨 확인 (프로필과 정확히 동일한 방식)
+        // 현재 줌 레벨 확인 (더 정확한 방식)
         const canvasData = cropper.getCanvasData();
         const containerData = cropper.getContainerData();
         const currentZoom = canvasData.naturalWidth > 0 ? canvasData.width / canvasData.naturalWidth : 1;
@@ -666,51 +735,85 @@ function setupSmartScroll() {
         
         console.log('🔍 현재 줌:', currentZoom.toFixed(2), '방향:', isZoomingIn ? '확대' : '축소');
         
-        // 프로필과 정확히 동일한 임계값 설정
-        const maxThreshold = 2.8;  // 조금 더 낮은 최대값
-        const minThreshold = 0.2;  // 조금 더 높은 최소값
+        // 더 엄격한 임계값 설정
+        const maxThreshold = 2.5;  // 더 낮은 최대값
+        const minThreshold = 0.3;  // 더 높은 최소값
         
-        // 확대 시: 최대 줌 근처에서 페이지 스크롤 허용
+        // ⚡ 최강 확대 제한 ⚡
         if (isZoomingIn && currentZoom >= maxThreshold) {
+            // 모든 가능한 이벤트 차단
+            event.preventDefault();
+            event.stopPropagation();
+            event.stopImmediatePropagation();
+            
+            // Cropper.js 내부 줌 기능도 강제 차단
+            if (cropper.zoom) {
+                const originalZoom = cropper.zoom;
+                cropper.zoom = function() { 
+                    console.log('🚫 Cropper.zoom() 호출 차단됨'); 
+                    return false;
+                };
+                setTimeout(() => { cropper.zoom = originalZoom; }, 100);
+            }
+            
             updateZoomIndicator(currentZoom, '최대 확대');
-            console.log('📈 최대 확대 근처 - 페이지 스크롤 위로 실행');
+            console.log('🚫 최대 확대 완전 차단 - 줌 기능 무력화');
             
-            // 최대 확대 상태에서 위로 페이지 스크롤 (수정된 방향)
-            window.scrollBy({
-                top: -100, // 위로 스크롤 (음수)
-                behavior: 'smooth'
-            });
-            return;
+            window.scrollBy({ top: -100, behavior: 'smooth' });
+            return false;
         }
         
-        // 축소 시: 최소 줌 근처에서 페이지 스크롤 허용  
+        // ⚡ 최강 축소 제한 ⚡
         if (isZoomingOut && currentZoom <= minThreshold) {
-            updateZoomIndicator(currentZoom, '최소 축소');
-            console.log('📉 최소 축소 근처 - 페이지 스크롤 아래로 실행');
+            // 모든 가능한 이벤트 차단
+            event.preventDefault();
+            event.stopPropagation();
+            event.stopImmediatePropagation();
             
-            // 최소 축소 상태에서 아래로 페이지 스크롤 (수정된 방향)
-            window.scrollBy({
-                top: 100, // 아래로 스크롤 (양수)
-                behavior: 'smooth'
-            });
-            return;
+            // Cropper.js 내부 줌 기능도 강제 차단
+            if (cropper.zoom) {
+                const originalZoom = cropper.zoom;
+                cropper.zoom = function() { 
+                    console.log('🚫 Cropper.zoom() 호출 차단됨'); 
+                    return false;
+                };
+                setTimeout(() => { cropper.zoom = originalZoom; }, 100);
+            }
+            
+            updateZoomIndicator(currentZoom, '최소 축소');
+            console.log('🚫 최소 축소 완전 차단 - 줌 기능 무력화');
+            
+            window.scrollBy({ top: 100, behavior: 'smooth' });
+            return false;
         }
         
-        // 이미지 확대/축소 범위 내에서는 줌 적용
+        // 정상 범위에서만 줌 허용
+        event.preventDefault();
+        event.stopPropagation();
+        
         const zoomDelta = isZoomingIn ? 0.1 : -0.1;
         cropper.zoom(zoomDelta);
         
-        // 줌 표시기 업데이트
         const newZoom = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, currentZoom + zoomDelta));
         updateZoomIndicator(newZoom, isZoomingIn ? '확대' : '축소');
     };
     
-    // 데스크탑 및 모바일 모두 지원하는 이벤트 등록
-    cropContainer.addEventListener('wheel', wheelHandler, { passive: false });
-    cropContainer.addEventListener('mousewheel', wheelHandler, { passive: false }); // IE/Edge 호환성
-    cropContainer.addEventListener('DOMMouseScroll', wheelHandler, { passive: false }); // Firefox 호환성
+    // 핸들러를 컨테이너에 저장하여 재사용 가능하게 함
+    cropContainer._smartScrollHandler = wheelHandler;
     
-    console.log('✅ 데스크탑/모바일 스마트 스크롤 이벤트 등록 완료');
+    // 데스크탑 및 모바일 모두 지원하는 이벤트 등록
+    try {
+        cropContainer.addEventListener('wheel', wheelHandler, { passive: false });
+        cropContainer.addEventListener('mousewheel', wheelHandler, { passive: false }); // IE/Edge 호환성
+        cropContainer.addEventListener('DOMMouseScroll', wheelHandler, { passive: false }); // Firefox 호환성
+        
+        console.log('✅ 시설 크롭퍼 스마트 스크롤 이벤트 등록 완료');
+        console.log('🎯 이벤트 대상 컨테이너:', cropContainer.className, cropContainer.tagName);
+        console.log('📏 현재 컨테이너 크기:', cropContainer.offsetWidth, 'x', cropContainer.offsetHeight);
+        
+    } catch (error) {
+        console.error('❌ 시설 크롭퍼 스마트 스크롤 이벤트 등록 실패:', error);
+    }
 }
 
 // 줌 표시기 업데이트 (프로필과 정확히 동일)
@@ -749,6 +852,31 @@ function updateZoomIndicator(zoomLevel, status) {
             elements.zoomIndicator.style.display = 'none';
         }
     }, 3000);
+}
+
+// 브라우저 창 크기 변경 핸들러 (작은 창에서 정상 작동하는 방식 유지)
+function handleWindowResize() {
+    if (!cropper) return;
+    
+    console.log('🔄 브라우저 창 크기 변경 감지 - responsive:true 모드로 자동 대응');
+    
+    // responsive:true 설정으로 Cropper.js가 자동으로 크기 조정하므로
+    // 스마트 스크롤만 재설정하면 됨
+    clearTimeout(window.resizeTimeout);
+    window.resizeTimeout = setTimeout(() => {
+        try {
+            const containerData = cropper.getContainerData();
+            console.log('📐 자동 조정된 컨테이너 크기:', containerData);
+            
+            // 스마트 스크롤만 재설정 (작은 창에서 정상 작동하는 방식)
+            setupSmartScroll();
+            
+            console.log('✅ 브라우저 창 크기 변경 대응 완료 (responsive 모드)');
+            
+        } catch (error) {
+            console.error('❌ 브라우저 창 크기 변경 처리 오류:', error);
+        }
+    }, 100); // 더 빠른 반응
 }
 
 // 미리보기 업데이트 (16:9 비율)
@@ -1148,8 +1276,8 @@ function saveAllImages() {
     
     console.log(`📸 전송할 이미지 수: ${croppedImages.filter(img => img && img.croppedDataUrl).length}`);
     
-    // 서버에 저장 요청 (프로필과 동일한 패턴)
-    fetch(`/facility/crop-images/save/${facilityId}`, {
+    // 서버에 저장 요청 (Promise 반환)
+    return fetch(`/facility/crop-images/save/${facilityId}`, {
         method: 'POST',
         body: formData
     })
@@ -1163,22 +1291,16 @@ function saveAllImages() {
         
         if (data.success) {
             console.log('✅ 시설 이미지 저장 성공');
-            goToCompleteStep();
-            
-            // 성공 메시지 표시 (프로필과 동일)
-            setTimeout(() => {
-                alert('시설 이미지가 성공적으로 저장되었습니다!');
-            }, 500);
-            
+            return data; // 성공 시 데이터 반환
         } else {
             console.error('❌ 저장 실패:', data.message);
-            alert(data.message || '이미지 저장에 실패했습니다.');
+            throw new Error(data.message || '이미지 저장에 실패했습니다.');
         }
     })
     .catch(error => {
         setButtonLoading(saveBtn, false);
         console.error('🚨 저장 오류:', error);
-        alert('이미지 저장 중 오류가 발생했습니다.');
+        throw error; // 에러 재발생
     });
 }
 
@@ -1205,21 +1327,29 @@ function goToCropStep() {
     updateStepIndicator(2);
 }
 
+function goToCompressionStep() {
+    hideAllSections();
+    if (elements.compressionSection) elements.compressionSection.style.display = 'block';
+    updateStepIndicator(3);
+}
+
+// 중복 함수 제거됨 - 하단의 새로운 goToManageStep() 함수 사용
+
 function goToCompleteStep() {
     hideAllSections();
     if (elements.completeSection) {
         elements.completeSection.style.display = 'block';
-        console.log('🎆 완료 단계 표시');
+        console.log('🎆 최종 완료 단계 표시');
     }
-    updateStepIndicator(4);
+    updateStepIndicator(5);
     
-    // 완료된 이미지들 표시
-    updateFinalImagesGrid();
+    // 최종 요약 표시
+    updateFinalSummary();
 }
 
 // 모든 섹션 숨기기 (프로필과 동일)
 function hideAllSections() {
-    const sections = ['uploadSection', 'cropSection', 'compressionSection', 'completeSection'];
+    const sections = ['uploadSection', 'cropSection', 'compressionSection', 'manageSection', 'completeSection'];
     sections.forEach(sectionId => {
         const section = elements[sectionId];
         if (section) {
@@ -1310,16 +1440,36 @@ function updateFinalImagesGrid() {
                     const imageElement = document.createElement('div');
                     imageElement.className = 'col-md-3 col-sm-4 col-6 mb-3';
                     imageElement.innerHTML = `
-                        <div class="card">
-                            <img src="${image.imagePath}" class="card-img-top" style="height: 120px; object-fit: cover;" 
-                                 alt="${image.imageAltText || '시설 이미지'}" onerror="this.src='/images/default_facility.jpg'">
+                        <div class="card" data-image-id="${image.imageId}">
+                            <div class="position-relative">
+                                <img src="${image.imagePath}" class="card-img-top" style="height: 120px; object-fit: cover;" 
+                                     alt="${image.imageAltText || '시설 이미지'}" onerror="this.src='/images/default_facility.jpg'">
+                                <div class="position-absolute top-0 end-0 p-1">
+                                    <div class="dropdown">
+                                        <button class="btn btn-sm btn-light dropdown-toggle" type="button" 
+                                                data-bs-toggle="dropdown" aria-expanded="false">
+                                            <i class="fas fa-cog"></i>
+                                        </button>
+                                        <ul class="dropdown-menu dropdown-menu-end">
+                                            ${!image.isMainImage ? `
+                                                <li><button class="dropdown-item" onclick="setMainImage(${image.imageId})">
+                                                    <i class="fas fa-star text-warning me-2"></i>메인 이미지로 설정
+                                                </button></li>
+                                            ` : ''}
+                                            <li><button class="dropdown-item text-danger" onclick="deleteImage(${image.imageId})">
+                                                <i class="fas fa-trash me-2"></i>이미지 삭제
+                                            </button></li>
+                                        </ul>
+                                    </div>
+                                </div>
+                                ${image.isMainImage ? '<div class="position-absolute top-0 start-0 p-1"><span class="badge bg-primary"><i class="fas fa-star me-1"></i>메인</span></div>' : ''}
+                            </div>
                             <div class="card-body p-2">
                                 <small class="text-success">
                                     <i class="fas fa-check-circle me-1"></i>저장 완료 (ID: ${image.imageId})
                                 </small>
                                 <br>
                                 <small class="text-muted">${image.imageAltText || '시설 이미지'}</small>
-                                ${image.isMainImage ? '<br><span class="badge bg-primary">메인 이미지</span>' : ''}
                             </div>
                         </div>
                     `;
@@ -1327,6 +1477,18 @@ function updateFinalImagesGrid() {
                 });
                 
                 console.log(`✅ 서버에서 가져온 이미지 수: ${images.length}개`);
+                
+                // Bootstrap 드롭다운 초기화 (동적으로 생성된 요소들을 위해)
+                setTimeout(() => {
+                    const dropdowns = finalImagesGrid.querySelectorAll('[data-bs-toggle="dropdown"]');
+                    dropdowns.forEach(dropdown => {
+                        // Bootstrap 5 드롭다운 초기화
+                        if (typeof bootstrap !== 'undefined' && bootstrap.Dropdown) {
+                            new bootstrap.Dropdown(dropdown);
+                        }
+                    });
+                    console.log(`🔧 Bootstrap 드롭다운 초기화 완료: ${dropdowns.length}개`);
+                }, 100);
                 
                 // 추가 정보 표시
                 const infoElement = document.createElement('div');
@@ -1558,3 +1720,515 @@ window.addEventListener('beforeunload', function() {
         cropper.destroy();
     }
 });
+
+// 이미지 삭제 함수 (전역 함수로 설정)
+window.deleteImage = function(imageId) {
+    if (!confirm('이 이미지를 삭제하시겠습니까?')) {
+        return;
+    }
+    
+    console.log('🗑️ 이미지 삭제 요청:', imageId);
+    
+    fetch(`/facility/api/images/${imageId}`, {
+        method: 'DELETE',
+        headers: {
+            'Content-Type': 'application/json'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            console.log('✅ 이미지 삭제 성공:', imageId);
+            
+            // UI에서 해당 이미지 카드 제거
+            const imageCard = document.querySelector(`[data-image-id="${imageId}"]`);
+            if (imageCard) {
+                imageCard.closest('.col-md-3').remove();
+            }
+            
+            // 성공 메시지
+            alert('이미지가 성공적으로 삭제되었습니다.');
+            
+            // 이미지 목록 새로고침
+            updateFinalImagesGrid();
+            
+        } else {
+            console.error('❌ 이미지 삭제 실패:', data.message);
+            alert(data.message || '이미지 삭제에 실패했습니다.');
+        }
+    })
+    .catch(error => {
+        console.error('🚨 이미지 삭제 오류:', error);
+        alert('이미지 삭제 중 오류가 발생했습니다.');
+    });
+};
+
+// 이미지 저장 및 관리 단계 이동 (Promise 반환)
+function saveAllImages() {
+    console.log('🔄 모든 이미지 저장 시작...');
+    
+    return new Promise(async (resolve, reject) => {
+        try {
+            let savedCount = 0;
+            let totalImages = croppedImages.filter(img => img && img.croppedDataUrl).length;
+            
+            if (totalImages === 0) {
+                reject(new Error('저장할 크롭된 이미지가 없습니다.'));
+                return;
+            }
+            
+            console.log(`📊 저장할 이미지 수: ${totalImages}장`);
+            
+            // 크롭된 각 이미지를 서버에 저장
+            for (let i = 0; i < croppedImages.length; i++) {
+                const image = croppedImages[i];
+                if (!image || !image.croppedDataUrl) continue;
+                
+                try {
+                    // DataURL을 Blob으로 변환
+                    const response = await fetch(image.croppedDataUrl);
+                    const blob = await response.blob();
+                    
+                    // FormData 생성
+                    const formData = new FormData();
+                    
+                    // 압축 설정 가져오기
+                    const qualitySlider = document.getElementById('qualitySlider');
+                    const quality = qualitySlider ? parseFloat(qualitySlider.value) : 0.8;
+                    
+                    const formatRadios = document.querySelectorAll('input[name="imageFormat"]:checked');
+                    let format = formatRadios.length > 0 ? formatRadios[0].value : 'jpeg';
+                    
+                    // Alt 텍스트 가져오기
+                    const altTextInput = document.getElementById('altTextInput');
+                    const imageNameInput = document.getElementById('imageNameInput');
+                    
+                    let altText = '';
+                    if (altTextInput && altTextInput.value.trim()) {
+                        altText = altTextInput.value.trim();
+                    } else if (imageNameInput && imageNameInput.value.trim()) {
+                        altText = imageNameInput.value.trim() + ' 시설 이미지';
+                    } else {
+                        altText = `시설 이미지 ${i + 1}`;
+                    }
+                    
+                    // 파일명 설정
+                    const extension = format === 'jpeg' ? '.jpg' : `.${format}`;
+                    const fileName = `facility_${facilityId}_image_${i}${extension}`;
+                    
+                    // Blob을 File로 변환
+                    const file = new File([blob], fileName, { 
+                        type: `image/${format === 'jpeg' ? 'jpeg' : format}` 
+                    });
+                    
+                    formData.append('facilityImage', file);
+                    formData.append('altText', altText);
+                    formData.append('format', format);
+                    formData.append('imageIndex', i.toString());
+                    
+                    console.log(`📤 이미지 ${i + 1} 업로드 중...`);
+                    
+                    // 서버에 업로드
+                    const uploadResponse = await fetch(`/facility/crop-images/save/${facilityId}`, {
+                        method: 'POST',
+                        body: formData
+                    });
+                    
+                    const result = await uploadResponse.json();
+                    
+                    if (result.success) {
+                        savedCount++;
+                        console.log(`✅ 이미지 ${i + 1} 저장 성공 (ID: ${result.imageId})`);
+                    } else {
+                        console.error(`❌ 이미지 ${i + 1} 저장 실패:`, result.message);
+                        throw new Error(result.message);
+                    }
+                    
+                } catch (error) {
+                    console.error(`🚨 이미지 ${i + 1} 저장 중 오류:`, error);
+                    throw error;
+                }
+            }
+            
+            console.log(`🎉 모든 이미지 저장 완료: ${savedCount}/${totalImages}장`);
+            resolve(savedCount);
+            
+        } catch (error) {
+            console.error('❌ 이미지 저장 과정에서 오류 발생:', error);
+            reject(error);
+        }
+    });
+}
+
+// 관리 단계로 이동
+function goToManageStep() {
+    console.log('🔄 이미지 관리 단계로 이동');
+    
+    hideAllSections();
+    if (elements.manageSection) {
+        elements.manageSection.style.display = 'block';
+        console.log('🛠️ 관리 단계 표시 완료');
+    }
+    updateStepIndicator(4);
+    
+    // 관리 이미지 그리드 업데이트
+    updateManageImagesGrid();
+}
+
+// 압축 단계로 돌아가기
+function goToCompressionStep() {
+    console.log('🔄 압축 단계로 돌아가기');
+    
+    hideAllSections();
+    if (elements.compressionSection) {
+        elements.compressionSection.style.display = 'block';
+        console.log('📦 압축 단계 표시 완료');
+    }
+    updateStepIndicator(3);
+    
+    // 압축 미리보기 업데이트
+    updateCompressionPreview();
+}
+
+// 관리 이미지 그리드 업데이트
+function updateManageImagesGrid() {
+    const manageImagesGrid = document.getElementById('manageImagesGrid');
+    if (!manageImagesGrid) {
+        console.error('❌ manageImagesGrid 요소를 찾을 수 없습니다.');
+        return;
+    }
+    
+    console.log('🔄 관리 이미지 그리드 업데이트 시작');
+    
+    // 로딩 표시
+    manageImagesGrid.innerHTML = `
+        <div class="col-12 text-center">
+            <div class="d-flex justify-content-center align-items-center" style="height: 200px;">
+                <div class="spinner-border text-primary me-3" role="status">
+                    <span class="visually-hidden">로딩 중...</span>
+                </div>
+                <span class="text-muted">저장된 이미지를 불러오는 중...</span>
+            </div>
+        </div>
+    `;
+    
+    // 서버에서 저장된 이미지 목록 가져오기
+    fetch(`/facility/api/${facilityId}/images`)
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            return response.json();
+        })
+        .then(images => {
+            console.log(`📋 서버에서 가져온 이미지 수: ${images.length}개`);
+            
+            manageImagesGrid.innerHTML = '';
+            
+            if (images && images.length > 0) {
+                // 이미지 그리드 생성
+                const gridContainer = document.createElement('div');
+                gridContainer.className = 'row g-3';
+                
+                images.forEach((image, index) => {
+                    const imageElement = document.createElement('div');
+                    imageElement.className = 'col-md-4 col-sm-6 col-12';
+                    imageElement.innerHTML = `
+                        <div class="card h-100" data-image-id="${image.imageId}">
+                            <div class="position-relative">
+                                <img src="${image.imagePath}" class="card-img-top" 
+                                     style="height: 200px; object-fit: cover;" 
+                                     alt="${image.imageAltText || '시설 이미지'}" 
+                                     onerror="this.src='/images/default_facility.jpg'">
+                                
+                                <!-- 메인 이미지 배지 -->
+                                ${image.isMainImage ? `
+                                    <div class="position-absolute top-0 start-0 m-2">
+                                        <span class="badge bg-warning text-dark">
+                                            <i class="fas fa-star me-1"></i>메인 이미지
+                                        </span>
+                                    </div>
+                                ` : ''}
+                                
+                                <!-- 관리 버튼 -->
+                                <div class="position-absolute top-0 end-0 m-2">
+                                    <div class="dropdown">
+                                        <button class="btn btn-sm btn-light dropdown-toggle" type="button" 
+                                                data-bs-toggle="dropdown" aria-expanded="false">
+                                            <i class="fas fa-cog"></i>
+                                        </button>
+                                        <ul class="dropdown-menu dropdown-menu-end">
+                                            ${!image.isMainImage ? `
+                                                <li>
+                                                    <button class="dropdown-item" onclick="setMainImage(${image.imageId})">
+                                                        <i class="fas fa-star text-warning me-2"></i>메인 이미지로 설정
+                                                    </button>
+                                                </li>
+                                            ` : ''}
+                                            <li>
+                                                <button class="dropdown-item text-danger" onclick="deleteImage(${image.imageId})">
+                                                    <i class="fas fa-trash me-2"></i>이미지 삭제
+                                                </button>
+                                            </li>
+                                        </ul>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="card-body">
+                                <h6 class="card-title text-truncate">
+                                    ${image.imageAltText || `시설 이미지 ${index + 1}`}
+                                </h6>
+                                <small class="text-success">
+                                    <i class="fas fa-check-circle me-1"></i>저장 완료
+                                </small>
+                                <br>
+                                <small class="text-muted">ID: ${image.imageId}</small>
+                            </div>
+                        </div>
+                    `;
+                    gridContainer.appendChild(imageElement);
+                });
+                
+                manageImagesGrid.appendChild(gridContainer);
+                
+                // 안내 메시지 추가
+                const infoElement = document.createElement('div');
+                infoElement.className = 'col-12 mt-4';
+                infoElement.innerHTML = `
+                    <div class="alert alert-info">
+                        <h6 class="alert-heading">
+                            <i class="fas fa-info-circle me-2"></i>이미지 관리 안내
+                        </h6>
+                        <ul class="mb-0 small">
+                            <li>메인 이미지는 시설 목록에서 대표 이미지로 표시됩니다</li>
+                            <li>불필요한 이미지는 삭제할 수 있습니다</li>
+                            <li>최종 완료 후에는 시설 관리 페이지에서 수정 가능합니다</li>
+                            <li>현재 <strong>${images.length}장</strong>의 이미지가 등록되어 있습니다</li>
+                        </ul>
+                    </div>
+                `;
+                manageImagesGrid.appendChild(infoElement);
+                
+                // Bootstrap 드롭다운 초기화
+                setTimeout(() => {
+                    const dropdowns = manageImagesGrid.querySelectorAll('[data-bs-toggle="dropdown"]');
+                    dropdowns.forEach(dropdown => {
+                        if (typeof bootstrap !== 'undefined' && bootstrap.Dropdown) {
+                            new bootstrap.Dropdown(dropdown);
+                        }
+                    });
+                    console.log(`🔧 Bootstrap 드롭다운 초기화 완료: ${dropdowns.length}개`);
+                }, 100);
+                
+            } else {
+                // 이미지가 없는 경우
+                manageImagesGrid.innerHTML = `
+                    <div class="col-12 text-center">
+                        <div class="alert alert-warning">
+                            <h5><i class="fas fa-exclamation-triangle me-2"></i>등록된 이미지가 없습니다</h5>
+                            <p class="mb-3">압축 단계로 돌아가서 이미지를 저장해 주세요.</p>
+                            <button type="button" class="btn btn-outline-secondary" onclick="goToCompressionStep()">
+                                <i class="fas fa-arrow-left me-2"></i>압축 단계로 돌아가기
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }
+        })
+        .catch(error => {
+            console.error('❌ 이미지 목록을 가져오는 중 오류:', error);
+            manageImagesGrid.innerHTML = `
+                <div class="col-12">
+                    <div class="alert alert-danger">
+                        <h6><i class="fas fa-exclamation-triangle me-2"></i>오류 발생</h6>
+                        <p class="mb-0">이미지 목록을 불러올 수 없습니다: ${error.message}</p>
+                    </div>
+                </div>
+            `;
+        });
+}
+
+// 최종 완료 처리
+function finalComplete() {
+    console.log('🎯 최종 완료 처리 시작');
+    
+    // 확인 대화상자
+    if (!confirm('이미지 등록을 완료하시겠습니까?\n완료 후에는 시설 관리 페이지에서 수정할 수 있습니다.')) {
+        return;
+    }
+    
+    // 버튼 로딩 상태
+    const finalBtn = elements.buttons.finalComplete;
+    if (finalBtn) {
+        setButtonLoading(finalBtn, true, '완료 처리 중...');
+    }
+    
+    // 완료 단계로 이동
+    setTimeout(() => {
+        hideAllSections();
+        if (elements.completeSection) {
+            elements.completeSection.style.display = 'block';
+            console.log('✅ 완료 단계 표시');
+        }
+        updateStepIndicator(5);
+        
+        // 최종 요약 업데이트
+        updateFinalSummary();
+        
+        if (finalBtn) {
+            setButtonLoading(finalBtn, false);
+        }
+        
+        console.log('🎉 시설 이미지 등록 프로세스 완료!');
+    }, 1000);
+}
+
+// 최종 요약 업데이트
+function updateFinalSummary() {
+    const finalSummary = document.getElementById('finalSummary');
+    if (!finalSummary) {
+        console.error('❌ finalSummary 요소를 찾을 수 없습니다.');
+        return;
+    }
+    
+    console.log('📊 최종 요약 업데이트 시작');
+    
+    // 로딩 표시
+    finalSummary.innerHTML = `
+        <div class="text-center">
+            <div class="spinner-border text-success me-2" role="status">
+                <span class="visually-hidden">로딩 중...</span>
+            </div>
+            <span class="text-muted">최종 결과를 확인하는 중...</span>
+        </div>
+    `;
+    
+    // 서버에서 최종 이미지 정보 가져오기
+    fetch(`/facility/api/${facilityId}/images`)
+        .then(response => response.json())
+        .then(images => {
+            const mainImage = images.find(img => img.isMainImage);
+            const totalImages = images.length;
+            
+            finalSummary.innerHTML = `
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="card border-success">
+                            <div class="card-header bg-success text-white">
+                                <h6 class="mb-0">
+                                    <i class="fas fa-chart-bar me-2"></i>등록 완료 현황
+                                </h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="row text-center">
+                                    <div class="col-6">
+                                        <h4 class="text-success mb-1">${totalImages}</h4>
+                                        <small class="text-muted">총 이미지 수</small>
+                                    </div>
+                                    <div class="col-6">
+                                        <h4 class="text-primary mb-1">${mainImage ? '1' : '0'}</h4>
+                                        <small class="text-muted">메인 이미지</small>
+                                    </div>
+                                </div>
+                                
+                                <hr class="my-3">
+                                
+                                <div class="small">
+                                    <div class="d-flex justify-content-between">
+                                        <span>이미지 비율:</span>
+                                        <span class="fw-bold text-primary">16:9</span>
+                                    </div>
+                                    <div class="d-flex justify-content-between">
+                                        <span>압축 적용:</span>
+                                        <span class="fw-bold text-success">✓ 완료</span>
+                                    </div>
+                                    <div class="d-flex justify-content-between">
+                                        <span>SEO 최적화:</span>
+                                        <span class="fw-bold text-success">✓ 완료</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <div class="card border-info">
+                            <div class="card-header bg-info text-white">
+                                <h6 class="mb-0">
+                                    <i class="fas fa-star me-2"></i>메인 이미지
+                                </h6>
+                            </div>
+                            <div class="card-body text-center">
+                                ${mainImage ? `
+                                    <img src="${mainImage.imagePath}" class="img-fluid rounded mb-2" 
+                                         style="max-height: 150px; object-fit: cover;" 
+                                         alt="${mainImage.imageAltText}">
+                                    <p class="small text-muted mb-0">${mainImage.imageAltText}</p>
+                                ` : `
+                                    <div class="text-muted">
+                                        <i class="fas fa-info-circle fa-2x mb-2"></i>
+                                        <p class="small mb-0">메인 이미지가 설정되지 않았습니다</p>
+                                    </div>
+                                `}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="alert alert-success mt-3">
+                    <h6 class="alert-heading">
+                        <i class="fas fa-thumbs-up me-2"></i>등록 완료!
+                    </h6>
+                    <p class="mb-0">시설 이미지가 성공적으로 등록되었습니다. 이제 시설 검색 결과에서 고품질 이미지를 확인할 수 있습니다.</p>
+                </div>
+            `;
+            
+            console.log('✅ 최종 요약 업데이트 완료');
+        })
+        .catch(error => {
+            console.error('❌ 최종 요약 업데이트 오류:', error);
+            finalSummary.innerHTML = `
+                <div class="alert alert-warning">
+                    <h6><i class="fas fa-exclamation-triangle me-2"></i>요약 정보 확인 불가</h6>
+                    <p class="mb-0">이미지는 정상적으로 등록되었지만, 요약 정보를 불러올 수 없습니다.</p>
+                </div>
+            `;
+        });
+}
+
+// 메인 이미지 설정 함수 (전역 함수로 설정)
+window.setMainImage = function(imageId) {
+    if (!confirm('이 이미지를 메인 이미지로 설정하시겠습니까?')) {
+        return;
+    }
+    
+    console.log('⭐ 메인 이미지 설정 요청:', imageId);
+    
+    fetch(`/facility/api/images/${imageId}/set-main`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            console.log('✅ 메인 이미지 설정 성공:', imageId);
+            
+            // 성공 메시지
+            alert('메인 이미지로 설정되었습니다.');
+            
+            // 이미지 목록 새로고침
+            updateFinalImagesGrid();
+            
+        } else {
+            console.error('❌ 메인 이미지 설정 실패:', data.message);
+            alert(data.message || '메인 이미지 설정에 실패했습니다.');
+        }
+    })
+    .catch(error => {
+        console.error('🚨 메인 이미지 설정 오류:', error);
+        alert('메인 이미지 설정 중 오류가 발생했습니다.');
+    });
+};
