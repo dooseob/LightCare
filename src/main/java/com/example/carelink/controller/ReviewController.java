@@ -277,10 +277,9 @@ public class ReviewController {
                 return "redirect:/review";
             }
             
-            // 작성자 권한 확인
-            Long currentMemberId = getCurrentMemberId(session);
-            if (!review.getMemberId().equals(currentMemberId)) {
-                redirectAttributes.addFlashAttribute("error", "작성자만 수정할 수 있습니다.");
+            // 작성자 또는 관리자 권한 확인
+            if (!hasEditPermission(session, review.getMemberId())) {
+                redirectAttributes.addFlashAttribute("error", "작성자 또는 관리자만 수정할 수 있습니다.");
                 return "redirect:/review/detail/" + id;
             }
             
@@ -310,10 +309,9 @@ public class ReviewController {
                 return "redirect:/review";
             }
             
-            // 작성자 권한 확인
-            Long currentMemberId = getCurrentMemberId(session);
-            if (!existingReview.getMemberId().equals(currentMemberId)) {
-                redirectAttributes.addFlashAttribute("error", "작성자만 수정할 수 있습니다.");
+            // 작성자 또는 관리자 권한 확인
+            if (!hasEditPermission(session, existingReview.getMemberId())) {
+                redirectAttributes.addFlashAttribute("error", "작성자 또는 관리자만 수정할 수 있습니다.");
                 return "redirect:/review/detail/" + reviewDTO.getReviewId();
             }
             
@@ -373,10 +371,9 @@ public class ReviewController {
                 return "redirect:/review";
             }
             
-            // 작성자 권한 확인
-            Long currentMemberId = getCurrentMemberId(session);
-            if (!existingReview.getMemberId().equals(currentMemberId)) {
-                redirectAttributes.addFlashAttribute("error", "작성자만 삭제할 수 있습니다.");
+            // 작성자 또는 관리자 권한 확인
+            if (!hasEditPermission(session, existingReview.getMemberId())) {
+                redirectAttributes.addFlashAttribute("error", "작성자 또는 관리자만 삭제할 수 있습니다.");
                 return "redirect:/review/detail/" + id;
             }
             
@@ -536,7 +533,22 @@ public class ReviewController {
      * 현재 로그인한 사용자 ID 조회 (세션 기반)
      */
     private Long getCurrentMemberId(HttpSession session) {
+        return (Long) session.getAttribute("memberId");
+    }
+    
+    /**
+     * 현재 사용자가 관리자인지 확인
+     */
+    private boolean isAdmin(HttpSession session) {
         MemberDTO loginMember = (MemberDTO) session.getAttribute(Constants.SESSION_MEMBER);
-        return (loginMember != null) ? loginMember.getMemberId() : null;
+        return loginMember != null && "ADMIN".equals(loginMember.getRole());
+    }
+    
+    /**
+     * 수정/삭제 권한 확인 (작성자 또는 관리자)
+     */
+    private boolean hasEditPermission(HttpSession session, Long authorMemberId) {
+        Long currentMemberId = getCurrentMemberId(session);
+        return (currentMemberId != null && currentMemberId.equals(authorMemberId)) || isAdmin(session);
     }
 } 

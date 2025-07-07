@@ -27,6 +27,7 @@ public class FacilityDTO extends BaseDTO {
     private Double latitude; // DB: latitude
     private String description;
     private String facilityImage; // DB: facility_image
+    private String facilityImageAltText; // DB: facility_image_alt_text (SEO 최적화용)
     private String homepage;
     private Integer capacity;
     private Integer currentOccupancy;
@@ -35,8 +36,10 @@ public class FacilityDTO extends BaseDTO {
     private Boolean isApproved; // DB: is_approved
     private Boolean isDeleted; // DB: is_deleted
     private String approvalStatus; // DB: approval_status
+    private String rejectionReason; // DB: rejection_reason (관리자용)
     private Long registeredMemberId; // DB: registered_member_id
     private String registeredMemberName; // DB: registered_member_name
+    private String registeredUserName; // DB: registered_user_name (관리자용 - 로그인 ID)
     private Double averageRating; // DB: average_rating (스키마에 존재)
     private Integer reviewCount; // DB: review_count (스키마에 존재)
     private Integer gradeRating; // DB: grade_rating (스키마에 존재)

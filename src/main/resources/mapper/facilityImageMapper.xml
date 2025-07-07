@@ -1,0 +1,137 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.example.carelink.dao.FacilityImageMapper">
+
+    <!-- ResultMap 정의 -->
+    <resultMap id="FacilityImageResultMap" type="com.example.carelink.dto.FacilityImageDTO">
+        <id property="imageId" column="image_id"/>
+        <result property="facilityId" column="facility_id"/>
+        <result property="imagePath" column="image_path"/>
+        <result property="imageAltText" column="image_alt_text"/>
+        <result property="imageOrder" column="image_order"/>
+        <result property="isMainImage" column="is_main_image"/>
+        <result property="uploadDate" column="upload_date"/>
+        <result property="updatedAt" column="updated_at"/>
+    </resultMap>
+
+    <!-- 시설의 모든 이미지 조회 (순서대로) -->
+    <select id="getImagesByFacilityId" resultMap="FacilityImageResultMap">
+        SELECT 
+            image_id,
+            facility_id,
+            image_path,
+            image_alt_text,
+            image_order,
+            is_main_image,
+            upload_date,
+            updated_at
+        FROM facility_images
+        WHERE facility_id = #{facilityId}
+        ORDER BY image_order ASC, upload_date ASC
+    </select>
+
+    <!-- 시설의 메인 이미지 조회 -->
+    <select id="getMainImageByFacilityId" resultMap="FacilityImageResultMap">
+        SELECT 
+            image_id,
+            facility_id,
+            image_path,
+            image_alt_text,
+            image_order,
+            is_main_image,
+            upload_date,
+            updated_at
+        FROM facility_images
+        WHERE facility_id = #{facilityId} 
+        AND is_main_image = TRUE
+        LIMIT 1
+    </select>
+
+    <!-- 시설 이미지 추가 -->
+    <insert id="insertFacilityImage" useGeneratedKeys="true" keyProperty="imageId">
+        INSERT INTO facility_images (
+            facility_id,
+            image_path,
+            image_alt_text,
+            image_order,
+            is_main_image,
+            upload_date
+        ) VALUES (
+            #{facilityId},
+            #{imagePath},
+            #{imageAltText},
+            #{imageOrder},
+            #{isMainImage},
+            NOW()
+        )
+    </insert>
+
+    <!-- 시설 이미지 수정 -->
+    <update id="updateFacilityImage">
+        UPDATE facility_images 
+        SET 
+            image_path = #{imagePath},
+            image_alt_text = #{imageAltText},
+            image_order = #{imageOrder},
+            is_main_image = #{isMainImage},
+            updated_at = NOW()
+        WHERE image_id = #{imageId}
+    </update>
+
+    <!-- 시설 이미지 삭제 -->
+    <delete id="deleteFacilityImage">
+        DELETE FROM facility_images 
+        WHERE image_id = #{imageId}
+    </delete>
+
+    <!-- 시설의 모든 이미지 삭제 -->
+    <delete id="deleteAllImagesByFacilityId">
+        DELETE FROM facility_images 
+        WHERE facility_id = #{facilityId}
+    </delete>
+
+    <!-- 시설의 이미지 개수 조회 -->
+    <select id="countImagesByFacilityId" resultType="int">
+        SELECT COUNT(*) 
+        FROM facility_images 
+        WHERE facility_id = #{facilityId}
+    </select>
+
+    <!-- 기존 메인 이미지 해제 -->
+    <update id="clearMainImages">
+        UPDATE facility_images 
+        SET is_main_image = FALSE, updated_at = NOW()
+        WHERE facility_id = #{facilityId}
+    </update>
+
+    <!-- 메인 이미지 설정 -->
+    <update id="updateMainImage">
+        UPDATE facility_images 
+        SET is_main_image = TRUE, updated_at = NOW()
+        WHERE facility_id = #{facilityId} AND image_id = #{imageId}
+    </update>
+
+    <!-- 특정 이미지 ID로 이미지 조회 -->
+    <select id="getImageById" resultMap="FacilityImageResultMap">
+        SELECT 
+            image_id,
+            facility_id,
+            image_path,
+            image_alt_text,
+            image_order,
+            is_main_image,
+            upload_date,
+            updated_at
+        FROM facility_images
+        WHERE image_id = #{imageId}
+    </select>
+
+    <!-- 이미지 순서 업데이트 (데이터 정합성 보장) -->
+    <update id="updateImageOrder">
+        UPDATE facility_images 
+        SET image_order = #{imageOrder}, updated_at = NOW()
+        WHERE image_id = #{imageId}
+    </update>
+
+</mapper>

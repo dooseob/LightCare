@@ -12,7 +12,11 @@
         <result property="email" column="email"/>
         <result property="phone" column="phone"/>
         <result property="role" column="role"/>
-        <result property="address" column="address"/> <result property="profileImage" column="profile_image"/> <result property="isActive" column="is_active"/>
+        <result property="address" column="address"/>
+        <result property="detailAddress" column="detail_address"/>
+        <result property="profileImage" column="profile_image"/>
+        <result property="profileImageAltText" column="profile_image_alt_text"/>
+        <result property="isActive" column="is_active"/>
         <result property="loginFailCount" column="login_fail_count"/>
         <result property="lastLoginAt" column="last_login_at"/>
         <result property="createdAt" column="created_at"/>
@@ -51,11 +55,12 @@
         phone,              <!-- 6 -->
         role,               <!-- 7 -->
         address,            <!-- 8 -->
-        profile_image,      <!-- 9 -->
-        is_active,          <!-- 10 -->
-        login_fail_count,   <!-- 11 -->
-        last_login_at,      <!-- 12 -->
-        is_deleted          <!-- 13 -->
+        detail_address,     <!-- 9 -->
+        profile_image,      <!-- 10 -->
+        is_active,          <!-- 11 -->
+        login_fail_count,   <!-- 12 -->
+        last_login_at,      <!-- 13 -->
+        is_deleted          <!-- 14 -->
         <!-- created_at, updated_at은 DB DEFAULT이므로 제외 -->
         ) VALUES (
         #{memberId},              <!-- DTO에 null 또는 0으로 설정 -->
@@ -66,6 +71,7 @@
         #{phone, jdbcType=VARCHAR},
         #{role, jdbcType=VARCHAR},
         #{address, jdbcType=VARCHAR},
+        #{detailAddress, jdbcType=VARCHAR},
         #{profileImage, jdbcType=VARCHAR},
         #{isActive, jdbcType=BOOLEAN},
         #{loginFailCount, jdbcType=INTEGER},
@@ -88,7 +94,11 @@
             name = #{name},
             email = #{email},
             phone = #{phone},
-            address = #{address},        profile_image = #{profileImage}, updated_at = NOW()
+            address = #{address},
+            detail_address = #{detailAddress},
+            profile_image = #{profileImage},
+            profile_image_alt_text = #{profileImageAltText},
+            updated_at = NOW()
         WHERE member_id = #{memberId}
     </update>
 
@@ -100,6 +110,27 @@
             updated_at = NOW()
         WHERE user_id = #{userId}
     </update>
+    
+    <!-- 익명화: 개인정보만 삭제, 콘텐츠는 유지 -->
+    <update id="anonymizeMember">
+        UPDATE member
+        SET
+            name = '탈퇴회원',
+            email = NULL,
+            phone = NULL,
+            address = NULL,
+            profile_image = NULL,
+            password = 'DELETED',
+            is_deleted = TRUE,
+            is_active = FALSE,
+            updated_at = NOW()
+        WHERE user_id = #{userId}
+    </update>
+    
+    <!-- 물리 삭제: 완전히 데이터 제거 -->
+    <delete id="hardDeleteMember">
+        DELETE FROM member WHERE user_id = #{userId}
+    </delete>
 
     <update id="updatePassword" parameterType="MemberDTO">
         UPDATE member
@@ -124,6 +155,7 @@
         WHERE member_id = #{memberId}
     </update>
 
+    <!-- 전체 회원 수 조회 (관리자용) -->
     <select id="getTotalCount" resultType="int">
         SELECT COUNT(*)
         FROM member
@@ -144,8 +176,11 @@
     <select id="findMembersByRole" resultMap="memberResultMap">
         SELECT *
         FROM member
-        WHERE role = #{role}
-          AND is_deleted = FALSE
+        WHERE is_deleted = FALSE
+        <if test="role != null and role != ''">
+            AND role = #{role}
+        </if>
+        ORDER BY created_at DESC
     </select>
 
     <update id="updateMemberStatus">
@@ -160,6 +195,34 @@
         SELECT COUNT(*) 
         FROM member 
         WHERE is_deleted = false AND is_active = true
+    </select>
+
+    <!-- ================== 관리자용 쿼리들 ================== -->
+
+    <!-- 시설 회원 수 조회 (관리자용) -->
+    <select id="getFacilityMemberCount" resultType="int">
+        SELECT COUNT(*) 
+        FROM member 
+        WHERE is_deleted = false 
+        AND role = 'FACILITY'
+    </select>
+
+    <!-- 일반 회원 수 조회 (관리자용) -->
+    <select id="getUserMemberCount" resultType="int">
+        SELECT COUNT(*) 
+        FROM member 
+        WHERE is_deleted = false 
+        AND role = 'USER'
+    </select>
+
+    <!-- 역할별 회원 수 조회 (관리자용) -->
+    <select id="getMemberCountByRole" resultType="int">
+        SELECT COUNT(*) 
+        FROM member 
+        WHERE is_deleted = false
+        <if test="role != null and role != ''">
+            AND role = #{role}
+        </if>
     </select>
 
 </mapper>

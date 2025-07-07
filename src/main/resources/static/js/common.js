@@ -50,7 +50,7 @@ function autoHideAlerts() {
         if (!alert.hasClass('alert-permanent')) {
             setTimeout(function() {
                 alert.fadeOut('slow');
-            }, 5000); // 5초 후 자동 숨김
+            }, 3000); // 3초 후 자동 숨김
         }
     });
 }

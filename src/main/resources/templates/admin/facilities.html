@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="ko">
+<head th:replace="~{layout/header :: header}">
+    <title>시설 승인 관리 - CareLink</title>
+</head>
+<body class="d-flex flex-column min-vh-100 pt-5">
+<nav th:replace="~{layout/header :: navbar}"></nav>
+
+<div th:replace="~{layout/header :: messages}"></div>
+
+<main class="flex-grow-1">
+    <div class="container mt-4">
+        <!-- 브레드크럼 -->
+        <nav aria-label="breadcrumb" class="mb-4">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="/">홈</a></li>
+                <li class="breadcrumb-item"><a href="/admin">관리자 대시보드</a></li>
+                <li class="breadcrumb-item active" aria-current="page">시설 승인 관리</li>
+            </ol>
+        </nav>
+
+        <!-- 페이지 헤더 -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <h1 class="h2 mb-3">
+                    <i class="fas fa-check-circle text-warning me-2"></i>
+                    시설 승인 관리
+                </h1>
+            </div>
+        </div>
+
+        <!-- 상태 필터 탭 -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <ul class="nav nav-tabs" id="statusTabs" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" th:classappend="${currentStatus == 'PENDING' ? 'active' : ''}" 
+                                type="button" onclick="loadFacilities('PENDING')">
+                            <i class="fas fa-clock text-warning me-1"></i>
+                            승인 대기 <span class="badge bg-warning ms-1">대기중</span>
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" th:classappend="${currentStatus == 'APPROVED' ? 'active' : ''}" 
+                                type="button" onclick="loadFacilities('APPROVED')">
+                            <i class="fas fa-check text-success me-1"></i>
+                            승인 완료 <span class="badge bg-success ms-1">승인</span>
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" th:classappend="${currentStatus == 'REJECTED' ? 'active' : ''}" 
+                                type="button" onclick="loadFacilities('REJECTED')">
+                            <i class="fas fa-times text-danger me-1"></i>
+                            승인 거부 <span class="badge bg-danger ms-1">거부</span>
+                        </button>
+                    </li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- 시설 목록 -->
+        <div class="row">
+            <div class="col-12">
+                <div class="card shadow-sm">
+                    <div class="card-body" id="facilityListContainer">
+                        <div th:if="${facilities.empty}" class="text-center py-5">
+                            <i class="fas fa-search fa-3x text-muted mb-3"></i>
+                            <h5 class="text-muted">해당 상태의 시설이 없습니다.</h5>
+                            <p class="text-muted mb-0">다른 상태 탭을 확인해보세요.</p>
+                        </div>
+
+                        <div th:unless="${facilities.empty}">
+                            <div class="table-responsive">
+                                <table class="table table-hover">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th scope="col">#</th>
+                                            <th scope="col">시설명</th>
+                                            <th scope="col">유형</th>
+                                            <th scope="col">주소</th>
+                                            <th scope="col">등록자</th>
+                                            <th scope="col">등록일</th>
+                                            <th scope="col">상태</th>
+                                            <th scope="col">작업</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr th:each="facility, iterStat : ${facilities}">
+                                            <th scope="row" th:text="${iterStat.count}">1</th>
+                                            <td>
+                                                <div class="d-flex align-items-center">
+                                                    <div>
+                                                        <h6 class="mb-0" th:text="${facility.facilityName}">시설명</h6>
+                                                        <small class="text-muted" th:if="${facility.phone}" th:text="${facility.phone}">전화번호</small>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td>
+                                                <span class="badge bg-info" th:text="${facility.facilityType}">유형</span>
+                                            </td>
+                                            <td>
+                                                <small th:text="${facility.address}">주소</small>
+                                            </td>
+                                            <td>
+                                                <div>
+                                                    <div th:text="${facility.registeredMemberName}">등록자명</div>
+                                                    <small class="text-muted" th:text="'(' + ${facility.registeredUserName} + ')'">ID</small>
+                                                </div>
+                                            </td>
+                                            <td>
+                                                <small th:text="${#temporals.format(facility.createdAt, 'yyyy-MM-dd')}">등록일</small>
+                                            </td>
+                                            <td>
+                                                <span th:if="${facility.approvalStatus == 'PENDING'}" class="badge bg-warning">승인대기</span>
+                                                <span th:if="${facility.approvalStatus == 'APPROVED'}" class="badge bg-success">승인완료</span>
+                                                <span th:if="${facility.approvalStatus == 'REJECTED'}" class="badge bg-danger">승인거부</span>
+                                            </td>
+                                            <td>
+                                                <div class="btn-group btn-group-sm" role="group">
+                                                    <button type="button" class="btn btn-outline-info" 
+                                                            th:onclick="'viewFacilityDetail(' + ${facility.facilityId} + ')'">
+                                                        <i class="fas fa-eye"></i> 상세
+                                                    </button>
+                                                    <div th:if="${facility.approvalStatus == 'PENDING'}">
+                                                        <button type="button" class="btn btn-success btn-sm" 
+                                                                th:onclick="'approveFacility(' + ${facility.facilityId} + ')'">
+                                                            <i class="fas fa-check"></i> 승인
+                                                        </button>
+                                                        <button type="button" class="btn btn-danger btn-sm" 
+                                                                th:onclick="'rejectFacility(' + ${facility.facilityId} + ')'">
+                                                            <i class="fas fa-times"></i> 거부
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</main>
+
+<!-- 시설 상세 정보 모달 -->
+<div class="modal fade" id="facilityDetailModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">시설 상세 정보</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="facilityDetailContent">
+                <!-- AJAX로 로드될 내용 -->
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">닫기</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 승인 거부 사유 입력 모달 -->
+<div class="modal fade" id="rejectModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">승인 거부 사유</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="rejectForm">
+                    <input type="hidden" id="rejectFacilityId">
+                    <div class="mb-3">
+                        <label for="rejectionReason" class="form-label">거부 사유 <span class="text-danger">*</span></label>
+                        <textarea class="form-control" id="rejectionReason" rows="4" 
+                                  placeholder="승인 거부 사유를 상세히 입력해주세요." required></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">취소</button>
+                <button type="button" class="btn btn-danger" onclick="confirmReject()">승인 거부</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<footer th:replace="~{layout/footer :: footer}"></footer>
+
+<div th:replace="~{layout/footer :: scripts}"></div>
+
+<script>
+// 현재 상태 저장
+let currentStatus = '[[${currentStatus}]]';
+
+// 시설 목록 AJAX 로드
+function loadFacilities(status) {
+    // 탭 활성화 상태 변경
+    $('.nav-tabs .nav-link').removeClass('active');
+    event.target.classList.add('active');
+    
+    // 로딩 표시
+    $('#facilityListContainer').html('<div class="text-center py-5"><i class="fas fa-spinner fa-spin fa-2x"></i><p class="mt-2">로딩 중...</p></div>');
+    
+    // AJAX 요청
+    $.get('/admin/facilities', { status: status })
+        .done(function(html) {
+            // 응답에서 시설 목록 부분만 추출
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(html, 'text/html');
+            const facilityContent = doc.getElementById('facilityListContainer').innerHTML;
+            $('#facilityListContainer').html(facilityContent);
+            currentStatus = status;
+        })
+        .fail(function() {
+            $('#facilityListContainer').html('<div class="text-center py-5 text-danger"><i class="fas fa-exclamation-triangle fa-2x"></i><p class="mt-2">시설 목록을 불러오는데 실패했습니다.</p></div>');
+        });
+}
+
+// 시설 상세 정보 조회
+function viewFacilityDetail(facilityId) {
+    $.get('/admin/facilities/' + facilityId + '/detail')
+        .done(function(facility) {
+            if (facility) {
+                let content = `
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6>기본 정보</h6>
+                            <table class="table table-sm">
+                                <tr><td><strong>시설명:</strong></td><td>${facility.facilityName || '-'}</td></tr>
+                                <tr><td><strong>유형:</strong></td><td>${facility.facilityType || '-'}</td></tr>
+                                <tr><td><strong>전화번호:</strong></td><td>${facility.phone || '-'}</td></tr>
+                                <tr><td><strong>수용인원:</strong></td><td>${facility.capacity || '-'}명</td></tr>
+                                <tr><td><strong>운영시간:</strong></td><td>${facility.operatingHours || '-'}</td></tr>
+                            </table>
+                        </div>
+                        <div class="col-md-6">
+                            <h6>등록 정보</h6>
+                            <table class="table table-sm">
+                                <tr><td><strong>등록자:</strong></td><td>${facility.registeredMemberName || '-'}</td></tr>
+                                <tr><td><strong>등록 ID:</strong></td><td>${facility.registeredUserName || '-'}</td></tr>
+                                <tr><td><strong>등록일:</strong></td><td>${facility.createdAt || '-'}</td></tr>
+                                <tr><td><strong>승인상태:</strong></td><td>
+                                    ${facility.approvalStatus === 'PENDING' ? '<span class="badge bg-warning">승인대기</span>' : 
+                                      facility.approvalStatus === 'APPROVED' ? '<span class="badge bg-success">승인완료</span>' : 
+                                      '<span class="badge bg-danger">승인거부</span>'}
+                                </td></tr>
+                            </table>
+                        </div>
+                    </div>
+                    <div class="row mt-3">
+                        <div class="col-12">
+                            <h6>주소 정보</h6>
+                            <p>${facility.address || '-'}</p>
+                            ${facility.detailAddress ? '<p><small class="text-muted">상세: ' + facility.detailAddress + '</small></p>' : ''}
+                        </div>
+                    </div>
+                    ${facility.description ? 
+                        '<div class="row mt-3"><div class="col-12"><h6>시설 설명</h6><p>' + facility.description + '</p></div></div>' : ''}
+                    ${facility.features ? 
+                        '<div class="row mt-3"><div class="col-12"><h6>시설 특징</h6><p>' + facility.features + '</p></div></div>' : ''}
+                    ${facility.rejectionReason ? 
+                        '<div class="row mt-3"><div class="col-12"><h6 class="text-danger">거부 사유</h6><p class="text-danger">' + facility.rejectionReason + '</p></div></div>' : ''}
+                `;
+                
+                $('#facilityDetailContent').html(content);
+                $('#facilityDetailModal').modal('show');
+            }
+        })
+        .fail(function() {
+            alert('시설 정보를 불러올 수 없습니다.');
+        });
+}
+
+// 시설 승인
+function approveFacility(facilityId) {
+    if (confirm('이 시설을 승인하시겠습니까?')) {
+        $.post('/admin/facilities/' + facilityId + '/approve', {
+            action: 'approve'
+        })
+        .done(function(result) {
+            if (result === 'SUCCESS') {
+                alert('시설이 승인되었습니다.');
+                location.reload();
+            } else {
+                alert('승인 처리 중 오류가 발생했습니다.');
+            }
+        })
+        .fail(function() {
+            alert('승인 처리 중 오류가 발생했습니다.');
+        });
+    }
+}
+
+// 시설 승인 거부 (모달 열기)
+function rejectFacility(facilityId) {
+    $('#rejectFacilityId').val(facilityId);
+    $('#rejectionReason').val('');
+    $('#rejectModal').modal('show');
+}
+
+// 승인 거부 확인
+function confirmReject() {
+    const facilityId = $('#rejectFacilityId').val();
+    const reason = $('#rejectionReason').val().trim();
+    
+    if (!reason) {
+        alert('거부 사유를 입력해주세요.');
+        return;
+    }
+    
+    $.post('/admin/facilities/' + facilityId + '/approve', {
+        action: 'reject',
+        reason: reason
+    })
+    .done(function(result) {
+        if (result === 'SUCCESS') {
+            alert('시설 승인이 거부되었습니다.');
+            $('#rejectModal').modal('hide');
+            location.reload();
+        } else {
+            alert('거부 처리 중 오류가 발생했습니다.');
+        }
+    })
+    .fail(function() {
+        alert('거부 처리 중 오류가 발생했습니다.');
+    });
+}
+</script>
+
+</body>
+</html>

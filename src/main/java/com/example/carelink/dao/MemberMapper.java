@@ -99,5 +99,32 @@ public interface MemberMapper {
      * (활성/비활성 여부, 삭제 여부와 상관없이 이메일 자체의 중복 확인)
      */
     boolean existsByEmail(@Param("email") String email);
+    
+    /**
+     * 회원 익명화 (개인정보만 삭제, 콘텐츠는 유지)
+     */
+    int anonymizeMember(@Param("userId") String userId);
+    
+    /**
+     * 회원 물리 삭제 (완전 삭제)
+     */
+    int hardDeleteMember(@Param("userId") String userId);
+
+    // ================== 관리자용 메서드들 ==================
+
+    /**
+     * 시설 회원 수 조회 (관리자용)
+     */
+    int getFacilityMemberCount();
+
+    /**
+     * 일반 회원 수 조회 (관리자용)
+     */
+    int getUserMemberCount();
+
+    /**
+     * 역할별 회원 수 조회 (관리자용)
+     */
+    int getMemberCountByRole(@Param("role") String role);
 
 }

@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{layout/header :: header}">
+    <title>시설 관리 - 라이트케어</title>
+</head>
+
+<body class="d-flex flex-column min-vh-100 pt-5">
+<nav th:replace="~{layout/header :: navbar}"></nav>
+
+<div th:replace="~{layout/header :: messages}"></div>
+
+<main class="container my-4">
+    <!-- 브레드크럼 -->
+    <nav aria-label="breadcrumb" class="mb-4">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="/">홈</a></li>
+            <li class="breadcrumb-item"><a href="/facility/search">시설 찾기</a></li>
+            <li class="breadcrumb-item active" aria-current="page">내 시설 관리</li>
+        </ol>
+    </nav>
+    <div class="row">
+        <div class="col-12">
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white">
+                    <h3 class="card-title mb-0">
+                        <i class="fas fa-building me-2"></i>내 시설 관리
+                    </h3>
+                </div>
+                <div class="card-body">
+                    <!-- 시설 정보가 없는 경우 -->
+                    <div th:if="${#lists.isEmpty(facilities)}" class="text-center py-5">
+                        <i class="fas fa-building fa-3x text-muted mb-3"></i>
+                        <h4 class="text-muted">등록된 시설 정보가 없습니다</h4>
+                        <p class="text-muted">시설 정보를 등록하여 구인구직과 리뷰 서비스를 이용해보세요.</p>
+                        <a th:href="@{/facility/register}" class="btn btn-primary btn-lg">
+                            <i class="fas fa-plus me-2"></i>시설 등록하기
+                        </a>
+                    </div>
+
+                    <!-- 시설 정보가 있는 경우 -->
+                    <div th:if="${not #lists.isEmpty(facilities)}">
+                        <div class="row">
+                            <!-- 왼쪽: 시설 목록 (40%) -->
+                            <div class="col-md-4">
+                                <div class="card">
+                                    <div class="card-header">
+                                        <h5 class="mb-0">
+                                            <i class="fas fa-list me-2"></i>내 시설 목록 
+                                            <span class="badge bg-primary ms-2" th:text="${facilityCount}">0</span>
+                                        </h5>
+                                    </div>
+                                    <div class="card-body p-0">
+                                        <div class="list-group list-group-flush">
+                                            <a th:each="facility : ${facilities}" 
+                                               href="#" 
+                                               class="list-group-item list-group-item-action facility-item"
+                                               th:data-facility-id="${facility.facilityId}"
+                                               th:data-facility-info="${facility}">
+                                                <div class="d-flex w-100 justify-content-between">
+                                                    <h6 class="mb-1" th:text="${facility.facilityName}">시설명</h6>
+                                                    <small>
+                                                        <span th:if="${facility.approvalStatus == 'APPROVED'}" class="badge bg-success">승인완료</span>
+                                                        <span th:if="${facility.approvalStatus == 'PENDING'}" class="badge bg-warning">승인대기</span>
+                                                        <span th:if="${facility.approvalStatus == 'REJECTED'}" class="badge bg-danger">승인거절</span>
+                                                    </small>
+                                                </div>
+                                                <p class="mb-1 text-muted small" th:text="${facility.address}">주소</p>
+                                                <small class="text-muted">
+                                                    <i class="fas fa-star me-1"></i>
+                                                    <span th:text="${facility.averageRating ?: '0.0'}">0.0</span>
+                                                    <span class="mx-2">|</span>
+                                                    <i class="fas fa-comment me-1"></i>
+                                                    <span th:text="${facility.reviewCount ?: '0'}">0</span>
+                                                </small>
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- 오른쪽: 선택된 시설 상세 관리 (60%) -->
+                            <div class="col-md-8">
+                                <!-- 시설 선택 안내 (초기 상태) -->
+                                <div id="no-selection" class="text-center py-5">
+                                    <i class="fas fa-arrow-left fa-3x text-muted mb-3"></i>
+                                    <h5 class="text-muted">관리할 시설을 선택해주세요</h5>
+                                    <p class="text-muted">왼쪽 목록에서 시설을 클릭하면 상세 관리 화면이 표시됩니다.</p>
+                                </div>
+
+                                <!-- 선택된 시설 상세 정보 (숨김 상태) -->
+                                <div id="facility-detail" style="display: none;">
+                                    <div class="card">
+                                        <div class="card-header">
+                                            <h5 class="mb-0" id="selected-facility-name">시설명</h5>
+                                        </div>
+                                        <div class="card-body">
+                                            <!-- 승인 상태 -->
+                                            <div id="approval-status" class="alert mb-4">
+                                                <i class="fas fa-info-circle me-2"></i>
+                                                <strong>승인 상태: </strong>
+                                                <span id="approval-text"></span>
+                                            </div>
+
+                                            <!-- 통계 정보 -->
+                                            <div class="row mb-4">
+                                                <div class="col-md-3 col-sm-6 mb-3">
+                                                    <div class="card bg-primary text-white text-center">
+                                                        <div class="card-body">
+                                                            <i class="fas fa-star fa-2x mb-2"></i>
+                                                            <h4 id="avg-rating">0.0</h4>
+                                                            <small>평균 평점</small>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-3 col-sm-6 mb-3">
+                                                    <div class="card bg-info text-white text-center">
+                                                        <div class="card-body">
+                                                            <i class="fas fa-comment fa-2x mb-2"></i>
+                                                            <h4 id="review-count">0</h4>
+                                                            <small>리뷰 수</small>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-3 col-sm-6 mb-3">
+                                                    <div class="card bg-success text-white text-center">
+                                                        <div class="card-body">
+                                                            <i class="fas fa-briefcase fa-2x mb-2"></i>
+                                                            <h4 id="job-count">0</h4>
+                                                            <small>구인공고 수</small>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-3 col-sm-6 mb-3">
+                                                    <div class="card bg-warning text-white text-center">
+                                                        <div class="card-body">
+                                                            <i class="fas fa-users fa-2x mb-2"></i>
+                                                            <h4 id="capacity">0</h4>
+                                                            <small>수용인원</small>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <!-- 시설 기본 정보 -->
+                                            <div class="row mb-4">
+                                                <div class="col-12">
+                                                    <h6><i class="fas fa-info-circle me-2"></i>기본 정보</h6>
+                                                    <div class="table-responsive">
+                                                        <table class="table table-sm">
+                                                            <tr>
+                                                                <td width="30%"><strong>시설 유형</strong></td>
+                                                                <td id="facility-type">-</td>
+                                                            </tr>
+                                                            <tr>
+                                                                <td><strong>주소</strong></td>
+                                                                <td id="facility-address">-</td>
+                                                            </tr>
+                                                            <tr>
+                                                                <td><strong>전화번호</strong></td>
+                                                                <td id="facility-phone">-</td>
+                                                            </tr>
+                                                            <tr>
+                                                                <td><strong>운영시간</strong></td>
+                                                                <td id="operating-hours">-</td>
+                                                            </tr>
+                                                            <tr>
+                                                                <td><strong>홈페이지</strong></td>
+                                                                <td id="homepage">-</td>
+                                                            </tr>
+                                                        </table>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <!-- 관리 버튼들 -->
+                                            <div class="row">
+                                                <div class="col-12">
+                                                    <div class="d-flex gap-2 flex-wrap">
+                                                        <a id="edit-btn" href="#" class="btn btn-primary">
+                                                            <i class="fas fa-edit me-2"></i>시설 정보 수정
+                                                        </a>
+                                                        <a href="/job/write" class="btn btn-success">
+                                                            <i class="fas fa-plus me-2"></i>구인공고 작성
+                                                        </a>
+                                                        <a id="detail-btn" href="#" class="btn btn-info">
+                                                            <i class="fas fa-eye me-2"></i>시설 페이지 보기
+                                                        </a>
+                                                        <button type="button" id="delete-btn" class="btn btn-danger">
+                                                            <i class="fas fa-trash me-2"></i>시설 삭제
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</main>
+
+<footer th:replace="~{layout/footer :: footer}"></footer>
+
+<div th:replace="~{layout/footer :: scripts}"></div>
+
+<script>
+let currentFacilityId = null;
+
+$(document).ready(function() {
+    // 시설 선택 이벤트
+    $('.facility-item').on('click', function(e) {
+        e.preventDefault();
+        
+        // 기존 선택 제거
+        $('.facility-item').removeClass('active');
+        
+        // 현재 선택 표시
+        $(this).addClass('active');
+        
+        // 시설 정보 가져오기
+        const facilityId = $(this).data('facility-id');
+        currentFacilityId = facilityId;
+        
+        // 시설 정보를 data 속성에서 가져오거나 AJAX로 조회
+        loadFacilityDetail(facilityId);
+    });
+    
+    // 삭제 버튼 이벤트
+    $('#delete-btn').on('click', function() {
+        if (currentFacilityId) {
+            deleteFacility(currentFacilityId);
+        }
+    });
+});
+
+function loadFacilityDetail(facilityId) {
+    // AJAX로 시설 상세 정보 조회 (통합된 API 사용)
+    $.get(`/facility/facility-info/${facilityId}`, function(data) {
+        if (data.success) {
+            updateFacilityDetail(data.facility);
+        } else {
+            alert(data.message || '시설 정보를 불러올 수 없습니다.');
+        }
+    }).fail(function() {
+        alert('시설 정보를 불러오는데 실패했습니다.');
+    });
+}
+
+function updateFacilityDetail(facility) {
+    // 화면 전환
+    $('#no-selection').hide();
+    $('#facility-detail').show();
+    
+    // 기본 정보 업데이트
+    $('#selected-facility-name').text(facility.facilityName);
+    $('#facility-type').text(getFacilityTypeText(facility.facilityType));
+    $('#facility-address').text(facility.address + (facility.detailAddress ? ' ' + facility.detailAddress : ''));
+    $('#facility-phone').text(facility.phone || '-');
+    $('#operating-hours').text(facility.operatingHours || '-');
+    $('#homepage').html(facility.homepage ? 
+        `<a href="${facility.homepage}" target="_blank">${facility.homepage}</a>` : '-');
+    
+    // 통계 정보 업데이트
+    $('#avg-rating').text(facility.averageRating || '0.0');
+    $('#review-count').text(facility.reviewCount || '0');
+    $('#job-count').text(facility.jobCount || '0');
+    $('#capacity').text(facility.capacity || '0');
+    
+    // 승인 상태 업데이트
+    updateApprovalStatus(facility.approvalStatus);
+    
+    // 버튼 링크 업데이트
+    $('#edit-btn').attr('href', `/facility/edit/${facility.facilityId}`);
+    $('#detail-btn').attr('href', `/facility/detail/${facility.facilityId}`);
+}
+
+function updateApprovalStatus(status) {
+    const alertDiv = $('#approval-status');
+    const textSpan = $('#approval-text');
+    
+    alertDiv.removeClass('alert-success alert-warning alert-danger');
+    
+    switch(status) {
+        case 'APPROVED':
+            alertDiv.addClass('alert-success');
+            textSpan.text('승인 완료');
+            break;
+        case 'PENDING':
+            alertDiv.addClass('alert-warning');
+            textSpan.text('승인 대기 중 (관리자 승인 후 검색 결과에 표시됩니다)');
+            break;
+        case 'REJECTED':
+            alertDiv.addClass('alert-danger');
+            textSpan.text('승인 거절');
+            break;
+        default:
+            alertDiv.addClass('alert-secondary');
+            textSpan.text('상태 불명');
+    }
+}
+
+function getFacilityTypeText(type) {
+    switch(type) {
+        case 'NURSING_HOME': return '요양원';
+        case 'HOSPITAL': return '요양병원';
+        case 'DAY_CARE': return '데이케어센터';
+        default: return type;
+    }
+}
+
+function deleteFacility(facilityId) {
+    if (confirm('정말로 이 시설을 삭제하시겠습니까?\n삭제된 시설은 복구할 수 없습니다.')) {
+        $.post(`/facility/delete/${facilityId}`, function() {
+            alert('시설이 삭제되었습니다.');
+            location.reload();
+        }).fail(function() {
+            alert('시설 삭제에 실패했습니다.');
+        });
+    }
+}
+</script>
+
+</body>
+</html>

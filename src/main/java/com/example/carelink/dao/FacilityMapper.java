@@ -58,4 +58,45 @@ public interface FacilityMapper {
      * 전체 시설 수 조회 (통계용)
      */
     int getFacilityCount();
+
+    /**
+     * 회원 ID로 시설 삭제 (회원 탈퇴 시 사용)
+     */
+    int deleteByMemberId(@Param("memberId") Long memberId);
+
+    /**
+     * 회원 ID로 시설 목록 조회
+     */
+    List<FacilityDTO> getFacilitiesByMemberId(@Param("memberId") Long memberId);
+    
+    /**
+     * 회원 ID로 시설 조회 (단일 조회 - 하위 호환성 유지)
+     */
+    FacilityDTO getFacilityByMemberId(@Param("memberId") Long memberId);
+    
+    /**
+     * 시설 메인 이미지 정보 업데이트
+     */
+    int updateFacilityMainImage(@Param("facilityId") Long facilityId, 
+                               @Param("mainImagePath") String mainImagePath, 
+                               @Param("imageCount") Integer imageCount);
+
+    // ================== 관리자용 메서드들 ==================
+
+    /**
+     * 승인 상태별 시설 목록 조회 (관리자용)
+     */
+    List<FacilityDTO> getFacilitiesByApprovalStatus(@Param("approvalStatus") String approvalStatus);
+
+    /**
+     * 시설 승인 상태 업데이트 (관리자용)
+     */
+    int updateFacilityApprovalStatus(@Param("facilityId") Long facilityId, 
+                                   @Param("approvalStatus") String approvalStatus, 
+                                   @Param("rejectionReason") String rejectionReason);
+
+    /**
+     * 승인 상태별 시설 수 조회 (관리자용)
+     */
+    int countFacilitiesByStatus(@Param("approvalStatus") String approvalStatus);
 }

@@ -29,30 +29,30 @@
                     </h2>
                     <p class="text-muted mb-3" th:text="${boardDescription}">게시판 설명</p>
                     
-                    <!-- 게시판 타입 메뉴 -->
+                    <!-- 게시판 타입 메뉴 (기존 방식 그대로 유지) -->
                     <div class="btn-group mb-3" role="group" aria-label="게시판 타입">
                         <a th:href="@{/board(type='all')}" 
-                           class="btn btn-sm"
+                           class="btn btn-sm board-type-link"
                            th:classappend="${type == 'all'} ? 'btn-primary' : 'btn-outline-primary'">
                             전체
                         </a>
                         <a th:href="@{/board(type='notice')}" 
-                           class="btn btn-sm"
+                           class="btn btn-sm board-type-link"
                            th:classappend="${type == 'notice'} ? 'btn-primary' : 'btn-outline-primary'">
                             공지사항
                         </a>
                         <a th:href="@{/board(type='info')}" 
-                           class="btn btn-sm"
+                           class="btn btn-sm board-type-link"
                            th:classappend="${type == 'info'} ? 'btn-primary' : 'btn-outline-primary'">
                             정보공유
                         </a>
                         <a th:href="@{/board(type='qna')}" 
-                           class="btn btn-sm"
+                           class="btn btn-sm board-type-link"
                            th:classappend="${type == 'qna'} ? 'btn-primary' : 'btn-outline-primary'">
                             Q&A
                         </a>
                         <a th:href="@{/board(type='faq')}" 
-                           class="btn btn-sm"
+                           class="btn btn-sm board-type-link"
                            th:classappend="${type == 'faq'} ? 'btn-primary' : 'btn-outline-primary'">
                             FAQ
                         </a>
@@ -80,12 +80,49 @@
                     </form>
                 </div>
                 <div class="col-md-4 text-end">
-                    <!-- 로그인한 사용자만 글쓰기 버튼 표시 -->
-                    <a th:if="${session.memberId != null}" 
+                    <!-- 글쓰기 버튼 - 권한별 표시 -->
+                    <!-- 공지사항과 FAQ는 관리자만 작성 가능 -->
+                    <a th:if="${session.memberId != null and (type == 'notice' or type == 'faq') and session.loginMember?.role == 'ADMIN'}" 
                        th:href="@{/board/write(type=${type})}" 
                        class="btn btn-success">
                         <i class="fas fa-plus me-1"></i>글쓰기
                     </a>
+                    
+                    <!-- 정보공유는 모든 로그인 사용자 작성 가능 -->
+                    <a th:if="${session.memberId != null and (type == 'info' or type == 'all')}" 
+                       th:href="@{/board/write(type=${type == 'all' ? 'info' : type})}" 
+                       class="btn btn-success">
+                        <i class="fas fa-plus me-1"></i>글쓰기
+                    </a>
+                    
+                    <!-- Q&A: 일반 사용자는 질문하기, 관리자는 답변하기 -->
+                    <div th:if="${session.memberId != null and type == 'qna'}" class="btn-group">
+                        <!-- 일반 사용자: 질문하기 -->
+                        <a th:if="${session.loginMember?.role != 'ADMIN'}" 
+                           th:href="@{/board/write(type=qna, qaType=QUESTION)}" 
+                           class="btn btn-primary">
+                            <i class="fas fa-question-circle me-1"></i>질문하기
+                        </a>
+                        
+                        <!-- 관리자: 질문하기 + 답변하기 -->
+                        <a th:if="${session.loginMember?.role == 'ADMIN'}" 
+                           th:href="@{/board/write(type=qna, qaType=QUESTION)}" 
+                           class="btn btn-primary">
+                            <i class="fas fa-question-circle me-1"></i>질문하기
+                        </a>
+                        <a th:if="${session.loginMember?.role == 'ADMIN'}" 
+                           th:href="@{/board/write(type=qna, qaType=ANSWER)}" 
+                           class="btn btn-success">
+                            <i class="fas fa-reply me-1"></i>답변하기
+                        </a>
+                    </div>
+                    
+                    <!-- 권한 없는 사용자에게 안내 메시지 -->
+                    <span th:if="${session.memberId != null and (type == 'notice' or type == 'faq') and session.loginMember?.role != 'ADMIN'}" 
+                          class="text-muted small">
+                        <i class="fas fa-lock me-1"></i>관리자만 작성 가능
+                    </span>
+                    
                     <!-- 비로그인 사용자에게는 로그인 안내 -->
                     <a th:unless="${session.memberId != null}" 
                        href="/member/login" 
@@ -95,6 +132,8 @@
                 </div>
             </div>
 
+            <!-- 동적 로딩될 게시판 컨텐츠 컨테이너 -->
+            <div id="boardContentContainer">
             <!-- 통계 정보 -->
             <div class="row mb-4">
                 <div class="col-md-12">
@@ -182,15 +221,18 @@
                                     등록된 게시글이 없습니다.
                                 </td>
                             </tr>
-                            <tr th:each="board : ${boardList}">
+                            <tr th:each="board, iterStat : ${boardList}">
                                 <td class="text-center">
                                     <span th:if="${board.isNotice != null and board.isNotice}" class="badge bg-danger">공지</span>
-                                    <span th:unless="${board.isNotice != null and board.isNotice}" th:text="${board.boardId}">1</span>
+                                    <span th:unless="${board.isNotice != null and board.isNotice}" 
+                                          th:text="${pageInfo.totalCount - ((pageInfo.currentPage - 1) * pageInfo.pageSize + iterStat.index)}">1</span>
                                 </td>
                                 <td class="text-center">
                                     <span th:if="${board.category == 'NOTICE'}" class="badge bg-danger">공지</span>
                                     <span th:if="${board.category == 'INFO'}" class="badge bg-primary">정보</span>
-                                    <span th:if="${board.category == 'QNA'}" class="badge bg-success">Q&A</span>
+                                    <span th:if="${board.category == 'QNA' and board.qaType == 'QUESTION'}" class="badge bg-success">질문</span>
+                                    <span th:if="${board.category == 'QNA' and board.qaType == 'ANSWER'}" class="badge bg-info">답변</span>
+                                    <span th:if="${board.category == 'QNA' and #strings.isEmpty(board.qaType)}" class="badge bg-success">Q&A</span>
                                     <span th:if="${board.category == 'FAQ'}" class="badge bg-warning">FAQ</span>
                                     <span th:if="${#strings.isEmpty(board.category)}" class="badge bg-secondary">일반</span>
                                 </td>
@@ -201,6 +243,13 @@
                                           class="badge bg-secondary ms-1" th:text="'[' + ${board.commentCount} + ']'">0</span>
                                     <span th:if="${board.isNew != null and board.isNew}" class="badge bg-danger ms-1">NEW</span>
                                     <span th:if="${board.isPinned != null and board.isPinned}" class="badge bg-info ms-1">고정</span>
+                                    <!-- Q&A 답변 상태 표시 -->
+                                    <span th:if="${board.category == 'QNA' and board.qaType == 'QUESTION' and board.isAnswered != null and board.isAnswered}" 
+                                          class="badge bg-success ms-1">답변완료</span>
+                                    <span th:if="${board.category == 'QNA' and board.qaType == 'QUESTION' and (board.isAnswered == null or !board.isAnswered)}" 
+                                          class="badge bg-warning ms-1">답변대기</span>
+                                    <span th:if="${board.category == 'QNA' and board.qaType == 'QUESTION' and board.answerCount != null and board.answerCount > 0}" 
+                                          class="badge bg-primary ms-1" th:text="'답변 ' + ${board.answerCount} + '개'">답변 0개</span>
                                 </td>
                                 <td th:text="${board.memberName}">작성자</td>
                                 <td th:text="${#temporals.format(board.createdAt, 'MM-dd')}">01-01</td>
@@ -261,6 +310,7 @@
                     </nav>
                 </div>
             </div>
+            </div> <!-- boardContentContainer 끝 -->
         </div>
     </main>
 
@@ -269,5 +319,8 @@
     
     <!-- JavaScript -->
     <div th:replace="~{layout/footer :: scripts}"></div>
+    
+    <!-- 게시판 네비게이션 공통 스크립트 -->
+    <script src="/js/board-navigation.js"></script>
 </body>
 </html> 

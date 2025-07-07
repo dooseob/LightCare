@@ -31,11 +31,11 @@
                     
                     <!-- 게시판 타입 메뉴 -->
                     <div class="btn-group mb-3" role="group" aria-label="게시판 타입">
-                        <a th:href="@{/board(type='all')}" class="btn btn-sm btn-outline-primary">전체</a>
-                        <a th:href="@{/board(type='notice')}" class="btn btn-sm btn-outline-primary">공지사항</a>
-                        <a th:href="@{/board(type='info')}" class="btn btn-sm btn-outline-primary">정보공유</a>
-                        <a th:href="@{/board(type='qna')}" class="btn btn-sm btn-outline-primary">Q&A</a>
-                        <a th:href="@{/board(type='faq')}" class="btn btn-sm btn-primary">FAQ</a>
+                        <a th:href="@{/board(type='all')}" class="btn btn-sm btn-outline-primary board-type-link">전체</a>
+                        <a th:href="@{/board(type='notice')}" class="btn btn-sm btn-outline-primary board-type-link">공지사항</a>
+                        <a th:href="@{/board(type='info')}" class="btn btn-sm btn-outline-primary board-type-link">정보공유</a>
+                        <a th:href="@{/board(type='qna')}" class="btn btn-sm btn-outline-primary board-type-link">Q&A</a>
+                        <a th:href="@{/board(type='faq')}" class="btn btn-sm btn-primary board-type-link">FAQ</a>
                     </div>
                 </div>
             </div>
@@ -401,5 +401,8 @@
             });
         });
     </script>
+    
+    <!-- 게시판 네비게이션 공통 스크립트 -->
+    <script src="/js/board-navigation.js"></script>
 </body>
 </html> 

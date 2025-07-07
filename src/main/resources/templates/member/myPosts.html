@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="ko">
+<head th:replace="~{layout/header :: header}">
+    <title>내가 쓴 글 - CareLink</title>
+</head>
+<body class="d-flex flex-column min-vh-100 pt-5">
+<nav th:replace="~{layout/header :: navbar}"></nav>
+
+<div th:replace="~{layout/header :: messages}"></div>
+
+<main class="flex-grow-1">
+    <div class="container mt-4">
+        <!-- 브레드크럼 -->
+        <nav aria-label="breadcrumb" class="mb-4">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="/">홈</a></li>
+                <li class="breadcrumb-item"><a href="/member/myinfo/edit">내 정보</a></li>
+                <li class="breadcrumb-item active" aria-current="page">내가 쓴 글</li>
+            </ol>
+        </nav>
+        
+        <div class="row">
+            <div class="col-12">
+                <div class="card shadow">
+                    <div class="card-body">
+                        <!-- 헤더 -->
+                        <div class="d-flex justify-content-between align-items-center mb-4">
+                            <h3 class="card-title fw-bold text-primary mb-0">
+                                <i class="fas fa-edit me-2"></i>
+                                내가 쓴 글
+                            </h3>
+                            <div class="text-muted">
+                                <span th:text="${member.name}">사용자명</span>님의 작성 글
+                            </div>
+                        </div>
+                        
+                        
+                        <!-- 필터 및 정렬 -->
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <div class="btn-group btn-group-sm" role="group" aria-label="게시글 타입 필터">
+                                <button type="button" class="btn filter-btn" data-type="all" 
+                                        th:classappend="${currentType == 'all'} ? 'btn-primary' : 'btn-outline-primary'">
+                                    전체 (<span th:text="${contentCounts.total}">0</span>)
+                                </button>
+                                <button type="button" class="btn filter-btn" data-type="board"
+                                        th:classappend="${currentType == 'board'} ? 'btn-info' : 'btn-outline-info'">
+                                    게시글 (<span th:text="${contentCounts.board}">0</span>)
+                                </button>
+                                <button type="button" class="btn filter-btn" data-type="review"
+                                        th:classappend="${currentType == 'review'} ? 'btn-success' : 'btn-outline-success'">
+                                    리뷰 (<span th:text="${contentCounts.review}">0</span>)
+                                </button>
+                                <button type="button" class="btn filter-btn" data-type="job"
+                                        th:classappend="${currentType == 'job'} ? 'btn-warning' : 'btn-outline-warning'">
+                                    구인구직 (<span th:text="${contentCounts.job}">0</span>)
+                                </button>
+                            </div>
+                            
+                            <div class="d-flex align-items-center gap-2">
+                                <small class="text-muted">
+                                    총 <strong th:text="${totalCount}">0</strong>개
+                                </small>
+                                <select class="form-select form-select-sm" id="sortSelect" style="width: auto;">
+                                    <option value="latest">최신순</option>
+                                    <option value="oldest">오래된순</option>
+                                    <option value="views">조회순</option>
+                                    <option value="likes">추천순</option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <!-- 게시글 목록 -->
+                        <div class="posts-container">
+                            <div th:if="${#lists.isEmpty(posts)}" class="text-center py-5">
+                                <div class="text-muted">
+                                    <i class="fas fa-inbox fa-2x mb-3"></i>
+                                    <p>작성한 글이 없습니다.</p>
+                                </div>
+                            </div>
+                            
+                            <!-- 게시글 테이블 -->
+                            <div th:unless="${#lists.isEmpty(posts)}" id="postsContainer">
+                                <div class="table-responsive">
+                                    <table class="table table-hover">
+                                        <thead class="table-light">
+                                            <tr>
+                                                <th style="width: 80px;">유형</th>
+                                                <th>제목</th>
+                                                <th style="width: 100px;">카테고리</th>
+                                                <th style="width: 80px;">조회</th>
+                                                <th style="width: 80px;">추천</th>
+                                                <th style="width: 120px;">작성일</th>
+                                                <th style="width: 80px;">관리</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr th:each="post : ${posts}" class="post-item" 
+                                                th:attr="data-type=${post.type}, data-created=${post.createdAt}, data-views=${post.viewCount ?: 0}, data-likes=${post.likeCount ?: 0}">
+                                                <td>
+                                                    <span class="badge badge-sm" 
+                                                          th:classappend="'bg-' + ${post.type == 'board' ? 'info' : (post.type == 'review' ? 'success' : 'warning')}">
+                                                        <span th:text="${post.type == 'board' ? '게시글' : (post.type == 'review' ? '리뷰' : '구인')}">타입</span>
+                                                    </span>
+                                                </td>
+                                                <td>
+                                                    <div class="d-flex flex-column">
+                                                        <a th:href="${post.url}" class="text-decoration-none fw-medium text-dark" th:text="${post.title}">글 제목</a>
+                                                        <small class="text-muted" th:text="${#strings.abbreviate(post.content, 60)}" style="font-size: 0.8rem;">내용 미리보기...</small>
+                                                        <div class="mt-1" th:if="${post.rating != null or post.salary != null}">
+                                                            <small class="text-warning" th:if="${post.rating != null}">
+                                                                <i class="fas fa-star"></i> <span th:text="${post.rating}">0</span>점
+                                                            </small>
+                                                            <small class="text-success" th:if="${post.salary != null}">
+                                                                <i class="fas fa-won-sign"></i> <span th:text="${post.salary}">급여</span>
+                                                            </small>
+                                                        </div>
+                                                    </div>
+                                                </td>
+                                                <td>
+                                                    <small class="text-muted" th:text="${post.category}">카테고리</small>
+                                                </td>
+                                                <td class="text-center">
+                                                    <small class="text-muted" th:if="${post.viewCount != null}" th:text="${post.viewCount}">0</small>
+                                                    <small class="text-muted" th:unless="${post.viewCount != null}">-</small>
+                                                </td>
+                                                <td class="text-center">
+                                                    <small class="text-muted" th:if="${post.likeCount != null}" th:text="${post.likeCount}">0</small>
+                                                    <small class="text-muted" th:unless="${post.likeCount != null}">-</small>
+                                                </td>
+                                                <td>
+                                                    <small class="text-muted" th:text="${#temporals.format(post.createdAt, 'MM-dd HH:mm')}">날짜</small>
+                                                </td>
+                                                <td class="text-center">
+                                                    <a th:href="${post.url}" class="btn btn-outline-primary btn-sm">
+                                                        <i class="fas fa-eye"></i>
+                                                    </a>
+                                                </td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- 페이징 -->
+                        <div th:if="${totalPages > 1}" class="d-flex justify-content-center mt-4">
+                            <nav aria-label="게시글 페이지 네비게이션">
+                                <ul class="pagination">
+                                    <!-- 이전 페이지 -->
+                                    <li class="page-item" th:classappend="${currentPage <= 1} ? 'disabled'">
+                                        <a class="page-link" th:href="@{/member/mypost(type=${currentType}, page=${currentPage - 1}, pageSize=${pageSize})}" 
+                                           aria-label="이전 페이지">
+                                            <span aria-hidden="true">&laquo;</span>
+                                        </a>
+                                    </li>
+                                    
+                                    <!-- 페이지 번호 -->
+                                    <li th:each="i : ${#numbers.sequence(1, totalPages)}" 
+                                        class="page-item" th:classappend="${i == currentPage} ? 'active'">
+                                        <a class="page-link" th:href="@{/member/mypost(type=${currentType}, page=${i}, pageSize=${pageSize})}" 
+                                           th:text="${i}">1</a>
+                                    </li>
+                                    
+                                    <!-- 다음 페이지 -->
+                                    <li class="page-item" th:classappend="${currentPage >= totalPages} ? 'disabled'">
+                                        <a class="page-link" th:href="@{/member/mypost(type=${currentType}, page=${currentPage + 1}, pageSize=${pageSize})}" 
+                                           aria-label="다음 페이지">
+                                            <span aria-hidden="true">&raquo;</span>
+                                        </a>
+                                    </li>
+                                </ul>
+                            </nav>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</main>
+
+<footer th:replace="~{layout/footer :: footer}"></footer>
+
+<div th:replace="~{layout/footer :: scripts}"></div>
+
+<!-- 내가 쓴 글 전용 JavaScript -->
+<script src="/js/my-posts.js"></script>
+</body>
+</html>

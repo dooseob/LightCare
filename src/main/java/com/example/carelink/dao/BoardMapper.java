@@ -95,5 +95,14 @@ public interface BoardMapper {
      */
     BoardDTO getNextBoard(@Param("boardId") Long boardId);
     
+    /**
+     * 특정 회원이 작성한 게시글 목록 조회
+     */
+    List<BoardDTO> findBoardsByMemberId(@Param("memberId") Long memberId);
+
+    /**
+     * 회원 ID로 게시글 삭제 (회원 탈퇴 시 사용)
+     */
+    int deleteByMemberId(@Param("memberId") Long memberId);
 
 } 

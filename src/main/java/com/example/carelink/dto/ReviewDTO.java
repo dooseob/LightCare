@@ -49,6 +49,11 @@ public class ReviewDTO extends BaseDTO {
     private String reviewImage2;    // 리뷰 이미지 2
     private String reviewImage3;    // 리뷰 이미지 3
     
+    // 리뷰 이미지 alt 텍스트 (SEO 최적화용)
+    private String reviewImage1AltText;    // 리뷰 이미지 1 alt 텍스트
+    private String reviewImage2AltText;    // 리뷰 이미지 2 alt 텍스트
+    private String reviewImage3AltText;    // 리뷰 이미지 3 alt 텍스트
+    
     // 추천/비추천
     private Integer likeCount;      // 추천 수
     private Integer dislikeCount;   // 비추천 수

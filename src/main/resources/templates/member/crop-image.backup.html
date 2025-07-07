@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="ko">
+<head th:replace="~{layout/header :: header}">
+    <title>프로필 이미지 크롭 - CareLink</title>
+</head>
+<body class="d-flex flex-column min-vh-100 pt-5">
+<nav th:replace="~{layout/header :: navbar}"></nav>
+
+<div th:replace="~{layout/header :: messages}"></div>
+
+<main class="flex-grow-1">
+    <div class="container mt-4">
+        <!-- 브레드크럼 -->
+        <nav aria-label="breadcrumb" class="mb-4">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="/">홈</a></li>
+                <li class="breadcrumb-item"><a href="/member/myinfo">마이페이지</a></li>
+                <li class="breadcrumb-item active" aria-current="page">프로필 이미지 크롭</li>
+            </ol>
+        </nav>
+        
+        <div class="row justify-content-center">
+            <div class="col-12 col-lg-10">
+                <div class="card shadow">
+                    <div class="card-body p-4">
+                        <div class="text-center mb-4">
+                            <h3 class="card-title fw-bold text-primary">
+                                <i class="fas fa-crop me-2"></i>
+                                프로필 이미지 크롭
+                            </h3>
+                            <p class="text-muted">증명사진 비율(3:4)에 맞춰 프로필 사진을 조절하세요</p>
+                        </div>
+
+                        <!-- 고급 이미지 크롭퍼 컨테이너 -->
+                        <div id="profileImageCropper"></div>
+
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</main>
+
+<footer th:replace="~{layout/footer :: footer}"></footer>
+
+<div th:replace="~{layout/footer :: scripts}"></div>
+
+<!-- 고급 이미지 크롭퍼 -->
+<link rel="stylesheet" href="/css/advanced-image-cropper.css">
+<script src="/js/advanced-image-cropper.js"></script>
+
+<script>
+$(document).ready(function() {
+    // 프로필 이미지 크롭퍼 초기화
+    initializeProfileImageCropper();
+});
+
+// 프로필 이미지 크롭퍼 초기화
+function initializeProfileImageCropper() {
+    const profileImageCropper = new AdvancedImageCropper('profileImageCropper', {
+        // 프로필 이미지 최적화 설정
+        aspectRatio: 3/4, // 프로필 증명사진 비율
+        cropWidth: 300,
+        cropHeight: 400,
+        previewStyle: 'profile',
+        title: '프로필 이미지 업로드',
+        quality: 0.9,
+        enableAltText: true,
+        showSteps: true,
+        
+        // 크롭 완료 콜백
+        onCropComplete: function(result) {
+            console.log('프로필 이미지 크롭 완료:', result);
+            
+            // 서버에 크롭된 이미지 저장
+            saveProfileImage(result);
+        },
+        
+        // 에러 콜백
+        onError: function(message) {
+            console.error('프로필 이미지 크롭 오류:', message);
+            showErrorMessage('이미지 처리 중 오류가 발생했습니다: ' + message);
+        }
+    });
+    
+    // 전역에서 접근 가능하도록 저장
+    window.profileImageCropper = profileImageCropper;
+}
+
+// 프로필 이미지 서버 저장
+function saveProfileImage(result) {
+    // 로딩 표시
+    showLoadingMessage('프로필 이미지 저장 중...');
+    
+    const formData = new FormData();
+    formData.append('croppedImage', result.imageData);
+    formData.append('altText', result.altText);
+    
+    fetch('/member/myinfo/crop-image/save', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        hideLoadingMessage();
+        
+        if (data.success) {
+            showSuccessMessage('프로필 이미지가 성공적으로 저장되었습니다!');
+            
+            // 2초 후 마이페이지로 이동
+            setTimeout(() => {
+                window.location.href = '/member/myinfo/edit';
+            }, 2000);
+        } else {
+            showErrorMessage(data.message || '프로필 이미지 저장에 실패했습니다.');
+        }
+    })
+    .catch(error => {
+        hideLoadingMessage();
+        console.error('프로필 이미지 저장 오류:', error);
+        showErrorMessage('프로필 이미지 저장 중 오류가 발생했습니다.');
+    });
+}
+
+// 로딩 메시지 표시
+function showLoadingMessage(message) {
+    const existingLoading = document.querySelector('.loading-overlay');
+    if (existingLoading) existingLoading.remove();
+    
+    const loadingDiv = document.createElement('div');
+    loadingDiv.className = 'loading-overlay position-fixed top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center';
+    loadingDiv.style.cssText = 'background: rgba(0,0,0,0.5); z-index: 9999;';
+    loadingDiv.innerHTML = `
+        <div class="text-center text-white">
+            <div class="spinner-border mb-3" role="status"></div>
+            <div>${message}</div>
+        </div>
+    `;
+    
+    document.body.appendChild(loadingDiv);
+}
+
+// 로딩 메시지 숨김
+function hideLoadingMessage() {
+    const loadingOverlay = document.querySelector('.loading-overlay');
+    if (loadingOverlay) {
+        loadingOverlay.remove();
+    }
+}
+
+// 성공 메시지 표시
+function showSuccessMessage(message) {
+    const alertDiv = document.createElement('div');
+    alertDiv.className = 'alert alert-success alert-dismissible fade show position-fixed top-0 start-50 translate-middle-x mt-3';
+    alertDiv.style.cssText = 'z-index: 10000; min-width: 300px;';
+    alertDiv.innerHTML = `
+        <i class="fas fa-check-circle me-2"></i>${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    
+    document.body.appendChild(alertDiv);
+    
+    // 5초 후 자동 제거
+    setTimeout(() => {
+        if (alertDiv.parentNode) {
+            alertDiv.remove();
+        }
+    }, 5000);
+}
+
+// 에러 메시지 표시
+function showErrorMessage(message) {
+    const alertDiv = document.createElement('div');
+    alertDiv.className = 'alert alert-danger alert-dismissible fade show position-fixed top-0 start-50 translate-middle-x mt-3';
+    alertDiv.style.cssText = 'z-index: 10000; min-width: 300px;';
+    alertDiv.innerHTML = `
+        <i class="fas fa-exclamation-triangle me-2"></i>${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    
+    document.body.appendChild(alertDiv);
+    
+    // 10초 후 자동 제거
+    setTimeout(() => {
+        if (alertDiv.parentNode) {
+            alertDiv.remove();
+        }
+    }, 10000);
+}
+</script>
+
+</body>
+</html>

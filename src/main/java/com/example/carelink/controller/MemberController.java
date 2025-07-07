@@ -5,6 +5,8 @@ import com.example.carelink.dto.MemberDTO;
 import com.example.carelink.service.MemberService;
 import com.example.carelink.common.Constants;
 import com.example.carelink.validation.groups.OnFacilityJoin;
+import com.example.carelink.common.CustomMultipartFile;
+import org.springframework.web.multipart.MultipartFile;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -122,6 +124,8 @@ public class MemberController {
             @Validated(value = {javax.validation.groups.Default.class})
             @ModelAttribute MemberDTO memberDTO,
             BindingResult bindingResult,
+            @RequestParam(value = "facilityImageFile", required = false) MultipartFile facilityImageFile,
+            HttpSession session,
             RedirectAttributes redirectAttributes,
             Model model) {
 
@@ -152,12 +156,30 @@ public class MemberController {
         }
 
         try {
-            // MemberService를 통해 회원가입 처리
-            memberService.join(memberDTO);
+            // MemberService를 통해 회원가입 처리 (시설 이미지 파일 포함)
+            memberService.join(memberDTO, facilityImageFile);
             log.info("회원가입 성공: {}", memberDTO.getUserId());
 
-            redirectAttributes.addFlashAttribute("message", "회원가입이 완료되었습니다. 로그인해주세요.");
-            return "redirect:/member/login"; // 회원가입 성공 시 로그인 페이지로 리다이렉트
+            // 회원가입 후 자동 로그인 처리
+            LoginDTO loginDTO = new LoginDTO();
+            loginDTO.setUserId(memberDTO.getUserId());
+            loginDTO.setPassword(memberDTO.getPassword());
+            
+            MemberDTO loginMember = memberService.login(loginDTO);
+            if (loginMember != null) {
+                // 자동 로그인 성공 시 세션에 회원 정보 저장
+                session.setAttribute(Constants.SESSION_MEMBER, loginMember);
+                session.setAttribute("memberId", loginMember.getMemberId());
+                log.info("회원가입 후 자동 로그인 성공: userId={}", loginMember.getUserId());
+                
+                redirectAttributes.addFlashAttribute("message", "회원가입이 완료되었습니다. 환영합니다!");
+                return "redirect:/"; // 홈 페이지로 리다이렉트
+            } else {
+                // 자동 로그인 실패 시 로그인 페이지로
+                log.warn("회원가입은 성공했으나 자동 로그인 실패: {}", memberDTO.getUserId());
+                redirectAttributes.addFlashAttribute("message", "회원가입이 완료되었습니다. 로그인해주세요.");
+                return "redirect:/member/login";
+            }
 
         } catch (IllegalArgumentException e) {
             // 서비스 계층에서 발생한 아이디 중복 등의 비즈니스 로직 예외 처리
@@ -249,10 +271,56 @@ public class MemberController {
     }
 
     /**
-     * 내 정보 페이지 표시 (HttpSession 사용으로 복원)
+     * 비밀번호 확인 페이지 (내 정보 수정 전)
      */
     @GetMapping("/myinfo")
-    public String myInfo(HttpSession session, Model model, RedirectAttributes redirectAttributes) {
+    public String verifyPasswordForm(HttpSession session, Model model, RedirectAttributes redirectAttributes) {
+        MemberDTO loginMember = (MemberDTO) session.getAttribute(Constants.SESSION_MEMBER);
+
+        if (loginMember == null) {
+            redirectAttributes.addFlashAttribute("error", "로그인이 필요합니다.");
+            return "redirect:/member/login";
+        }
+
+        return "member/verifyPassword";
+    }
+    
+    /**
+     * 비밀번호 확인 처리
+     */
+    @PostMapping("/myinfo/verify")
+    public String verifyPassword(@RequestParam("password") String password,
+                                HttpSession session,
+                                RedirectAttributes redirectAttributes) {
+        MemberDTO loginMember = (MemberDTO) session.getAttribute(Constants.SESSION_MEMBER);
+
+        if (loginMember == null) {
+            redirectAttributes.addFlashAttribute("error", "로그인이 필요합니다.");
+            return "redirect:/member/login";
+        }
+
+        try {
+            // 비밀번호 확인
+            if (!password.equals(loginMember.getPassword())) {
+                redirectAttributes.addFlashAttribute("error", "비밀번호가 일치하지 않습니다.");
+                return "redirect:/member/myinfo";
+            }
+            
+            // 비밀번호 확인 성공 시 실제 내정보 페이지로 이동
+            return "redirect:/member/myinfo/edit";
+            
+        } catch (Exception e) {
+            log.error("비밀번호 확인 중 오류 발생: {}", loginMember.getUserId(), e);
+            redirectAttributes.addFlashAttribute("error", "비밀번호 확인 중 오류가 발생했습니다.");
+            return "redirect:/member/myinfo";
+        }
+    }
+
+    /**
+     * 내 정보 수정 페이지 표시 (비밀번호 확인 후)
+     */
+    @GetMapping("/myinfo/edit")
+    public String myInfoEdit(HttpSession session, Model model, RedirectAttributes redirectAttributes) {
         MemberDTO loginMember = (MemberDTO) session.getAttribute(Constants.SESSION_MEMBER);
 
         if (loginMember == null) {
@@ -271,6 +339,9 @@ public class MemberController {
                 return "redirect:/member/login";
             }
 
+            // 크롭 페이지 접근 권한 플래그 설정 (보안용)
+            session.setAttribute("myinfo_verified", true);
+            
             model.addAttribute("memberDTO", memberInfo);
             return "member/myinfo";
 
@@ -282,41 +353,250 @@ public class MemberController {
     }
 
     /**
+     * 프로필 이미지 크롭 페이지
+     */
+    @GetMapping("/myinfo/crop-image")
+    public String cropImagePage(HttpSession session, Model model, RedirectAttributes redirectAttributes) {
+        MemberDTO loginMember = (MemberDTO) session.getAttribute(Constants.SESSION_MEMBER);
+        if (loginMember == null) {
+            redirectAttributes.addFlashAttribute("error", "로그인이 필요합니다.");
+            return "redirect:/member/login";
+        }
+        
+        // 마이페이지에서 온 사용자인지 확인 (보안)
+        Boolean myinfoVerified = (Boolean) session.getAttribute("myinfo_verified");
+        if (myinfoVerified == null || !myinfoVerified) {
+            redirectAttributes.addFlashAttribute("error", "올바른 경로로 접근해주세요.");
+            return "redirect:/member/myinfo";
+        }
+        
+        model.addAttribute("memberDTO", loginMember);
+        return "member/crop-image";
+    }
+
+    /**
+     * 프로필 이미지 크롭 처리 (임시 저장)
+     */
+    @PostMapping("/myinfo/crop-image/upload")
+    @ResponseBody
+    public Map<String, Object> uploadTempImage(@RequestParam("imageFile") MultipartFile imageFile,
+                                               HttpSession session) {
+        Map<String, Object> result = new HashMap<>();
+        
+        try {
+            MemberDTO loginMember = (MemberDTO) session.getAttribute(Constants.SESSION_MEMBER);
+            if (loginMember == null) {
+                result.put("success", false);
+                result.put("message", "로그인이 필요합니다.");
+                return result;
+            }
+            
+            if (imageFile.isEmpty()) {
+                result.put("success", false);
+                result.put("message", "이미지 파일이 없습니다.");
+                return result;
+            }
+            
+            // 파일 크기 검증 (5MB)
+            if (imageFile.getSize() > 5 * 1024 * 1024) {
+                result.put("success", false);
+                result.put("message", "파일 크기는 5MB 이하여야 합니다.");
+                return result;
+            }
+            
+            // 파일 타입 검증
+            String contentType = imageFile.getContentType();
+            if (contentType == null || !contentType.startsWith("image/")) {
+                result.put("success", false);
+                result.put("message", "이미지 파일만 업로드 가능합니다.");
+                return result;
+            }
+            
+            // Base64로 인코딩하여 임시 저장
+            byte[] imageBytes = imageFile.getBytes();
+            String base64Image = "data:" + contentType + ";base64," + 
+                                java.util.Base64.getEncoder().encodeToString(imageBytes);
+            
+            // 세션에 임시 저장
+            session.setAttribute("tempImageData", base64Image);
+            session.setAttribute("tempImageName", imageFile.getOriginalFilename());
+            
+            result.put("success", true);
+            result.put("imageData", base64Image);
+            result.put("message", "이미지가 업로드되었습니다.");
+            
+        } catch (Exception e) {
+            log.error("임시 이미지 업로드 중 오류 발생", e);
+            result.put("success", false);
+            result.put("message", "이미지 업로드 중 오류가 발생했습니다.");
+        }
+        
+        return result;
+    }
+
+    /**
+     * 크롭된 이미지 저장 처리
+     */
+    @PostMapping("/myinfo/crop-image/save")
+    @ResponseBody
+    public Map<String, Object> saveCroppedImage(@RequestParam("croppedImage") MultipartFile croppedImageFile,
+                                                @RequestParam(value = "altText", required = false) String altText,
+                                                @RequestParam(value = "format", required = false) String format,
+                                                @RequestParam(value = "quality", required = false) String quality,
+                                                HttpSession session) {
+        Map<String, Object> result = new HashMap<>();
+        
+        try {
+            MemberDTO loginMember = (MemberDTO) session.getAttribute(Constants.SESSION_MEMBER);
+            if (loginMember == null) {
+                result.put("success", false);
+                result.put("message", "로그인이 필요합니다.");
+                return result;
+            }
+            
+            log.info("🖼️ 크롭된 이미지 저장 요청 - 형식: {}, 품질: {}, 크기: {} bytes", 
+                    format, quality, croppedImageFile.getSize());
+            log.info("📁 파일 정보 - 이름: {}, 컨텐츠 타입: {}", 
+                    croppedImageFile.getOriginalFilename(), croppedImageFile.getContentType());
+            
+            // 업로드된 파일이 유효한지 확인
+            if (croppedImageFile.isEmpty()) {
+                result.put("success", false);
+                result.put("message", "업로드된 이미지 파일이 비어있습니다.");
+                return result;
+            }
+            
+            // 기존 회원정보 조회
+            MemberDTO memberDTO = memberService.findById(loginMember.getMemberId());
+            if (memberDTO == null) {
+                result.put("success", false);
+                result.put("message", "회원 정보를 찾을 수 없습니다.");
+                return result;
+            }
+            
+            // Alt 텍스트 설정 (SEO 최적화용)
+            log.info("📋 받은 파라미터 - altText: '{}', format: '{}', quality: '{}'", altText, format, quality);
+            if (altText != null && !altText.trim().isEmpty()) {
+                memberDTO.setProfileImageAltText(altText.trim());
+                log.info("🏷️ 프로필 이미지 Alt 텍스트 설정: {}", altText.trim());
+            } else {
+                // 기본값 설정
+                memberDTO.setProfileImageAltText("사용자 프로필 사진");
+                log.info("🏷️ 프로필 이미지 Alt 텍스트 기본값 설정: 사용자 프로필 사진");
+            }
+            
+            // 이미지 형식 정보 로깅
+            String contentType = croppedImageFile.getContentType();
+            if (contentType != null) {
+                log.info("📷 업로드된 이미지 형식: {}", contentType);
+                if (contentType.contains("avif")) {
+                    log.info("✨ AVIF 형식 감지 - 최적 압축 적용됨");
+                } else if (contentType.contains("webp")) {
+                    log.info("🚀 WebP 형식 감지 - 효율적 압축 적용됨");
+                } else if (contentType.contains("jpeg")) {
+                    log.info("📸 JPEG 형식 감지 - 호환성 우선 적용됨");
+                }
+            }
+            
+            // 프로필 이미지 업데이트 (원본 형식 유지)
+            memberService.updateMember(memberDTO, croppedImageFile);
+            
+            // 세션 정보 업데이트
+            MemberDTO updatedMember = memberService.findById(loginMember.getMemberId());
+            if (updatedMember != null) {
+                session.setAttribute(Constants.SESSION_MEMBER, updatedMember);
+            }
+            
+            // 임시 데이터 삭제
+            session.removeAttribute("tempImageData");
+            session.removeAttribute("tempImageName");
+            
+            result.put("success", true);
+            result.put("message", "프로필 이미지가 성공적으로 저장되었습니다.");
+            result.put("profileImageUrl", updatedMember.getProfileImage());
+            
+        } catch (Exception e) {
+            log.error("크롭된 이미지 저장 중 오류 발생", e);
+            result.put("success", false);
+            result.put("message", "이미지 저장 중 오류가 발생했습니다.");
+        }
+        
+        return result;
+    }
+
+    /**
      * 회원정보 수정 처리 (HttpSession 사용으로 복원)
      */
     @PostMapping("/myinfo/update")
-    public String updateMember(@Valid @ModelAttribute MemberDTO memberDTO,
+    public String updateMember(@ModelAttribute MemberDTO memberDTO,
                                BindingResult bindingResult,
                                @RequestParam(value = "profileImageFile", required = false) MultipartFile profileImageFile,
                                HttpSession session,
+                               Model model,
                                RedirectAttributes redirectAttributes) {
 
+        log.info("회원정보 수정 요청: memberId={}, name={}, email={}", 
+                memberDTO.getMemberId(), memberDTO.getName(), memberDTO.getEmail());
+        
         MemberDTO loginMember = (MemberDTO) session.getAttribute(Constants.SESSION_MEMBER);
-        if (loginMember == null || !loginMember.getMemberId().equals(memberDTO.getMemberId())) {
+        log.info("세션 로그인 멤버: {}", loginMember != null ? loginMember.getMemberId() : "null");
+        
+        if (loginMember == null) {
+            log.warn("세션에 로그인 정보가 없음");
+            redirectAttributes.addFlashAttribute("error", "로그인이 필요합니다.");
+            return "redirect:/member/login";
+        }
+        
+        if (!loginMember.getMemberId().equals(memberDTO.getMemberId())) {
+            log.warn("권한 없음: 세션 memberId={}, 요청 memberId={}", 
+                    loginMember.getMemberId(), memberDTO.getMemberId());
             redirectAttributes.addFlashAttribute("error", "권한이 없거나 로그인 정보가 유효하지 않습니다.");
             return "redirect:/member/myinfo";
         }
 
+        // 수동 유효성 검사 (정보수정에 필요한 필드만)
+        if (memberDTO.getName() == null || memberDTO.getName().trim().isEmpty()) {
+            bindingResult.rejectValue("name", "NotBlank", "이름은 필수입니다.");
+        }
+        if (memberDTO.getEmail() != null && !memberDTO.getEmail().trim().isEmpty()) {
+            if (!memberDTO.getEmail().matches("^[A-Za-z0-9+_.-]+@(.+)$")) {
+                bindingResult.rejectValue("email", "Email", "올바른 이메일 형식이 아닙니다.");
+            }
+        }
+        if (memberDTO.getPhone() != null && !memberDTO.getPhone().trim().isEmpty()) {
+            if (!memberDTO.getPhone().matches("^01(?:0|1|[6-9])-(?:\\d{3}|\\d{4})-\\d{4}$")) {
+                bindingResult.rejectValue("phone", "Pattern", "올바른 휴대폰 번호 형식이 아닙니다.");
+            }
+        }
+        
         if (bindingResult.hasErrors()) {
             log.warn("회원정보 수정 유효성 검사 실패: {}", bindingResult.getAllErrors());
-            // 에러가 있을 경우, 기존의 myinfo 폼으로 다시 데이터를 채워서 보내줘야 함
+            model.addAttribute("memberDTO", memberDTO);
             return "member/myinfo";
         }
 
         try {
+            log.info("회원정보 수정 서비스 호출 시작");
             memberService.updateMember(memberDTO, profileImageFile);
+            log.info("회원정보 수정 서비스 호출 완료");
 
             // 세션 정보 업데이트 (수정된 최신 정보로 갱신)
             MemberDTO updatedMember = memberService.findById(memberDTO.getMemberId());
-            session.setAttribute(Constants.SESSION_MEMBER, updatedMember);
+            if (updatedMember != null) {
+                session.setAttribute(Constants.SESSION_MEMBER, updatedMember);
+                log.info("세션 정보 업데이트 완료: {}", updatedMember.getName());
+            } else {
+                log.warn("업데이트된 회원 정보 조회 실패");
+            }
 
             redirectAttributes.addFlashAttribute("message", "회원정보가 성공적으로 수정되었습니다.");
-            return "redirect:/member/myinfo";
+            return "redirect:/member/myinfo/edit";
 
         } catch (Exception e) {
-            log.error("회원정보 수정 중 오류 발생: {}", memberDTO.getUserId(), e);
-            redirectAttributes.addFlashAttribute("error", "회원정보 수정 중 오류가 발생했습니다.");
-            return "redirect:/member/myinfo";
+            log.error("회원정보 수정 중 오류 발생: memberId={}, userId={}", 
+                    memberDTO.getMemberId(), memberDTO.getUserId(), e);
+            redirectAttributes.addFlashAttribute("error", "회원정보 수정 중 오류가 발생했습니다: " + e.getMessage());
+            return "redirect:/member/myinfo/edit";
         }
     }
 
@@ -339,7 +619,7 @@ public class MemberController {
     @PostMapping("/mypage/change-password")
     public String changePassword(@RequestParam("currentPassword") String currentPassword,
                                  @RequestParam("newPassword") String newPassword,
-                                 @RequestParam("confirmNewPassword") String confirmNewPassword,
+                                 @RequestParam("confirmPassword") String confirmNewPassword,
                                  HttpSession session,
                                  RedirectAttributes redirectAttributes) {
         MemberDTO loginMember = (MemberDTO) session.getAttribute(Constants.SESSION_MEMBER);
@@ -352,7 +632,7 @@ public class MemberController {
         try {
             memberService.changePassword(userId, currentPassword, newPassword, confirmNewPassword);
             redirectAttributes.addFlashAttribute("message", "비밀번호가 성공적으로 변경되었습니다.");
-            return "redirect:/member/myinfo"; // 비밀번호 변경 후 내 정보 페이지로
+            return "redirect:/member/myinfo/edit"; // 비밀번호 변경 후 내 정보 페이지로
         } catch (IllegalArgumentException e) {
             redirectAttributes.addFlashAttribute("error", e.getMessage());
             return "redirect:/member/mypage/change-password";
@@ -364,26 +644,100 @@ public class MemberController {
     }
 
     /**
-     * 회원 탈퇴 처리 (논리 삭제) (HttpSession 사용으로 복원)
+     * 회원 탈퇴 페이지 표시
      */
     @GetMapping("/mypage/delete")
-    public String deleteMember(HttpSession session, RedirectAttributes redirectAttributes) {
+    public String deleteMemberForm(HttpSession session, Model model, RedirectAttributes redirectAttributes) {
         MemberDTO loginMember = (MemberDTO) session.getAttribute(Constants.SESSION_MEMBER);
         if (loginMember == null) {
             redirectAttributes.addFlashAttribute("error", "로그인이 필요합니다.");
             return "redirect:/member/login";
         }
 
-        String userId = loginMember.getUserId(); // 세션에서 userId 가져오기
         try {
-            memberService.deleteMember(userId);
-            session.invalidate(); // 탈퇴 후 세션 무효화
-            redirectAttributes.addFlashAttribute("message", "회원 탈퇴가 완료되었습니다.");
-            return "redirect:/"; // 홈페이지로 리다이렉트
+            // 작성한 콘텐츠 개수 조회
+            Map<String, Integer> contentCounts = memberService.getUserContentCounts(loginMember.getMemberId());
+            
+            model.addAttribute("member", loginMember);
+            model.addAttribute("contentCounts", contentCounts);
+            
+            log.info("회원탈퇴 페이지 접근: userId={}, 작성 콘텐츠={}", 
+                    loginMember.getUserId(), contentCounts);
+                    
+            return "member/deleteMember";
+            
+        } catch (Exception e) {
+            log.error("회원탈퇴 페이지 로드 중 오류: {}", loginMember.getUserId(), e);
+            model.addAttribute("member", loginMember);
+            model.addAttribute("contentCounts", Map.of("board", 0, "review", 0, "job", 0));
+            return "member/deleteMember";
+        }
+    }
+
+    /**
+     * 회원 탈퇴 처리 (논리 삭제)
+     */
+    @PostMapping("/mypage/delete")
+    public String deleteMember(@RequestParam("password") String password,
+                              @RequestParam("confirmName") String confirmName,
+                              @RequestParam("deleteOption") String deleteOption,
+                              HttpSession session, 
+                              RedirectAttributes redirectAttributes) {
+        MemberDTO loginMember = (MemberDTO) session.getAttribute(Constants.SESSION_MEMBER);
+        if (loginMember == null) {
+            redirectAttributes.addFlashAttribute("error", "로그인이 필요합니다.");
+            return "redirect:/member/login";
+        }
+
+        String userId = loginMember.getUserId();
+        log.info("회원탈퇴 요청: userId={}, 입력된 비밀번호 길이={}, 입력된 이름={}, 삭제옵션={}", 
+                userId, password.length(), confirmName, deleteOption);
+        
+        try {
+            // DB에서 최신 비밀번호 정보 조회
+            MemberDTO currentMember = memberService.findById(loginMember.getMemberId());
+            if (currentMember == null) {
+                log.warn("회원탈퇴: 회원 정보를 찾을 수 없음: memberId={}", loginMember.getMemberId());
+                redirectAttributes.addFlashAttribute("error", "회원 정보를 찾을 수 없습니다.");
+                return "redirect:/member/mypage/delete";
+            }
+            
+            // 현재 비밀번호 확인 (개발용: 평문 비교)
+            log.info("비밀번호 비교: DB 비밀번호={}, 입력 비밀번호={}", 
+                    currentMember.getPassword(), password);
+            
+            if (!password.equals(currentMember.getPassword())) {
+                log.warn("회원탈퇴: 비밀번호 불일치: userId={}", userId);
+                redirectAttributes.addFlashAttribute("error", "현재 비밀번호가 일치하지 않습니다.");
+                return "redirect:/member/mypage/delete";
+            }
+            
+            log.info("비밀번호 확인 성공: userId={}", userId);
+            
+            // 이름 확인 검증
+            if (!confirmName.trim().equals(currentMember.getName().trim())) {
+                log.warn("회원탈퇴: 이름 불일치: userId={}, 입력된 이름={}, 등록된 이름={}", 
+                        userId, confirmName, currentMember.getName());
+                redirectAttributes.addFlashAttribute("error", 
+                        String.format("이름이 일치하지 않습니다. 등록된 이름 '%s'를 정확히 입력해주세요.", currentMember.getName()));
+                return "redirect:/member/mypage/delete";
+            }
+            
+            log.info("이름 확인 성공: userId={}, 이름={}", userId, confirmName);
+            
+            // 회원 탈퇴 처리 (옵션에 따라 처리 방식 결정)
+            String resultMessage = memberService.deleteMemberWithOption(userId, deleteOption);
+            log.info("회원탈퇴 완료: userId={}, 옵션={}", userId, deleteOption);
+            
+            // 세션 무효화
+            session.invalidate();
+            
+            redirectAttributes.addFlashAttribute("message", resultMessage + " 그동안 이용해 주셔서 감사합니다.");
+            return "redirect:/";
         } catch (Exception e) {
             log.error("회원 탈퇴 처리 중 오류 발생: {}", userId, e);
             redirectAttributes.addFlashAttribute("error", "회원 탈퇴 처리 중 오류가 발생했습니다.");
-            return "redirect:/member/myinfo";
+            return "redirect:/member/mypage/delete";
         }
     }
 
@@ -451,5 +805,54 @@ public class MemberController {
             redirectAttributes.addFlashAttribute("error", "회원 상태 변경 중 오류가 발생했습니다.");
         }
         return "redirect:/member/admin/members"; // 변경 후 회원 목록 페이지로 리다이렉트
+    }
+    
+    /**
+     * 내가 쓴 글 페이지 표시
+     */
+    @GetMapping("/mypost")
+    public String myPosts(@RequestParam(defaultValue = "all") String type,
+                         @RequestParam(defaultValue = "1") int page,
+                         @RequestParam(defaultValue = "10") int pageSize,
+                         HttpSession session, Model model, RedirectAttributes redirectAttributes) {
+        
+        MemberDTO loginMember = (MemberDTO) session.getAttribute(Constants.SESSION_MEMBER);
+        if (loginMember == null) {
+            redirectAttributes.addFlashAttribute("error", "로그인이 필요합니다.");
+            return "redirect:/member/login";
+        }
+        
+        try {
+            Long memberId = loginMember.getMemberId();
+            log.info("내가 쓴 글 페이지 요청: memberId={}, type={}, page={}", memberId, type, page);
+            
+            // 페이징 설정
+            int offset = (page - 1) * pageSize;
+            
+            // 작성한 콘텐츠 조회
+            Map<String, Object> result = memberService.getMyPosts(memberId, type, page, pageSize, offset);
+            
+            // 모델에 데이터 추가
+            model.addAttribute("member", loginMember);
+            model.addAttribute("posts", result.get("posts"));
+            model.addAttribute("totalCount", result.get("totalCount"));
+            model.addAttribute("currentType", type);
+            model.addAttribute("currentPage", page);
+            model.addAttribute("pageSize", pageSize);
+            model.addAttribute("totalPages", (int) Math.ceil((double) (Integer) result.get("totalCount") / pageSize));
+            
+            // 콘텐츠 타입별 개수
+            Map<String, Integer> contentCounts = (Map<String, Integer>) result.get("contentCounts");
+            model.addAttribute("contentCounts", contentCounts);
+            
+            log.info("내가 쓴 글 조회 완료: 총 {}개", result.get("totalCount"));
+            
+            return "member/myPosts";
+            
+        } catch (Exception e) {
+            log.error("내가 쓴 글 페이지 로드 중 오류: memberId={}", loginMember.getMemberId(), e);
+            redirectAttributes.addFlashAttribute("error", "내가 쓴 글을 불러오는 중 오류가 발생했습니다.");
+            return "redirect:/member/myinfo/edit";
+        }
     }
 }

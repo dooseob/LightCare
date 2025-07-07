@@ -1,0 +1,836 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="ko">
+<head th:replace="~{layout/header :: header}">
+    <title>시설 이미지 관리 - CareLink</title>
+    <!-- 시설명 메타 태그 (JavaScript에서 사용) -->
+    <meta name="facility-name" th:content="${facility?.facilityName ?: '시설'}" />
+    <meta name="facility-id" th:content="${facility?.facilityId ?: ''}" />
+</head>
+<body class="d-flex flex-column min-vh-100 pt-5">
+<nav th:replace="~{layout/header :: navbar}"></nav>
+
+<div th:replace="~{layout/header :: messages}"></div>
+
+<main class="flex-grow-1">
+    <div class="container mt-4">
+        <!-- 브레드크럼 -->
+        <nav aria-label="breadcrumb" class="mb-4">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="/">홈</a></li>
+                <li class="breadcrumb-item"><a href="/facility/manage">시설 관리</a></li>
+                <li class="breadcrumb-item active" aria-current="page">시설 이미지 관리</li>
+            </ol>
+        </nav>
+        
+        <div class="row justify-content-center">
+            <div class="col-12 col-lg-11">
+                <div class="card shadow">
+                    <div class="card-body p-4">
+                        <div class="text-center mb-4">
+                            <h3 class="card-title fw-bold text-primary">
+                                <i class="fas fa-images me-2"></i>
+                                시설 이미지 관리
+                            </h3>
+                            <p class="text-muted">시설 사진을 16:9 비율로 조정하여 등록하세요 (최대 5장)</p>
+                        </div>
+
+                        <!-- 단계 표시기 (3단계로 간소화) -->
+                        <div class="steps-indicator mb-4">
+                            <div class="step-item active" id="step1">
+                                <div class="step-circle">
+                                    <i class="fas fa-upload"></i>
+                                </div>
+                                <div class="step-label">이미지 선택</div>
+                            </div>
+                            <div class="step-connector"></div>
+                            <div class="step-item" id="step2">
+                                <div class="step-circle">
+                                    <i class="fas fa-crop-alt"></i>
+                                </div>
+                                <div class="step-label">편집 & 설정</div>
+                            </div>
+                            <div class="step-connector"></div>
+                            <div class="step-item" id="step3">
+                                <div class="step-circle">
+                                    <i class="fas fa-cogs"></i>
+                                </div>
+                                <div class="step-label">이미지 관리</div>
+                            </div>
+                        </div>
+
+                        <!-- 1단계: 파일 업로드 -->
+                        <div id="uploadSection" class="upload-section">
+                            <div class="upload-area" id="uploadArea">
+                                <div class="upload-content">
+                                    <div class="upload-icon">
+                                        <i class="fas fa-cloud-upload-alt fa-3x text-primary"></i>
+                                    </div>
+                                    <h5 class="upload-title">시설 이미지 업로드</h5>
+                                    <p class="upload-description text-muted">
+                                        이미지를 드래그하여 업로드하거나 클릭하여 선택하세요
+                                    </p>
+                                    <div class="upload-format-info">
+                                        <small class="text-muted">
+                                            <i class="fas fa-info-circle me-1"></i>
+                                            JPG, PNG, WebP 파일 지원 (큰 파일도 자동 압축)
+                                        </small>
+                                        <br>
+                                        <small class="text-info">
+                                            <i class="fas fa-crop-alt me-1"></i>
+                                            시설 사진 비율 (16:9) 자동 조정
+                                        </small>
+                                        <br>
+                                        <small class="text-success">
+                                            <i class="fas fa-images me-1"></i>
+                                            최대 5장까지 등록 가능
+                                        </small>
+                                    </div>
+                                    <div class="d-flex flex-column gap-3 mt-3 align-items-center">
+                                        <!-- 통합된 이미지 불러오기 버튼 -->
+                                        <div class="btn-group">
+                                            <button type="button" class="btn btn-primary btn-lg" id="imageLoadBtn">
+                                                <i class="fas fa-images me-2"></i>이미지 불러오기
+                                            </button>
+                                            <button type="button" class="btn btn-primary btn-lg dropdown-toggle dropdown-toggle-split" 
+                                                    data-bs-toggle="dropdown" aria-expanded="false">
+                                                <span class="visually-hidden">옵션 토글</span>
+                                            </button>
+                                            <ul class="dropdown-menu">
+                                                <li>
+                                                    <a class="dropdown-item" href="#" id="fileSelectOption">
+                                                        <i class="fas fa-file me-2"></i>파일에서 선택
+                                                        <small class="text-muted d-block">개별 이미지 파일들을 선택</small>
+                                                    </a>
+                                                </li>
+                                                <li>
+                                                    <a class="dropdown-item" href="#" id="folderSelectOption">
+                                                        <i class="fas fa-folder-open me-2"></i>폴더에서 선택
+                                                        <small class="text-muted d-block">폴더 내 이미지들을 선택</small>
+                                                    </a>
+                                                </li>
+                                            </ul>
+                                        </div>
+                                        
+                                        <!-- 선택된 이미지 미리보기 및 오더 설정 영역 -->
+                                        <div id="selectedImagesPreview" class="selected-images-preview w-100" style="display: none;">
+                                            <div class="card border-primary">
+                                                <div class="card-header bg-primary text-white">
+                                                    <h6 class="mb-0">
+                                                        <i class="fas fa-list me-2"></i>선택된 이미지 (최대 5장)
+                                                        <span class="badge bg-light text-dark ms-2" id="selectedCount">0</span>
+                                                    </h6>
+                                                </div>
+                                                <div class="card-body">
+                                                    <div id="imageOrderList" class="row g-3"></div>
+                                                    <div class="text-center mt-3">
+                                                        <div class="btn-group">
+                                                            <button type="button" class="btn btn-outline-primary" id="addMoreImagesBtn" style="display: none;">
+                                                                <i class="fas fa-plus me-2"></i>이미지 더 추가
+                                                            </button>
+                                                            <button type="button" class="btn btn-success" id="proceedToCropBtn" style="display: none;">
+                                                                <i class="fas fa-crop-alt me-2"></i>크롭 시작
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <input type="file" id="imageInput" accept="image/*" multiple style="display: none;">
+                            <input type="file" id="folderInput" webkitdirectory directory multiple style="display: none;">
+                        </div>
+
+
+                        <!-- 2단계: 크롭 및 조정 (2줄 레이아웃) -->
+                        <div id="cropSection" class="crop-section" style="display: none;">
+                            <!-- 첫째줄: 이미지 크롭과 미리보기 좌우 배치 (6:4 비율) -->
+                            <div class="row mb-4">
+                                <div class="col-lg-7 col-md-6">
+                                    <div class="crop-container">
+                                        <h6 class="mb-3">
+                                            <i class="fas fa-crop-alt me-2"></i>
+                                            이미지 비율 조정
+                                            <span class="badge bg-info ms-2" id="currentImageNumber">1/1</span>
+                                        </h6>
+                                        <div class="crop-image-container">
+                                            <img id="cropImage" style="max-width: 100%; display: none;">
+                                        </div>
+                                        <div class="crop-controls mt-3 text-center">
+                                            <div class="btn-group me-3" role="group">
+                                                <button type="button" class="btn btn-outline-primary btn-sm" id="zoomInBtn">
+                                                    <i class="fas fa-search-plus"></i> 확대
+                                                </button>
+                                                <button type="button" class="btn btn-outline-primary btn-sm" id="zoomOutBtn">
+                                                    <i class="fas fa-search-minus"></i> 축소
+                                                </button>
+                                            </div>
+                                            <div class="btn-group me-3" role="group">
+                                                <button type="button" class="btn btn-outline-secondary btn-sm" id="rotateLeftBtn">
+                                                    <i class="fas fa-undo"></i> 좌회전
+                                                </button>
+                                                <button type="button" class="btn btn-outline-secondary btn-sm" id="rotateRightBtn">
+                                                    <i class="fas fa-redo"></i> 우회전
+                                                </button>
+                                            </div>
+                                            <button type="button" class="btn btn-outline-danger btn-sm" id="resetBtn">
+                                                <i class="fas fa-sync-alt"></i> 리셋
+                                            </button>
+                                        </div>
+                                        
+                                        <!-- 줌 상태 표시기 -->
+                                        <div id="zoomIndicator" class="zoom-indicator mt-2 text-center" style="display: none;">
+                                            <span class="badge bg-info">
+                                                <i class="fas fa-search me-1"></i>
+                                                <span id="zoomLevel">100%</span>
+                                                <span id="zoomStatus" class="ms-2"></span>
+                                            </span>
+                                        </div>
+                                        
+                                        <!-- 키보드 단축키 가이드 -->
+                                        <div class="mt-3">
+                                            <small class="text-muted d-block text-center mb-2">
+                                                <i class="fas fa-keyboard me-1"></i>키보드 단축키
+                                            </small>
+                                            <div class="small text-muted text-center">
+                                                <div class="d-flex justify-content-center gap-3 flex-wrap">
+                                                    <span><kbd>+/-</kbd> 확대/축소</span>
+                                                    <span><kbd>R/L</kbd> 회전</span>
+                                                    <span><kbd>Enter</kbd> 완료</span>
+                                                    <span><kbd>Esc</kbd> 리셋</span>
+                                                    <span><kbd>← →</kbd> 이미지 전환</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-lg-5 col-md-6">
+                                    <div class="crop-preview-panel h-100 d-flex flex-column">
+                                        <h6 class="mb-3">
+                                            <i class="fas fa-eye me-2"></i>미리보기 & 정보
+                                        </h6>
+                                        
+                                        <!-- 미리보기 카드 -->
+                                        <div class="facility-preview text-center mb-3 flex-grow-1 d-flex align-items-center justify-content-center">
+                                            <div class="facility-card-preview">
+                                                <div class="card" style="max-width: 280px; margin: 0 auto;">
+                                                    <div class="card-img-container">
+                                                        <canvas id="previewCanvas" width="192" height="108" 
+                                                                style="width: 100%; height: auto; border-radius: 8px;"></canvas>
+                                                    </div>
+                                                    <div class="card-body p-3">
+                                                        <h6 class="card-title text-truncate mb-1">시설명</h6>
+                                                        <small class="text-muted">시설 카드 미리보기</small>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        
+                                        <!-- 이미지 정보 패널 -->
+                                        <div class="image-info-panel mt-auto">
+                                            <div class="card">
+                                                <div class="card-body p-3">
+                                                    <h6 class="card-title mb-3">
+                                                        <i class="fas fa-info-circle me-2"></i>이미지 정보
+                                                    </h6>
+                                                    <div class="small">
+                                                        <div class="d-flex justify-content-between mb-2">
+                                                            <span><i class="fas fa-expand-arrows-alt me-1 text-muted"></i>비율:</span>
+                                                            <span class="text-primary fw-bold">16:9</span>
+                                                        </div>
+                                                        <div class="d-flex justify-content-between mb-2">
+                                                            <span><i class="fas fa-rulers me-1 text-muted"></i>크기:</span>
+                                                            <span id="imageDimensions" class="fw-medium">-</span>
+                                                        </div>
+                                                        <div class="d-flex justify-content-between">
+                                                            <span><i class="fas fa-file me-1 text-muted"></i>파일명:</span>
+                                                            <span id="imageFileName" class="text-truncate fw-medium" style="max-width: 150px;">-</span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- 둘째줄: 3개 카드로 재구성 -->
+                            <div class="row">
+                                <!-- 1번 카드: 압축 설정 (그대로 유지) -->
+                                <div class="col-lg-4 mb-3">
+                                    <div class="card h-100">
+                                        <div class="card-body p-3">
+                                            <h6 class="card-title text-center">
+                                                <i class="fas fa-compress-alt me-2"></i>포맷 & 압축
+                                            </h6>
+                                            <div class="btn-group w-100 mb-3" role="group">
+                                                <input type="radio" class="btn-check" name="imageFormat" id="formatAVIF" value="avif">
+                                                <label class="btn btn-outline-success btn-sm" for="formatAVIF">AVIF</label>
+                                                
+                                                <input type="radio" class="btn-check" name="imageFormat" id="formatWebP" value="webp" checked>
+                                                <label class="btn btn-outline-info btn-sm" for="formatWebP">WebP</label>
+                                                
+                                                <input type="radio" class="btn-check" name="imageFormat" id="formatJPEG" value="jpeg">
+                                                <label class="btn btn-outline-secondary btn-sm" for="formatJPEG">JPEG</label>
+                                            </div>
+                                            <div>
+                                                <label class="form-label small text-center d-block">
+                                                    품질: <span id="qualityPercent">80%</span>
+                                                </label>
+                                                <input type="range" class="form-range" id="qualitySlider" 
+                                                       min="0.3" max="1.0" step="0.1" value="0.8">
+                                                <div class="d-flex justify-content-between small text-muted">
+                                                    <span>압축</span>
+                                                    <span>품질</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- 2번 카드: Alt 텍스트 + 파일명 (세로 정렬) -->
+                                <div class="col-lg-4 mb-3">
+                                    <div class="card h-100">
+                                        <div class="card-body p-3">
+                                            <h6 class="card-title text-center mb-3">
+                                                <i class="fas fa-search me-2"></i>SEO 최적화
+                                            </h6>
+                                            
+                                            <!-- Alt 텍스트 -->
+                                            <div class="mb-3">
+                                                <label for="altText" class="form-label small">
+                                                    <i class="fas fa-font me-1"></i>Alt 텍스트
+                                                </label>
+                                                <input type="text" class="form-control form-control-sm" id="altText" 
+                                                       placeholder="이미지 설명을 입력하세요">
+                                                <small class="text-muted">검색엔진 최적화용</small>
+                                            </div>
+                                            
+                                            <!-- 파일명 -->
+                                            <div class="mb-2">
+                                                <label for="seoFileName" class="form-label small">
+                                                    <i class="fas fa-file-signature me-1"></i>파일명
+                                                </label>
+                                                <input type="text" class="form-control form-control-sm" id="seoFileName" 
+                                                       placeholder="예: 시설-로비">
+                                                <small class="text-muted">한글→영문 자동변환</small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- 3번 카드: 확장된 키워드 선택 (3줄 최대) -->
+                                <div class="col-lg-4 mb-3">
+                                    <div class="card h-100">
+                                        <div class="card-body p-3">
+                                            <h6 class="card-title text-center mb-3">
+                                                <i class="fas fa-tags me-2"></i>키워드 선택
+                                            </h6>
+                                            
+                                            <!-- 기본 키워드 (1줄) -->
+                                            <div class="mb-2">
+                                                <small class="text-muted d-block mb-1">기본</small>
+                                                <div class="keyword-row">
+                                                    <button type="button" class="btn btn-outline-primary btn-sm keyword-btn me-1 mb-1" data-keyword="외관" onclick="handleKeywordClick('exterior')">외관</button>
+                                                    <button type="button" class="btn btn-outline-primary btn-sm keyword-btn me-1 mb-1" data-keyword="내부" onclick="handleKeywordClick('interior')">내부</button>
+                                                    <button type="button" class="btn btn-outline-primary btn-sm keyword-btn me-1 mb-1" data-keyword="로비" onclick="handleKeywordClick('lobby')">로비</button>
+                                                    <button type="button" class="btn btn-outline-primary btn-sm keyword-btn me-1 mb-1" data-keyword="복도" onclick="handleKeywordClick('corridor')">복도</button>
+                                                    <button type="button" class="btn btn-outline-primary btn-sm keyword-btn me-1 mb-1" data-keyword="입구" onclick="handleKeywordClick('entrance')">입구</button>
+                                                </div>
+                                            </div>
+                                            
+                                            <!-- 공간 키워드 (2줄) -->
+                                            <div class="mb-2">
+                                                <small class="text-muted d-block mb-1">공간</small>
+                                                <div class="keyword-row">
+                                                    <button type="button" class="btn btn-outline-info btn-sm keyword-btn me-1 mb-1" data-keyword="거실" onclick="handleKeywordClick('living-room')">거실</button>
+                                                    <button type="button" class="btn btn-outline-info btn-sm keyword-btn me-1 mb-1" data-keyword="침실" onclick="handleKeywordClick('bedroom')">침실</button>
+                                                    <button type="button" class="btn btn-outline-info btn-sm keyword-btn me-1 mb-1" data-keyword="식당" onclick="handleKeywordClick('dining-room')">식당</button>
+                                                    <button type="button" class="btn btn-outline-info btn-sm keyword-btn me-1 mb-1" data-keyword="화장실" onclick="handleKeywordClick('restroom')">화장실</button>
+                                                    <button type="button" class="btn btn-outline-info btn-sm keyword-btn me-1 mb-1" data-keyword="의무실" onclick="handleKeywordClick('medical-room')">의무실</button>
+                                                </div>
+                                            </div>
+                                            
+                                            <!-- 시설 키워드 (3줄) -->
+                                            <div class="mb-2">
+                                                <small class="text-muted d-block mb-1">시설</small>
+                                                <div class="keyword-row">
+                                                    <button type="button" class="btn btn-outline-success btn-sm keyword-btn me-1 mb-1" data-keyword="재활실" onclick="handleKeywordClick('rehabilitation-room')">재활실</button>
+                                                    <button type="button" class="btn btn-outline-success btn-sm keyword-btn me-1 mb-1" data-keyword="휴게실" onclick="handleKeywordClick('rest-room')">휴게실</button>
+                                                    <button type="button" class="btn btn-outline-success btn-sm keyword-btn me-1 mb-1" data-keyword="진료실" onclick="handleKeywordClick('treatment-room')">진료실</button>
+                                                    <button type="button" class="btn btn-outline-success btn-sm keyword-btn me-1 mb-1" data-keyword="프로그램실" onclick="handleKeywordClick('program-room')">프로그램실</button>
+                                                    <button type="button" class="btn btn-outline-success btn-sm keyword-btn me-1 mb-1" data-keyword="정원" onclick="handleKeywordClick('garden')">정원</button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="crop-actions mt-4 text-center">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <button type="button" class="btn btn-outline-secondary" id="backToUploadBtn">
+                                        <i class="fas fa-arrow-left me-2"></i>다시 선택
+                                    </button>
+                                    
+                                    <!-- 이미지 번호 표시 -->
+                                    <div class="image-counter text-muted">
+                                        <small id="navigationImageNumber">1 / 1</small>
+                                    </div>
+                                    
+                                    <div class="crop-navigation d-flex gap-2">
+                                        <button type="button" class="btn btn-outline-primary" id="prevImageBtn" style="display: none;">
+                                            <i class="fas fa-chevron-left me-1"></i>이전
+                                        </button>
+                                        <button type="button" class="btn btn-primary" id="nextAndSaveBtn" style="display: none;">
+                                            저장 후 다음<i class="fas fa-chevron-right ms-1"></i>
+                                        </button>
+                                        <button type="button" class="btn btn-success" id="saveAndCompleteBtn">
+                                            <i class="fas fa-check me-2"></i>저장 후 완료
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 3단계: 이미지 관리 -->
+                        <div id="manageSection" class="manage-section" style="display: none;">
+                            <div class="text-center mb-4">
+                                <h4 class="text-primary mb-3">
+                                    <i class="fas fa-cogs me-2"></i>이미지 관리
+                                </h4>
+                                <p class="text-muted">메인 이미지를 설정하고, 불필요한 이미지를 삭제하세요.</p>
+                            </div>
+                            
+                            <div class="manage-images-grid mb-4" id="manageImagesGrid">
+                                <div class="text-center">
+                                    <i class="fas fa-spinner fa-spin"></i> 크롭된 이미지를 서버에 저장하는 중...
+                                </div>
+                            </div>
+                            
+                            <div class="manage-actions text-center">
+                                <div class="d-flex justify-content-between">
+                                    <button type="button" class="btn btn-outline-secondary" id="backToCropBtn">
+                                        <i class="fas fa-arrow-left me-2"></i>크롭으로 돌아가기
+                                    </button>
+                                    <button type="button" class="btn btn-success" id="finalCompleteBtn">
+                                        <i class="fas fa-check me-2"></i>최종 완료
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 4단계: 최종 완료 -->
+                        <div id="completeSection" class="complete-section text-center" style="display: none;">
+                            <div class="completion-icon mb-3">
+                                <i class="fas fa-check-circle fa-5x text-success"></i>
+                            </div>
+                            <h4 class="text-success mb-3">시설 이미지 등록 완료!</h4>
+                            <p class="text-muted mb-4">시설 이미지가 성공적으로 등록되었습니다.</p>
+                            
+                            <div class="final-summary mb-4" id="finalSummary">
+                                <!-- 최종 요약 정보가 여기에 표시됩니다 -->
+                            </div>
+                            
+                            <div class="final-actions">
+                                <a href="/facility/manage" class="btn btn-primary me-2">
+                                    <i class="fas fa-building me-2"></i>시설 관리로 돌아가기
+                                </a>
+                                <button type="button" class="btn btn-outline-primary" id="addMoreImagesBtn">
+                                    <i class="fas fa-plus me-2"></i>이미지 더 추가
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- 줌 표시기 -->
+                        <div id="zoomIndicator" class="zoom-indicator" style="display: none;">
+                            <i class="fas fa-search-plus me-2"></i>
+                            <span id="zoomLevel">100%</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</main>
+
+<!-- 이미지 선택 모달 (폴더에서 선택 시 사용) -->
+<div class="modal fade" id="imageSelectionModal" tabindex="-1" aria-labelledby="imageSelectionModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="imageSelectionModalLabel">
+                    <i class="fas fa-images me-2"></i>이미지 선택 (최대 5장)
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row mb-3">
+                    <div class="col-md-8">
+                        <p class="text-muted mb-0">
+                            <i class="fas fa-info-circle me-1"></i>
+                            선택한 폴더에서 이미지 파일을 골라주세요. 이미지를 클릭하면 선택됩니다.
+                        </p>
+                    </div>
+                    <div class="col-md-4 text-end">
+                        <span class="badge bg-primary fs-6" id="selectedImageCount">0/5 선택됨</span>
+                    </div>
+                </div>
+                
+                <!-- 로딩 상태 -->
+                <div id="modalLoadingState" class="text-center py-5">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">로딩 중...</span>
+                    </div>
+                    <p class="text-muted mt-3">폴더의 이미지를 불러오는 중...</p>
+                </div>
+                
+                <!-- 이미지 그리드 -->
+                <div id="modalImageGrid" class="row g-3" style="display: none;">
+                    <!-- 동적으로 생성되는 이미지 카드들 -->
+                </div>
+                
+                <!-- 이미지가 없는 경우 -->
+                <div id="modalEmptyState" class="text-center py-5" style="display: none;">
+                    <i class="fas fa-folder-open fa-3x text-muted mb-3"></i>
+                    <h5 class="text-muted">선택한 폴더에 이미지가 없습니다</h5>
+                    <p class="text-muted">JPG, PNG, WebP 형식의 이미지 파일이 있는 폴더를 선택해주세요.</p>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="fas fa-times me-2"></i>취소
+                </button>
+                <button type="button" class="btn btn-primary" id="confirmImageSelection" disabled>
+                    <i class="fas fa-check me-2"></i>선택 완료
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<footer th:replace="~{layout/footer :: footer}"></footer>
+
+<!-- 필수 JavaScript 라이브러리들 (Bootstrap 포함) -->
+<div th:replace="~{layout/footer :: scripts}"></div>
+
+<!-- Cropper.js CDN (추가) -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.12/cropper.min.js"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.12/cropper.min.css">
+
+<!-- 고급 이미지 크롭퍼 CSS -->
+<link th:href="@{/css/advanced-image-cropper.css}" rel="stylesheet">
+
+<!-- 시설 이미지 크롭퍼 JavaScript (프로필 방식 기반) -->
+<script th:src="@{/js/facility-image-cropper.js}"></script>
+
+<!-- 시설 이미지 관리 전용 JavaScript (Thymeleaf 충돌 방지용) -->
+<script th:src="@{/js/facility-image-manage.js}"></script>
+
+<!-- 폴더 선택 전용 JavaScript (충돌 방지용 분리) -->
+<script th:src="@{/js/facility-folder-selection.js}"></script>
+
+<!-- 3단계 관리 전용 JavaScript (타임리프 충돌 완전 방지) -->
+<script th:src="@{/js/facility-image-step3-manage.js}"></script>
+
+<!-- 기존 인라인 스크립트를 별도 파일로 대체 -->
+<script>
+// 기본 설정만 유지 (별도 파일에서 모든 로직 처리)
+console.log('🎨 시설 이미지 크롭퍼 페이지 로드 완료');
+console.log('📚 facility-image-cropper.js가 메인 로직을 처리합니다.');
+console.log('🛠️ facility-image-manage.js가 관리 기능을 처리합니다.');
+console.log('📂 facility-folder-selection.js가 폴더 선택을 처리합니다.');
+console.log('⚙️ facility-image-step3-manage.js가 3단계 관리를 처리합니다.');
+</script>
+
+<style>
+/* 시설 이미지 크롭퍼 전용 스타일 */
+.facility-preview .card {
+    transition: transform 0.3s ease;
+    border: none;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.facility-preview .card:hover {
+    transform: translateY(-2px);
+}
+
+.image-item {
+    cursor: pointer;
+    transition: transform 0.2s ease;
+}
+
+.image-item:hover {
+    transform: scale(1.02);
+}
+
+.image-item.active {
+    border-color: #007bff;
+    box-shadow: 0 0 0 2px rgba(0,123,255,0.25);
+}
+
+.crop-navigation .btn {
+    min-width: 80px;
+}
+
+.final-images-grid {
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.completion-icon {
+    animation: bounceIn 0.8s ease;
+}
+
+@keyframes bounceIn {
+    0% {
+        opacity: 0;
+        transform: scale(0.3);
+    }
+    50% {
+        opacity: 1;
+        transform: scale(1.05);
+    }
+    70% {
+        transform: scale(0.9);
+    }
+    100% {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+/* SEO 최적화 기능 스타일 */
+.keyword-suggestions {
+    background: #f8f9fa;
+    border-radius: 8px;
+    padding: 15px;
+    margin-bottom: 15px;
+}
+
+.keyword-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 5px;
+}
+
+.keyword-btn {
+    font-size: 0.875rem;
+    padding: 5px 10px;
+    border-radius: 15px;
+    transition: all 0.2s ease;
+    cursor: pointer;
+}
+
+.keyword-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+}
+
+.keyword-btn.btn-success {
+    animation: keywordClick 0.5s ease;
+}
+
+@keyframes keywordClick {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.1); }
+    100% { transform: scale(1); }
+}
+
+.seo-optimization-section {
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    border-radius: 10px;
+    padding: 20px;
+    border: 1px solid #dee2e6;
+}
+
+.seo-tips {
+    border-left: 4px solid #17a2b8;
+    background: rgba(23, 162, 184, 0.1);
+}
+
+#imageNameInput {
+    border-radius: 8px;
+}
+
+#previewFileName {
+    color: #17a2b8;
+    background: rgba(23, 162, 184, 0.1);
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-family: 'Courier New', monospace;
+}
+
+/* 이미지 선택 모달 스타일 */
+.image-selection-card {
+    cursor: pointer;
+    transition: all 0.3s ease;
+    border: 2px solid transparent;
+}
+
+.image-selection-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+}
+
+.image-selection-card.selected {
+    border-color: #007bff;
+    box-shadow: 0 4px 20px rgba(0,123,255,0.3);
+}
+
+.image-selection-card .selection-overlay {
+    border-radius: 0.375rem 0.375rem 0 0;
+}
+
+#imageSelectionModal .modal-body {
+    max-height: 70vh;
+    overflow-y: auto;
+}
+
+#modalImageGrid {
+    max-height: 60vh;
+    overflow-y: auto;
+}
+
+.input-group .btn {
+    border-radius: 0 8px 8px 0;
+}
+
+.form-label {
+    font-weight: 600;
+    color: #495057;
+}
+
+/* 이미지 순서 지정 애니메이션 */
+.image-order-item .card {
+    transition: all 0.3s ease;
+}
+
+.image-order-item .card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+.image-order-item .card.order-added {
+    animation: orderAdded 0.5s ease;
+    transform: scale(1.05);
+    box-shadow: 0 6px 20px rgba(40, 167, 69, 0.3);
+}
+
+.image-order-item .card.order-removed {
+    animation: orderRemoved 0.5s ease;
+    transform: scale(0.95);
+    box-shadow: 0 2px 8px rgba(220, 53, 69, 0.3);
+}
+
+@keyframes orderAdded {
+    0% { 
+        transform: scale(1);
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    50% { 
+        transform: scale(1.1);
+        box-shadow: 0 8px 25px rgba(40, 167, 69, 0.4);
+    }
+    100% { 
+        transform: scale(1.05);
+        box-shadow: 0 6px 20px rgba(40, 167, 69, 0.3);
+    }
+}
+
+@keyframes orderRemoved {
+    0% { 
+        transform: scale(1);
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    50% { 
+        transform: scale(0.9);
+        box-shadow: 0 8px 25px rgba(220, 53, 69, 0.4);
+    }
+    100% { 
+        transform: scale(0.95);
+        box-shadow: 0 2px 8px rgba(220, 53, 69, 0.3);
+    }
+}
+
+/* 순서 배지 애니메이션 */
+.order-badge {
+    transition: all 0.3s ease;
+}
+
+.order-badge.bg-success {
+    animation: badgeSuccess 0.5s ease;
+}
+
+.order-badge.bg-secondary {
+    animation: badgeSecondary 0.3s ease;
+}
+
+@keyframes badgeSuccess {
+    0% { 
+        transform: scale(1);
+        background-color: #6c757d;
+    }
+    50% { 
+        transform: scale(1.2);
+        background-color: #28a745;
+    }
+    100% { 
+        transform: scale(1);
+        background-color: #28a745;
+    }
+}
+
+@keyframes badgeSecondary {
+    0% { 
+        transform: scale(1);
+        background-color: #28a745;
+    }
+    50% { 
+        transform: scale(0.8);
+        background-color: #6c757d;
+    }
+    100% { 
+        transform: scale(1);
+        background-color: #6c757d;
+    }
+}
+</style>
+
+<!-- Cropper.js 및 관련 스크립트 -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.12/cropper.min.js"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.12/cropper.min.css">
+
+<!-- 시설 이미지 크롭 스타일 -->
+<link rel="stylesheet" href="/css/facility-image-uploader.css">
+
+<!-- 고급 이미지 크롭퍼 -->
+<link rel="stylesheet" href="/css/advanced-image-cropper.css">
+<script src="/js/advanced-image-cropper.js"></script>
+
+<!-- 이미지 압축 라이브러리 -->
+<link rel="stylesheet" href="/css/image-compressor.css">
+<script src="/js/image-compressor.js"></script>
+
+<!-- 시설 이미지 마스터 컨트롤러 (단계 전환 및 데이터 관리) - 우선 로드 -->
+<script th:src="@{/js/facility-image-master-controller.js}"></script>
+
+<!-- 시설 이미지 업로드 컴포넌트 -->
+<script src="/js/facility-image-uploader.js"></script>
+
+<!-- 시설 이미지 1단계 - 이미지 불러오기 및 오더 설정 (순수 JavaScript) -->
+<script th:src="@{/js/facility-image-step1-pure.js}"></script>
+
+<!-- 시설 이미지 2단계 - 크롭 및 편집 기능 (중요!) -->
+<script th:src="@{/js/facility-image-cropper.js}"></script>
+
+<!-- 시설 이미지 SEO 키워드 관리 (파일명 영문변환 및 키워드 추가) -->
+<script src="/js/facility-image-seo-keywords.js"></script>
+
+<!-- 시설 이미지 3단계 관리 전용 (타임리프 충돌 방지) -->
+<script src="/js/facility-image-step3-manage.js"></script>
+
+</body>
+</html>
