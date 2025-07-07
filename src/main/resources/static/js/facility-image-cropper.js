@@ -20,6 +20,43 @@ let formatSupport = {
     webp: false
 };
 
+// 전역 크롭퍼 객체 생성 (타임리프 충돌 방지)
+window.facilityImageCropper = {
+    state: {
+        selectedFiles: [],
+        currentStep: 1,
+        currentImageIndex: 0,
+        facilityId: null
+    },
+    
+    // 파일 설정 메서드
+    setFiles: function(files) {
+        originalImages = files;
+        this.state.selectedFiles = files;
+        console.log('🔗 크롭퍼에 파일 설정:', files.length, '개');
+    },
+    
+    // 단계 이동 메서드
+    moveToStep: function(step) {
+        this.state.currentStep = step;
+        
+        if (step === 2) {
+            // 2단계로 이동
+            document.getElementById('uploadSection').style.display = 'none';
+            document.getElementById('cropSection').style.display = 'block';
+            
+            // 단계 표시기 업데이트
+            document.getElementById('step1').classList.remove('active');
+            document.getElementById('step2').classList.add('active');
+            
+            // 첫 번째 이미지 로드
+            if (originalImages.length > 0) {
+                loadImageForCrop(0);
+            }
+        }
+    }
+};
+
 // 초기화 (프로필과 동일)
 document.addEventListener('DOMContentLoaded', function() {
     console.log('🎬 시설 이미지 크롭퍼 초기화 시작 (프로필 방식 완전 적용)');
@@ -27,6 +64,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // URL에서 시설 ID 추출
     const pathParts = window.location.pathname.split('/');
     facilityId = pathParts[pathParts.length - 1];
+    window.facilityImageCropper.state.facilityId = facilityId;
     console.log('🏢 시설 ID:', facilityId);
     
     // 프로필과 동일한 초기화 순서
@@ -36,19 +74,105 @@ document.addEventListener('DOMContentLoaded', function() {
     setupDragAndDrop();
     
     console.log('✅ 시설 이미지 크롭퍼 초기화 완료');
-    
-    // 디버깅: 버튼 상태 확인
-    setTimeout(() => {
-        const fileBtn = document.getElementById('fileSelectBtn');
-        const folderBtn = document.getElementById('folderSelectBtn');
-        console.log('🔍 버튼 상태 확인:', {
-            fileBtn: !!fileBtn,
-            folderBtn: !!folderBtn,
-            fileHandlers: fileBtn ? fileBtn.onclick : 'null',
-            folderHandlers: folderBtn ? folderBtn.onclick : 'null'
-        });
-    }, 1000);
 });
+
+// 크롭용 이미지 로드 함수 (누락된 기능 추가)
+function loadImageForCrop(index) {
+    console.log('🖼️ 크롭용 이미지 로드:', index);
+    
+    if (!originalImages || originalImages.length === 0) {
+        console.error('❌ 로드할 이미지가 없습니다');
+        return;
+    }
+    
+    if (index < 0 || index >= originalImages.length) {
+        console.error('❌ 잘못된 이미지 인덱스:', index);
+        return;
+    }
+    
+    currentImageIndex = index;
+    const file = originalImages[index];
+    
+    // 이미지 읽기
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        const cropImage = document.getElementById('cropImage');
+        if (cropImage) {
+            cropImage.src = e.target.result;
+            cropImage.style.display = 'block';
+            
+            // 기존 크롭퍼 정리
+            if (cropper) {
+                cropper.destroy();
+            }
+            
+            // 새 크롭퍼 초기화
+            cropper = new Cropper(cropImage, {
+                aspectRatio: 16/9,
+                viewMode: 1,
+                dragMode: 'move',
+                autoCropArea: 1,
+                background: false,
+                responsive: true,
+                restore: false,
+                checkCrossOrigin: false,
+                modal: false,
+                guides: true,
+                center: true,
+                highlight: false,
+                cropBoxMovable: true,
+                cropBoxResizable: true,
+                toggleDragModeOnDblclick: false,
+                
+                ready: function() {
+                    console.log('✅ 크롭퍼 준비 완료 - 이미지:', index + 1);
+                    updateImageInfo(file);
+                    updateNavigationButtons();
+                }
+            });
+        }
+    };
+    
+    reader.readAsDataURL(file);
+}
+
+// 이미지 정보 업데이트
+function updateImageInfo(file) {
+    const imageFileName = document.getElementById('imageFileName');
+    const imageDimensions = document.getElementById('imageDimensions');
+    const currentImageNumber = document.getElementById('currentImageNumber');
+    
+    if (imageFileName) {
+        imageFileName.textContent = file.name;
+    }
+    
+    if (currentImageNumber) {
+        currentImageNumber.textContent = `${currentImageIndex + 1}/${originalImages.length}`;
+    }
+    
+    // 이미지 실제 크기 확인
+    const img = new Image();
+    img.onload = function() {
+        if (imageDimensions) {
+            imageDimensions.textContent = `${this.width} × ${this.height}`;
+        }
+    };
+    img.src = URL.createObjectURL(file);
+}
+
+// 네비게이션 버튼 업데이트
+function updateNavigationButtons() {
+    const prevBtn = document.getElementById('prevImageBtn');
+    const nextBtn = document.getElementById('nextImageBtn');
+    
+    if (prevBtn) {
+        prevBtn.style.display = currentImageIndex > 0 ? 'inline-block' : 'none';
+    }
+    
+    if (nextBtn) {
+        nextBtn.style.display = currentImageIndex < originalImages.length - 1 ? 'inline-block' : 'none';
+    }
+}
 
 // 이미지 로드 에러 처리 함수 (중복 요청 방지)
 function handleImageError(imgElement, imageId) {

@@ -455,14 +455,28 @@ function proceedToStep2() {
     // 순서에 따라 파일 재정렬
     const orderedFiles = state.imageOrder.map(originalIndex => state.selectedFiles[originalIndex]);
     
-    // 마스터 컨트롤러에 상태 전달 (기존 기능과 호환)
-    if (window.FacilityImageMaster) {
-        window.FacilityImageMaster.state.selectedFiles = orderedFiles;
-        window.FacilityImageMaster.state.currentStep = 2;
+    // 기존 시스템과 호환을 위한 전역 상태 설정
+    if (typeof window.facilityImageCropper !== 'undefined') {
+        // 크롭퍼 시스템에 파일 전달
+        window.facilityImageCropper.setFiles(orderedFiles);
+        window.facilityImageCropper.moveToStep(2);
+    } else if (typeof window.FacilityImageUploader !== 'undefined') {
+        // 업로더 시스템에 파일 전달
+        const uploader = new window.FacilityImageUploader('uploadSection');
+        uploader.setSelectedFiles(orderedFiles);
+        uploader.moveToStep(2);
+    } else {
+        // 기본 DOM 조작으로 2단계 진행
+        document.getElementById('uploadSection').style.display = 'none';
+        document.getElementById('cropSection').style.display = 'block';
         
-        // 마스터 컨트롤러의 2단계 진행 함수 호출
-        if (typeof window.proceedToStep2 === 'function') {
-            window.proceedToStep2();
+        // 단계 표시기 업데이트
+        document.getElementById('step1').classList.remove('active');
+        document.getElementById('step2').classList.add('active');
+        
+        // 크롭 시스템에 파일 정보 전달
+        if (typeof window.initializeCropSystem === 'function') {
+            window.initializeCropSystem(orderedFiles);
         }
     }
     
