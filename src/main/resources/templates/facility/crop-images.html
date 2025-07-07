@@ -332,11 +332,11 @@
                                             <div class="mb-2">
                                                 <small class="text-muted d-block mb-1">기본</small>
                                                 <div class="keyword-row">
-                                                    <button type="button" class="btn btn-outline-primary btn-sm keyword-btn me-1 mb-1" data-keyword="외관">외관</button>
-                                                    <button type="button" class="btn btn-outline-primary btn-sm keyword-btn me-1 mb-1" data-keyword="내부">내부</button>
-                                                    <button type="button" class="btn btn-outline-primary btn-sm keyword-btn me-1 mb-1" data-keyword="로비">로비</button>
-                                                    <button type="button" class="btn btn-outline-primary btn-sm keyword-btn me-1 mb-1" data-keyword="복도">복도</button>
-                                                    <button type="button" class="btn btn-outline-primary btn-sm keyword-btn me-1 mb-1" data-keyword="입구">입구</button>
+                                                    <button type="button" class="btn btn-outline-primary btn-sm keyword-btn me-1 mb-1" data-keyword="외관" onclick="handleKeywordClick('exterior')">외관</button>
+                                                    <button type="button" class="btn btn-outline-primary btn-sm keyword-btn me-1 mb-1" data-keyword="내부" onclick="handleKeywordClick('interior')">내부</button>
+                                                    <button type="button" class="btn btn-outline-primary btn-sm keyword-btn me-1 mb-1" data-keyword="로비" onclick="handleKeywordClick('lobby')">로비</button>
+                                                    <button type="button" class="btn btn-outline-primary btn-sm keyword-btn me-1 mb-1" data-keyword="복도" onclick="handleKeywordClick('corridor')">복도</button>
+                                                    <button type="button" class="btn btn-outline-primary btn-sm keyword-btn me-1 mb-1" data-keyword="입구" onclick="handleKeywordClick('entrance')">입구</button>
                                                 </div>
                                             </div>
                                             
@@ -344,23 +344,23 @@
                                             <div class="mb-2">
                                                 <small class="text-muted d-block mb-1">공간</small>
                                                 <div class="keyword-row">
-                                                    <button type="button" class="btn btn-outline-info btn-sm keyword-btn me-1 mb-1" data-keyword="거실">거실</button>
-                                                    <button type="button" class="btn btn-outline-info btn-sm keyword-btn me-1 mb-1" data-keyword="침실">침실</button>
-                                                    <button type="button" class="btn btn-outline-info btn-sm keyword-btn me-1 mb-1" data-keyword="식당">식당</button>
-                                                    <button type="button" class="btn btn-outline-info btn-sm keyword-btn me-1 mb-1" data-keyword="화장실">화장실</button>
-                                                    <button type="button" class="btn btn-outline-info btn-sm keyword-btn me-1 mb-1" data-keyword="의무실">의무실</button>
+                                                    <button type="button" class="btn btn-outline-info btn-sm keyword-btn me-1 mb-1" data-keyword="거실" onclick="handleKeywordClick('living-room')">거실</button>
+                                                    <button type="button" class="btn btn-outline-info btn-sm keyword-btn me-1 mb-1" data-keyword="침실" onclick="handleKeywordClick('bedroom')">침실</button>
+                                                    <button type="button" class="btn btn-outline-info btn-sm keyword-btn me-1 mb-1" data-keyword="식당" onclick="handleKeywordClick('dining-room')">식당</button>
+                                                    <button type="button" class="btn btn-outline-info btn-sm keyword-btn me-1 mb-1" data-keyword="화장실" onclick="handleKeywordClick('restroom')">화장실</button>
+                                                    <button type="button" class="btn btn-outline-info btn-sm keyword-btn me-1 mb-1" data-keyword="의무실" onclick="handleKeywordClick('medical-room')">의무실</button>
                                                 </div>
                                             </div>
                                             
-                                            <!-- 특징 키워드 (3줄) -->
+                                            <!-- 시설 키워드 (3줄) -->
                                             <div class="mb-2">
-                                                <small class="text-muted d-block mb-1">특징</small>
+                                                <small class="text-muted d-block mb-1">시설</small>
                                                 <div class="keyword-row">
-                                                    <button type="button" class="btn btn-outline-success btn-sm keyword-btn me-1 mb-1" data-keyword="깨끗한">깨끗한</button>
-                                                    <button type="button" class="btn btn-outline-success btn-sm keyword-btn me-1 mb-1" data-keyword="밝은">밝은</button>
-                                                    <button type="button" class="btn btn-outline-success btn-sm keyword-btn me-1 mb-1" data-keyword="넓은">넓은</button>
-                                                    <button type="button" class="btn btn-outline-success btn-sm keyword-btn me-1 mb-1" data-keyword="안전한">안전한</button>
-                                                    <button type="button" class="btn btn-outline-success btn-sm keyword-btn me-1 mb-1" data-keyword="편안한">편안한</button>
+                                                    <button type="button" class="btn btn-outline-success btn-sm keyword-btn me-1 mb-1" data-keyword="재활실" onclick="handleKeywordClick('rehabilitation-room')">재활실</button>
+                                                    <button type="button" class="btn btn-outline-success btn-sm keyword-btn me-1 mb-1" data-keyword="휴게실" onclick="handleKeywordClick('rest-room')">휴게실</button>
+                                                    <button type="button" class="btn btn-outline-success btn-sm keyword-btn me-1 mb-1" data-keyword="진료실" onclick="handleKeywordClick('treatment-room')">진료실</button>
+                                                    <button type="button" class="btn btn-outline-success btn-sm keyword-btn me-1 mb-1" data-keyword="프로그램실" onclick="handleKeywordClick('program-room')">프로그램실</button>
+                                                    <button type="button" class="btn btn-outline-success btn-sm keyword-btn me-1 mb-1" data-keyword="정원" onclick="handleKeywordClick('garden')">정원</button>
                                                 </div>
                                             </div>
                                         </div>
@@ -373,20 +373,23 @@
                                     <button type="button" class="btn btn-outline-secondary" id="backToUploadBtn">
                                         <i class="fas fa-arrow-left me-2"></i>다시 선택
                                     </button>
-                                    <div class="crop-navigation">
-                                        <button type="button" class="btn btn-outline-primary me-2" id="prevImageBtn" style="display: none;">
+                                    
+                                    <!-- 이미지 번호 표시 -->
+                                    <div class="image-counter text-muted">
+                                        <small id="navigationImageNumber">1 / 1</small>
+                                    </div>
+                                    
+                                    <div class="crop-navigation d-flex gap-2">
+                                        <button type="button" class="btn btn-outline-primary" id="prevImageBtn" style="display: none;">
                                             <i class="fas fa-chevron-left me-1"></i>이전
                                         </button>
-                                        <button type="button" class="btn btn-outline-primary" id="nextImageBtn" style="display: none;">
-                                            다음<i class="fas fa-chevron-right ms-1"></i>
+                                        <button type="button" class="btn btn-primary" id="nextAndSaveBtn" style="display: none;">
+                                            저장 후 다음<i class="fas fa-chevron-right ms-1"></i>
+                                        </button>
+                                        <button type="button" class="btn btn-success" id="saveAndCompleteBtn">
+                                            <i class="fas fa-check me-2"></i>저장 후 완료
                                         </button>
                                     </div>
-                                    <button type="button" class="btn btn-success" id="cropCurrentBtn">
-                                        <i class="fas fa-check me-2"></i>이 이미지 완료
-                                    </button>
-                                    <button type="button" class="btn btn-primary" id="goToManageBtn" style="display: none;">
-                                        <i class="fas fa-arrow-right me-2"></i>이미지 관리로 이동
-                                    </button>
                                 </div>
                             </div>
                         </div>
@@ -811,11 +814,17 @@ console.log('⚙️ facility-image-step3-manage.js가 3단계 관리를 처리�
 <link rel="stylesheet" href="/css/image-compressor.css">
 <script src="/js/image-compressor.js"></script>
 
+<!-- 시설 이미지 마스터 컨트롤러 (단계 전환 및 데이터 관리) - 우선 로드 -->
+<script th:src="@{/js/facility-image-master-controller.js}"></script>
+
 <!-- 시설 이미지 업로드 컴포넌트 -->
 <script src="/js/facility-image-uploader.js"></script>
 
 <!-- 시설 이미지 1단계 - 이미지 불러오기 및 오더 설정 (순수 JavaScript) -->
 <script th:src="@{/js/facility-image-step1-pure.js}"></script>
+
+<!-- 시설 이미지 2단계 - 크롭 및 편집 기능 (중요!) -->
+<script th:src="@{/js/facility-image-cropper.js}"></script>
 
 <!-- 시설 이미지 SEO 키워드 관리 (파일명 영문변환 및 키워드 추가) -->
 <script src="/js/facility-image-seo-keywords.js"></script>

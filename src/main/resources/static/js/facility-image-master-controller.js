@@ -198,10 +198,9 @@ function validateDOMElements() {
             'manageSection',
             'manageImagesGrid'
         ],
-        // 공통 요소들
+        // 공통 요소들 (선택사항)
         common: [
-            'progressArea',
-            'stepIndicator'
+            // progressArea와 stepIndicator는 선택사항으로 변경
         ]
     };
     
@@ -630,6 +629,15 @@ function proceedToStep2() {
     
     // UI 전환
     changeStepUI(2);
+    
+    // 크롭퍼에 파일 데이터 전달 (중요!)
+    if (window.facilityImageCropper) {
+        console.log('📤 크롭퍼에 파일 전달:', orderedFiles.length, '개');
+        window.facilityImageCropper.setFiles(orderedFiles);
+        window.facilityImageCropper.moveToStep(2);
+    } else {
+        console.error('❌ 크롭퍼가 초기화되지 않음');
+    }
     
     // 2단계 기능 활성화
     activateStep2Features(orderedFiles);

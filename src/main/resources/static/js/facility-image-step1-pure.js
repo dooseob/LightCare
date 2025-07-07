@@ -124,13 +124,36 @@ function setupEventListeners() {
     
     const elements = window.FacilityImageStep1Pure.elements;
     
+    // 파일 선택 중복 실행 방지 (전역 레벨)
+    if (!window.fileSelectionInProgress) {
+        window.fileSelectionInProgress = false;
+    }
+    
+    const triggerFileSelection = (source) => {
+        if (window.fileSelectionInProgress) {
+            console.log('⚠️ 파일 선택이 이미 진행 중입니다. 중복 실행 방지.');
+            return;
+        }
+        
+        window.fileSelectionInProgress = true;
+        console.log(`🎯 파일 선택 트리거: ${source}`);
+        
+        if (elements.imageInput) {
+            // 파일 선택 창 열기
+            elements.imageInput.click();
+            
+            // 파일 선택 창이 열린 후 잠금 해제
+            setTimeout(() => {
+                window.fileSelectionInProgress = false;
+            }, 1000); // 1초 후 잠금 해제 (충분한 시간 확보)
+        }
+    };
+    
     // 이미지 불러오기 버튼 (메인)
     if (elements.imageLoadBtn) {
-        const listener1 = () => {
-            console.log('🎯 메인 이미지 불러오기 버튼 클릭');
-            if (elements.imageInput) {
-                elements.imageInput.click();
-            }
+        const listener1 = (e) => {
+            e.preventDefault();
+            triggerFileSelection('메인 버튼');
         };
         elements.imageLoadBtn.addEventListener('click', listener1);
         window.FacilityImageStep1Pure.listeners.push({element: elements.imageLoadBtn, event: 'click', handler: listener1});
@@ -140,10 +163,7 @@ function setupEventListeners() {
     if (elements.fileSelectOption) {
         const listener2 = (e) => {
             e.preventDefault();
-            console.log('📁 파일 선택 옵션 클릭');
-            if (elements.imageInput) {
-                elements.imageInput.click();
-            }
+            triggerFileSelection('드롭다운 옵션');
         };
         elements.fileSelectOption.addEventListener('click', listener2);
         window.FacilityImageStep1Pure.listeners.push({element: elements.fileSelectOption, event: 'click', handler: listener2});
@@ -162,10 +182,16 @@ function setupEventListeners() {
         window.FacilityImageStep1Pure.listeners.push({element: elements.folderSelectOption, event: 'click', handler: listener3});
     }
     
-    // 파일 입력 변경 이벤트 (핵심)
+    // 파일 입력 변경 이벤트 (핵심) - 중복 실행 방지 추가
     if (elements.imageInput) {
         const listener4 = (e) => {
             console.log('📁 파일 입력 변경 이벤트:', e.target.files.length, '개 파일');
+            
+            // 파일 선택 후 잠금 해제
+            setTimeout(() => {
+                window.fileSelectionInProgress = false;
+            }, 100);
+            
             handleFileSelection(e.target.files, 'file');
         };
         elements.imageInput.addEventListener('change', listener4);

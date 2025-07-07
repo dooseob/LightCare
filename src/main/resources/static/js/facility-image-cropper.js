@@ -4,12 +4,71 @@
  * 누락 기능: Alt 텍스트 자동 생성, AVIF/WebP 지원 확인, 로딩 상태 관리
  */
 
-// 전역 변수 (프로필과 동일)
-let cropper = null;
-let originalImages = [];
-let croppedImages = [];
-let currentImageIndex = 0;
-let facilityId = null;
+// 전역 변수 충돌 방지 - 완전한 네임스페이스 격리
+if (typeof window.FacilityCropperNamespace === 'undefined') {
+    window.FacilityCropperNamespace = {};
+}
+
+// 전역 상태를 네임스페이스로 완전 격리
+window.FacilityCropperNamespace = {
+    cropper: null,
+    originalImages: [],
+    croppedImages: [],
+    currentImageIndex: 0,
+    facilityId: null,
+    isInitialized: false,
+    
+    // 기존 DB 이미지와 새 이미지 구분
+    existingImages: [],
+    newImages: [],
+    isDataCleared: false
+};
+
+// 디버깅 로그 시스템
+const debugLog = {
+    enabled: true,
+    prefix: '🔍 [CropperDebug]',
+    
+    log: function(message, data = null) {
+        if (!this.enabled) return;
+        const timestamp = new Date().toLocaleTimeString();
+        console.log(`${this.prefix} [${timestamp}] ${message}`, data ? data : '');
+    },
+    
+    error: function(message, error = null) {
+        if (!this.enabled) return;
+        const timestamp = new Date().toLocaleTimeString();
+        console.error(`${this.prefix} [${timestamp}] ❌ ${message}`, error ? error : '');
+    },
+    
+    warn: function(message, data = null) {
+        if (!this.enabled) return;
+        const timestamp = new Date().toLocaleTimeString();
+        console.warn(`${this.prefix} [${timestamp}] ⚠️ ${message}`, data ? data : '');
+    },
+    
+    checkState: function() {
+        this.log('현재 상태 체크', {
+            isInitialized: isInitialized,
+            facilityCropper: !!facilityCropper,
+            originalImagesLength: originalImages ? originalImages.length : 'null',
+            currentImageIndex: currentImageIndex,
+            facilityId: facilityId
+        });
+    },
+    
+    checkDOM: function() {
+        const domElements = {
+            nextAndSaveBtn: !!document.getElementById('nextAndSaveBtn'),
+            saveAndCompleteBtn: !!document.getElementById('saveAndCompleteBtn'),
+            cropImage: !!document.getElementById('cropImage'),
+            cropSection: !!document.getElementById('cropSection'),
+            previewCanvas: !!document.getElementById('previewCanvas')
+        };
+        this.log('DOM 요소 상태', domElements);
+        return domElements;
+    }
+};
 
 // DOM 요소들 (프로필과 동일 구조)
 const elements = {};
@@ -34,6 +93,8 @@ window.facilityImageCropper = {
         originalImages = files;
         this.state.selectedFiles = files;
         console.log('🔗 크롭퍼에 파일 설정:', files.length, '개');
+        console.log('📊 원본 이미지 배열 설정됨:', originalImages.length, '개');
+        console.log('📋 첫 번째 파일:', originalImages[0] ? originalImages[0].name : '없음');
     },
     
     // 단계 이동 메서드
@@ -57,9 +118,15 @@ window.facilityImageCropper = {
     }
 };
 
-// 초기화 (프로필과 동일)
+// 초기화 (프로필과 동일) - 중복 방지 로직 추가
 document.addEventListener('DOMContentLoaded', function() {
+    if (isInitialized) {
+        console.log('⚠️ 시설 이미지 크롭퍼가 이미 초기화됨. 중복 초기화 방지.');
+        return;
+    }
+    
     console.log('🎬 시설 이미지 크롭퍼 초기화 시작 (프로필 방식 완전 적용)');
+    isInitialized = true;
     
     // URL에서 시설 ID 추출
     const pathParts = window.location.pathname.split('/');
@@ -102,12 +169,12 @@ function loadImageForCrop(index) {
             cropImage.style.display = 'block';
             
             // 기존 크롭퍼 정리
-            if (cropper) {
-                cropper.destroy();
+            if (facilityCropper) {
+                facilityCropper.destroy();
             }
             
             // 새 크롭퍼 초기화
-            cropper = new Cropper(cropImage, {
+            facilityCropper = new Cropper(cropImage, {
                 aspectRatio: 16/9,
                 viewMode: 1,
                 dragMode: 'move',
@@ -126,10 +193,14 @@ function loadImageForCrop(index) {
                 
                 ready: function() {
                     console.log('✅ 크롭퍼 준비 완료 - 이미지:', index + 1);
-                    updateImageInfo(file);
-                    updateNavigationButtons();
                     
-                    // Alt 태그 자동 생성 (다중 이미지 인덱스 고려)
+                    // 네비게이션 UI 업데이트 (중요!)
+                    updateImageNavigation();
+                    
+                    // 이미지 정보 업데이트
+                    updateImageInfo(index);
+                    
+                    // Alt 태그 자동 생성
                     if (typeof generateAutoAltText === 'function') {
                         generateAutoAltText(index);
                     }
@@ -141,28 +212,65 @@ function loadImageForCrop(index) {
     reader.readAsDataURL(file);
 }
 
-// 이미지 정보 업데이트
-function updateImageInfo(file) {
+// 이미지 정보 업데이트 (안전하게 처리)
+function updateImageInfo(fileOrIndex) {
     const imageFileName = document.getElementById('imageFileName');
     const imageDimensions = document.getElementById('imageDimensions');
     const currentImageNumber = document.getElementById('currentImageNumber');
     
+    // 현재 이미지 가져오기
+    let currentFile = null;
+    if (typeof fileOrIndex === 'number') {
+        // 인덱스로 호출된 경우
+        currentFile = originalImages[fileOrIndex];
+    } else if (fileOrIndex && fileOrIndex.name) {
+        // File 객체로 호출된 경우
+        currentFile = fileOrIndex;
+    } else {
+        // 현재 인덱스의 파일 사용
+        currentFile = originalImages[currentImageIndex];
+    }
+    
+    if (!currentFile) {
+        console.warn('⚠️ 유효한 파일을 찾을 수 없습니다');
+        return;
+    }
+    
     if (imageFileName) {
-        imageFileName.textContent = file.name;
+        imageFileName.textContent = currentFile.name || 'unknown';
     }
     
     if (currentImageNumber) {
         currentImageNumber.textContent = `${currentImageIndex + 1}/${originalImages.length}`;
     }
     
-    // 이미지 실제 크기 확인
-    const img = new Image();
-    img.onload = function() {
-        if (imageDimensions) {
-            imageDimensions.textContent = `${this.width} × ${this.height}`;
+    // 이미지 실제 크기 확인 (File 객체인 경우만)
+    if (currentFile instanceof File || (currentFile.type && currentFile.type.startsWith('image/'))) {
+        const img = new Image();
+        img.onload = function() {
+            if (imageDimensions) {
+                imageDimensions.textContent = `${this.width} × ${this.height}`;
+            }
+        };
+        img.onerror = function() {
+            if (imageDimensions) {
+                imageDimensions.textContent = '크기 확인 불가';
+            }
+        };
+        
+        try {
+            img.src = URL.createObjectURL(currentFile);
+        } catch (error) {
+            console.warn('⚠️ 이미지 URL 생성 실패:', error);
+            if (imageDimensions) {
+                imageDimensions.textContent = '크기 확인 불가';
+            }
         }
-    };
-    img.src = URL.createObjectURL(file);
+    } else {
+        if (imageDimensions) {
+            imageDimensions.textContent = '기존 이미지';
+        }
+    }
 }
 
 // 네비게이션 버튼 업데이트
@@ -471,11 +579,47 @@ function setupEventListeners() {
     if (elements.buttons.prevImage) {
         elements.buttons.prevImage.addEventListener('click', goToPreviousImage);
     }
-    if (elements.buttons.nextImage) {
-        elements.buttons.nextImage.addEventListener('click', goToNextImage);
+    
+    // 새로운 통합 버튼들 - 이벤트 위임 사용 (DOM 생성 시점과 무관하게 작동)
+    document.addEventListener('click', function(event) {
+        if (event.target && event.target.id === 'nextAndSaveBtn') {
+            debugLog.log('저장 후 다음 버튼 클릭 감지 (이벤트 위임)', {
+                target: event.target.outerHTML,
+                currentTime: Date.now()
+            });
+            debugLog.checkState();
+            debugLog.checkDOM();
+            event.preventDefault();
+            saveCurrentAndGoNext();
+        } else if (event.target && event.target.id === 'saveAndCompleteBtn') {
+            debugLog.log('저장 후 완료 버튼 클릭 감지 (이벤트 위임)', {
+                target: event.target.outerHTML,
+                currentTime: Date.now()
+            });
+            debugLog.checkState();
+            debugLog.checkDOM();
+            event.preventDefault();
+            saveCurrentAndComplete();
+        }
+    });
+    
+    // 기존 방식도 유지 (이중 안전장치)
+    const nextAndSaveBtn = document.getElementById('nextAndSaveBtn');
+    if (nextAndSaveBtn) {
+        nextAndSaveBtn.addEventListener('click', function(event) {
+            console.log('🎯 저장 후 다음 버튼 클릭 (직접 리스너)');
+            event.preventDefault();
+            saveCurrentAndGoNext();
+        });
     }
-    if (elements.buttons.cropCurrent) {
-        elements.buttons.cropCurrent.addEventListener('click', cropCurrentImage);
+    
+    const saveAndCompleteBtn = document.getElementById('saveAndCompleteBtn');
+    if (saveAndCompleteBtn) {
+        saveAndCompleteBtn.addEventListener('click', function(event) {
+            console.log('🎯 저장 후 완료 버튼 클릭 (직접 리스너)');
+            event.preventDefault();
+            saveCurrentAndComplete();
+        });
     }
     
     // 압축 단계 버튼들
@@ -708,7 +852,7 @@ function getFacilityName() {
     return '시설';
 }
 
-// 키워드 클릭 처리
+// 키워드 클릭 처리 (전역으로 노출)
 function handleKeywordClick(keyword) {
     console.log('🏷️ 키워드 클릭됨:', keyword);
     
@@ -735,15 +879,22 @@ function handleKeywordClick(keyword) {
         updateFileNamePreview();
     }
     
-    // Alt 텍스트에 키워드 추가
+    // Alt 텍스트에 키워드 추가 (더 자연스러운 방식)
     if (altTextInput) {
         const currentAlt = altTextInput.value.trim();
         let newAlt;
         
         if (currentAlt === '') {
+            // 새로 생성하는 경우 자연스러운 형태로
             newAlt = `${facilityName} ${keyword} 사진`;
         } else if (!currentAlt.includes(keyword)) {
-            newAlt = `${currentAlt} ${keyword}`;
+            // 기존 텍스트에 키워드 추가
+            if (currentAlt.endsWith('사진')) {
+                // "시설 사진" → "시설 로비 사진"
+                newAlt = currentAlt.replace('사진', `${keyword} 사진`);
+            } else {
+                newAlt = `${currentAlt} ${keyword}`;
+            }
         } else {
             newAlt = currentAlt; // 이미 포함된 경우 변경하지 않음
         }
@@ -751,26 +902,39 @@ function handleKeywordClick(keyword) {
         altTextInput.value = newAlt;
     }
     
-    // 버튼 일시적 하이라이트 효과
-    const button = document.querySelector(`[data-keyword="${keyword}"]`);
+    // 버튼 토글 효과 (선택/해제)
+    const koreanKeyword = document.querySelector(`[onclick*="${keyword}"]`)?.dataset.keyword;
+    const button = document.querySelector(`[onclick*="${keyword}"]`);
+    
     if (button) {
-        button.classList.add('btn-success');
-        button.classList.remove('btn-outline-primary', 'btn-outline-success', 'btn-outline-warning');
-        setTimeout(() => {
+        if (button.classList.contains('btn-success')) {
+            // 이미 선택된 키워드 해제
             button.classList.remove('btn-success');
-            const smallElement = button.parentElement.parentElement?.querySelector('small');
-            if (smallElement && smallElement.textContent) {
-                if (smallElement.textContent.includes('시설 구역')) {
-                    button.classList.add('btn-outline-primary');
-                } else if (smallElement.textContent.includes('시설 종류')) {
-                    button.classList.add('btn-outline-success');
-                } else {
-                    button.classList.add('btn-outline-warning');
-                }
+            if (button.closest('[class*="mb-2"]')?.querySelector('small')?.textContent === '기본') {
+                button.classList.add('btn-outline-primary');
+            } else if (button.closest('[class*="mb-2"]')?.querySelector('small')?.textContent === '공간') {
+                button.classList.add('btn-outline-info');
             } else {
-                button.classList.add('btn-outline-primary'); // 기본값
+                button.classList.add('btn-outline-success');
             }
-        }, 500);
+            
+            // 파일명에서 키워드 제거
+            if (imageNameInput && imageNameInput.value.includes(keyword)) {
+                imageNameInput.value = imageNameInput.value.replace(new RegExp(`-${keyword}`, 'g'), '');
+                updateFileNamePreview();
+            }
+            // Alt 텍스트에서 키워드 제거
+            if (altTextInput && altTextInput.value.includes(keyword)) {
+                altTextInput.value = altTextInput.value.replace(new RegExp(keyword, 'g'), '').trim();
+            }
+            
+            console.log(`➖ 키워드 해제: ${keyword}`);
+        } else {
+            // 새로운 키워드 선택
+            button.classList.remove('btn-outline-primary', 'btn-outline-info', 'btn-outline-success');
+            button.classList.add('btn-success');
+            console.log(`➕ 키워드 선택: ${keyword}`);
+        }
     }
 }
 
@@ -1503,7 +1667,7 @@ function initializeCropper() {
     console.log('🔧 크롭퍼 초기화 - 16:9 비율 (프로필 방식)');
     
     // 기존 크롭퍼 정리
-    if (cropper) {
+    if (facilityCropper) {
         // 윈도우 리사이즈 이벤트 리스너 제거
         window.removeEventListener('resize', handleWindowResize);
         
@@ -1516,12 +1680,12 @@ function initializeCropper() {
             cropContainer._smartScrollHandler = null;
         }
         
-        cropper.destroy();
-        cropper = null;
+        facilityCropper.destroy();
+        facilityCropper = null;
         console.log('🧹 기존 크롭퍼 및 이벤트 리스너 정리 완료');
     }
     
-    cropper = new Cropper(elements.cropImage, {
+    facilityCropper = new Cropper(elements.cropImage, {
         aspectRatio: 16 / 9, // 시설 사진은 16:9 비율 (프로필과 유일한 차이점)
         viewMode: 1, // 크롭 박스를 캔버스 내부로 제한
         dragMode: 'move',
@@ -1543,7 +1707,7 @@ function initializeCropper() {
         minCropBoxHeight: 90, // 16:9 비율에 맞춘 더 작은 최소 높이
         ready() {
             console.log('✅ 크롭퍼 준비 완료');
-            console.log('📐 컨테이너 크기:', cropper.getContainerData());
+            console.log('📐 컨테이너 크기:', facilityCropper.getContainerData());
             updatePreview();
             // 프로필과 동일: 크롭퍼 준비 완료 후 스마트 스크롤 설정
             setTimeout(() => {
@@ -1559,8 +1723,8 @@ function initializeCropper() {
 
 // 스마트 스크롤 기능 (프로필과 정확히 동일)
 function setupSmartScroll() {
-    if (!cropper || !elements.cropImage) {
-        console.warn('⚠️ setupSmartScroll: cropper 또는 cropImage가 없음');
+    if (!facilityCropper || !elements.cropImage) {
+        console.warn('⚠️ setupSmartScroll: facilityCropper 또는 cropImage가 없음');
         return;
     }
     
@@ -1587,11 +1751,11 @@ function setupSmartScroll() {
     
     // 최강 줌 리미트 차단 이벤트 리스너
     const wheelHandler = function(event) {
-        if (!cropper) return;
+        if (!facilityCropper) return;
         
         // 현재 줌 레벨 확인 (더 정확한 방식)
-        const canvasData = cropper.getCanvasData();
-        const containerData = cropper.getContainerData();
+        const canvasData = facilityCropper.getCanvasData();
+        const containerData = facilityCropper.getContainerData();
         const currentZoom = canvasData.naturalWidth > 0 ? canvasData.width / canvasData.naturalWidth : 1;
         
         const isZoomingIn = event.deltaY < 0;  // 휠을 위로 올리면 확대
@@ -1611,13 +1775,13 @@ function setupSmartScroll() {
             event.stopImmediatePropagation();
             
             // Cropper.js 내부 줌 기능도 강제 차단
-            if (cropper.zoom) {
-                const originalZoom = cropper.zoom;
-                cropper.zoom = function() { 
+            if (facilityCropper.zoom) {
+                const originalZoom = facilityCropper.zoom;
+                facilityCropper.zoom = function() { 
                     console.log('🚫 Cropper.zoom() 호출 차단됨'); 
                     return false;
                 };
-                setTimeout(() => { cropper.zoom = originalZoom; }, 100);
+                setTimeout(() => { facilityCropper.zoom = originalZoom; }, 100);
             }
             
             updateZoomIndicator(currentZoom, '최대 확대');
@@ -1635,13 +1799,13 @@ function setupSmartScroll() {
             event.stopImmediatePropagation();
             
             // Cropper.js 내부 줌 기능도 강제 차단
-            if (cropper.zoom) {
-                const originalZoom = cropper.zoom;
-                cropper.zoom = function() { 
+            if (facilityCropper.zoom) {
+                const originalZoom = facilityCropper.zoom;
+                facilityCropper.zoom = function() { 
                     console.log('🚫 Cropper.zoom() 호출 차단됨'); 
                     return false;
                 };
-                setTimeout(() => { cropper.zoom = originalZoom; }, 100);
+                setTimeout(() => { facilityCropper.zoom = originalZoom; }, 100);
             }
             
             updateZoomIndicator(currentZoom, '최소 축소');
@@ -1656,7 +1820,7 @@ function setupSmartScroll() {
         event.stopPropagation();
         
         const zoomDelta = isZoomingIn ? 0.1 : -0.1;
-        cropper.zoom(zoomDelta);
+        facilityCropper.zoom(zoomDelta);
         
         const newZoom = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, currentZoom + zoomDelta));
         updateZoomIndicator(newZoom, isZoomingIn ? '확대' : '축소');
@@ -1720,7 +1884,7 @@ function updateZoomIndicator(zoomLevel, status) {
 
 // 브라우저 창 크기 변경 핸들러 (작은 창에서 정상 작동하는 방식 유지)
 function handleWindowResize() {
-    if (!cropper) return;
+    if (!facilityCropper) return;
     
     console.log('🔄 브라우저 창 크기 변경 감지 - responsive:true 모드로 자동 대응');
     
@@ -1729,7 +1893,7 @@ function handleWindowResize() {
     clearTimeout(window.resizeTimeout);
     window.resizeTimeout = setTimeout(() => {
         try {
-            const containerData = cropper.getContainerData();
+            const containerData = facilityCropper.getContainerData();
             console.log('📐 자동 조정된 컨테이너 크기:', containerData);
             
             // 스마트 스크롤만 재설정 (작은 창에서 정상 작동하는 방식)
@@ -1745,12 +1909,12 @@ function handleWindowResize() {
 
 // 미리보기 업데이트 (16:9 비율)
 function updatePreview() {
-    if (!cropper || !elements.previewCanvas) return;
+    if (!facilityCropper || !elements.previewCanvas) return;
     
     console.log('🖼️ 미리보기 업데이트 시작');
     
     // 크롭된 이미지를 캔버스에 그리기 (16:9 비율)
-    const canvas = cropper.getCroppedCanvas({
+    const canvas = facilityCropper.getCroppedCanvas({
         width: 192,
         height: 108, // 16:9 비율
         imageSmoothingEnabled: true,
@@ -1767,15 +1931,15 @@ function updatePreview() {
 
 // 이미지 크기 정보 업데이트
 function updateImageDimensions() {
-    if (!cropper || !elements.imageDimensions) return;
+    if (!facilityCropper || !elements.imageDimensions) return;
     
-    const imageData = cropper.getImageData();
+    const imageData = facilityCropper.getImageData();
     elements.imageDimensions.textContent = `${Math.round(imageData.naturalWidth)} × ${Math.round(imageData.naturalHeight)}`;
 }
 
 // 현재 이미지 크롭 (프로필 방식 + 로딩 상태)
 function cropCurrentImage() {
-    if (!cropper) {
+    if (!facilityCropper) {
         alert('크롭퍼가 초기화되지 않았습니다.');
         return;
     }
@@ -1788,7 +1952,7 @@ function cropCurrentImage() {
     
     try {
         // 크롭된 이미지 생성 (16:9 비율)
-        const canvas = cropper.getCroppedCanvas({
+        const canvas = facilityCropper.getCroppedCanvas({
             width: 800,
             height: 450, // 16:9 비율
             imageSmoothingEnabled: true,
@@ -2263,9 +2427,9 @@ function goToUploadStep() {
     
     // 초기화 (프로필과 동일)
     if (elements.imageInput) elements.imageInput.value = '';
-    if (cropper) {
-        cropper.destroy();
-        cropper = null;
+    if (facilityCropper) {
+        facilityCropper.destroy();
+        facilityCropper = null;
     }
     originalImages = [];
     croppedImages = [];
@@ -2579,20 +2743,20 @@ function formatFileSize(bytes) {
 
 // 크롭퍼 줌 (프로필과 동일)
 function zoomCropper(ratio) {
-    if (!cropper) return;
-    cropper.zoom(ratio);
+    if (!facilityCropper) return;
+    facilityCropper.zoom(ratio);
 }
 
 // 크롭퍼 회전 (프로필과 동일)
 function rotateCropper(degree) {
-    if (!cropper) return;
-    cropper.rotate(degree);
+    if (!facilityCropper) return;
+    facilityCropper.rotate(degree);
 }
 
 // 크롭퍼 리셋 (프로필과 동일)
 function resetCropper() {
-    if (!cropper) return;
-    cropper.reset();
+    if (!facilityCropper) return;
+    facilityCropper.reset();
 }
 
 // 이전 이미지로 이동 (설정 저장 포함)
@@ -2703,8 +2867,8 @@ function setButtonLoading(button, isLoading, loadingText = '처리 중...') {
 
 // 페이지 언로드 시 정리 (프로필과 동일)
 window.addEventListener('beforeunload', function() {
-    if (cropper) {
-        cropper.destroy();
+    if (facilityCropper) {
+        facilityCropper.destroy();
     }
 });
 
@@ -3429,4 +3593,325 @@ window.handleSelectedImages = function(selectedImages) {
 // 전역 함수들은 facility-image-manage.js에서 처리됨 (Thymeleaf 충돌 방지)
 // window.setMainImage와 window.deleteImage는 별도 파일에서 정의하여 인라인 충돌 해결
 
-console.log('📋 facility-image-cropper.js 로드 완료 - 폴더 선택 및 관리 기능 포함');
+// 이미지 네비게이션 함수들
+function goToNextImage() {
+    if (currentImageIndex < originalImages.length - 1) {
+        saveCurrentImageData(); // 현재 이미지 데이터 저장
+        currentImageIndex++;
+        loadImageForCrop(currentImageIndex);
+        restoreImageData(currentImageIndex); // 이미지 데이터 복원
+        updateImageNavigation();
+    }
+}
+
+function goToPreviousImage() {
+    if (currentImageIndex > 0) {
+        saveCurrentImageData(); // 현재 이미지 데이터 저장
+        currentImageIndex--;
+        loadImageForCrop(currentImageIndex);
+        restoreImageData(currentImageIndex); // 이미지 데이터 복원
+        updateImageNavigation();
+    }
+}
+
+// 현재 이미지 크롭 후 다음으로 이동
+async function saveCurrentAndGoNext() {
+    debugLog.log('saveCurrentAndGoNext 함수 시작');
+    debugLog.checkState();
+    
+    try {
+        debugLog.log('현재 이미지 크롭 후 다음 이미지로 이동 시작', {
+            currentIndex: window.FacilityCropperNamespace.currentImageIndex,
+            totalImages: window.FacilityCropperNamespace.originalImages ? window.FacilityCropperNamespace.originalImages.length : 'null'
+        });
+        
+        // 현재 이미지 크롭 및 저장
+        debugLog.log('cropAndSaveCurrentImage 호출 전');
+        await cropAndSaveCurrentImage();
+        debugLog.log('cropAndSaveCurrentImage 완료');
+        
+        // 다음 이미지로 이동
+        if (window.FacilityCropperNamespace.currentImageIndex < window.FacilityCropperNamespace.originalImages.length - 1) {
+            window.FacilityCropperNamespace.currentImageIndex++;
+            loadImageForCrop(window.FacilityCropperNamespace.currentImageIndex);
+            restoreImageData(window.FacilityCropperNamespace.currentImageIndex);
+            updateImageNavigation();
+        } else {
+            // 마지막 이미지인 경우 관리 단계로 이동
+            console.log('✅ 마지막 이미지 완료 - 관리 단계로 이동');
+            goToManageStep();
+        }
+        
+    } catch (error) {
+        console.error('❌ 이미지 저장 후 이동 중 오류:', error);
+        alert('이미지 저장 중 오류가 발생했습니다: ' + error.message);
+    }
+}
+
+// 현재 이미지 크롭 후 완료
+async function saveCurrentAndComplete() {
+    try {
+        console.log('✅ 현재 이미지 크롭 후 전체 완료');
+        
+        // 현재 이미지 크롭 및 저장
+        await cropAndSaveCurrentImage();
+        
+        // 관리 단계로 이동
+        goToManageStep();
+        
+    } catch (error) {
+        console.error('❌ 이미지 저장 후 완료 중 오류:', error);
+        alert('이미지 저장 중 오류가 발생했습니다: ' + error.message);
+    }
+}
+
+// 현재 이미지 크롭 및 저장
+async function cropAndSaveCurrentImage() {
+    return new Promise((resolve, reject) => {
+        debugLog.log('cropAndSaveCurrentImage 시작', {
+            facilityCropper: !!facilityCropper,
+            originalImagesLength: originalImages ? originalImages.length : 'null',
+            currentImageIndex: currentImageIndex
+        });
+        
+        if (!window.FacilityCropperNamespace.cropper) {
+            debugLog.error('크롭퍼가 초기화되지 않았습니다');
+            reject(new Error('크롭퍼가 초기화되지 않았습니다'));
+            return;
+        }
+        
+        if (!window.FacilityCropperNamespace.originalImages || window.FacilityCropperNamespace.originalImages.length === 0) {
+            debugLog.error('원본 이미지가 없습니다');
+            reject(new Error('원본 이미지가 없습니다'));
+            return;
+        }
+        
+        if (window.FacilityCropperNamespace.currentImageIndex < 0 || window.FacilityCropperNamespace.currentImageIndex >= window.FacilityCropperNamespace.originalImages.length) {
+            debugLog.error('잘못된 이미지 인덱스', { currentImageIndex: window.FacilityCropperNamespace.currentImageIndex, totalImages: window.FacilityCropperNamespace.originalImages.length });
+            reject(new Error('잘못된 이미지 인덱스'));
+            return;
+        }
+        
+        debugLog.log('현재 이미지 데이터 저장 시작');
+        // 현재 이미지 데이터 저장
+        saveCurrentImageData();
+        debugLog.log('현재 이미지 데이터 저장 완료');
+        
+        debugLog.log('크롭된 캔버스 생성 시작');
+        // 크롭된 이미지 데이터 생성
+        const canvas = window.FacilityCropperNamespace.cropper.getCroppedCanvas({
+            width: 960,
+            height: 540,
+            imageSmoothingEnabled: true,
+            imageSmoothingQuality: 'high'
+        });
+        
+        if (!canvas) {
+            debugLog.error('크롭된 캔버스 생성 실패');
+            reject(new Error('크롭된 이미지를 생성할 수 없습니다'));
+            return;
+        }
+        
+        debugLog.log('크롭된 캔버스 생성 완료', {
+            canvasWidth: canvas.width,
+            canvasHeight: canvas.height
+        });
+        
+        // 압축 설정 적용
+        const quality = parseFloat(document.getElementById('qualitySlider')?.value || '0.8');
+        const format = document.querySelector('input[name="imageFormat"]:checked')?.value || 'jpeg';
+        
+        debugLog.log('압축 설정 적용', { quality, format });
+        
+        let mimeType = 'image/jpeg';
+        if (format === 'webp') mimeType = 'image/webp';
+        if (format === 'avif') mimeType = 'image/avif';
+        
+        debugLog.log('canvas.toBlob() 호출 준비', { mimeType, quality });
+        
+        // 타임아웃 설정 (10초)
+        const timeoutId = setTimeout(() => {
+            debugLog.error('canvas.toBlob() 타임아웃 발생 - 10초 경과');
+            reject(new Error('이미지 처리 타임아웃 (10초 경과)'));
+        }, 10000);
+        
+        debugLog.log('canvas.toBlob() 호출 시작');
+        canvas.toBlob((blob) => {
+            clearTimeout(timeoutId); // 타임아웃 해제
+            
+            if (!blob) {
+                debugLog.error('canvas.toBlob() 결과가 null/undefined');
+                reject(new Error('이미지 압축에 실패했습니다'));
+                return;
+            }
+            
+            debugLog.log('canvas.toBlob() 성공', {
+                blobSize: blob.size,
+                blobType: blob.type,
+                currentIndex: currentImageIndex
+            });
+            
+            // 크롭된 이미지를 원본 이미지 배열에 저장
+            const currentImage = window.FacilityCropperNamespace.originalImages[window.FacilityCropperNamespace.currentImageIndex];
+            currentImage.croppedBlob = blob;
+            currentImage.processed = true;
+            
+            console.log(`✅ 이미지 ${currentImageIndex + 1} 크롭 완료:`, {
+                size: `${blob.size} bytes`,
+                type: blob.type,
+                fileName: currentImage.seoFileName || currentImage.name
+            });
+            
+            resolve(blob);
+        }, mimeType, quality);
+    });
+}
+
+// 현재 이미지의 키워드/Alt 텍스트 데이터 저장
+function saveCurrentImageData() {
+    if (currentImageIndex >= 0 && originalImages[currentImageIndex]) {
+        const currentImage = originalImages[currentImageIndex];
+        const seoFileName = document.getElementById('seoFileName');
+        const altText = document.getElementById('altText');
+        
+        if (seoFileName) {
+            currentImage.seoFileName = seoFileName.value;
+        }
+        if (altText) {
+            currentImage.altText = altText.value;
+        }
+        
+        // 선택된 키워드들 저장
+        const selectedKeywords = Array.from(document.querySelectorAll('.keyword-btn.btn-success'))
+            .map(btn => btn.dataset.keyword);
+        currentImage.selectedKeywords = selectedKeywords;
+        
+        console.log(`💾 이미지 ${currentImageIndex + 1} 데이터 저장:`, {
+            seoFileName: currentImage.seoFileName,
+            altText: currentImage.altText,
+            selectedKeywords: currentImage.selectedKeywords
+        });
+    }
+}
+
+// 이미지 데이터 복원
+function restoreImageData(index) {
+    if (index >= 0 && originalImages[index]) {
+        const currentImage = originalImages[index];
+        const seoFileName = document.getElementById('seoFileName');
+        const altText = document.getElementById('altText');
+        
+        // 파일명 복원
+        if (seoFileName && currentImage.seoFileName) {
+            seoFileName.value = currentImage.seoFileName;
+        } else if (seoFileName) {
+            seoFileName.value = ''; // 빈 값으로 초기화
+        }
+        
+        // Alt 텍스트 복원
+        if (altText && currentImage.altText) {
+            altText.value = currentImage.altText;
+        } else if (altText) {
+            altText.value = ''; // 빈 값으로 초기화
+        }
+        
+        // 키워드 버튼 상태 복원
+        resetKeywordButtons();
+        if (currentImage.selectedKeywords) {
+            currentImage.selectedKeywords.forEach(keyword => {
+                const button = document.querySelector(`[data-keyword="${keyword}"]`);
+                if (button) {
+                    button.classList.remove('btn-outline-primary', 'btn-outline-info', 'btn-outline-success');
+                    button.classList.add('btn-success');
+                }
+            });
+        }
+        
+        console.log(`🔄 이미지 ${index + 1} 데이터 복원 완료`);
+    }
+}
+
+// 키워드 버튼 상태 초기화
+function resetKeywordButtons() {
+    document.querySelectorAll('.keyword-btn').forEach(button => {
+        button.classList.remove('btn-success');
+        if (button.closest('[class*="mb-2"]')?.querySelector('small')?.textContent === '기본') {
+            button.classList.add('btn-outline-primary');
+        } else if (button.closest('[class*="mb-2"]')?.querySelector('small')?.textContent === '공간') {
+            button.classList.add('btn-outline-info');
+        } else {
+            button.classList.add('btn-outline-success');
+        }
+    });
+}
+
+// 이미지 네비게이션 UI 업데이트
+function updateImageNavigation() {
+    console.log('🔄 네비게이션 업데이트 시작');
+    console.log('📊 현재 상태:', {
+        currentImageIndex: currentImageIndex,
+        originalImagesLength: originalImages ? originalImages.length : 'null',
+        originalImagesType: typeof originalImages
+    });
+    
+    const prevBtn = document.getElementById('prevImageBtn');
+    const nextAndSaveBtn = document.getElementById('nextAndSaveBtn');
+    const saveAndCompleteBtn = document.getElementById('saveAndCompleteBtn');
+    const currentImageNumber = document.getElementById('currentImageNumber'); // 상단 배지
+    const navigationImageNumber = document.getElementById('navigationImageNumber'); // 하단 네비게이션
+    
+    // 이전 버튼: 첫 번째 이미지가 아닐 때만 표시
+    if (prevBtn) {
+        prevBtn.style.display = currentImageIndex > 0 ? 'inline-block' : 'none';
+    }
+    
+    // 저장 후 다음 버튼: 마지막 이미지가 아닐 때만 표시
+    if (nextAndSaveBtn) {
+        if (currentImageIndex < originalImages.length - 1) {
+            nextAndSaveBtn.style.display = 'inline-block';
+            nextAndSaveBtn.innerHTML = '<i class="fas fa-save me-1"></i>저장 후 다음<i class="fas fa-chevron-right ms-1"></i>';
+        } else {
+            nextAndSaveBtn.style.display = 'none';
+        }
+    }
+    
+    // 저장 후 완료 버튼: 항상 표시하되 텍스트 변경
+    if (saveAndCompleteBtn) {
+        if (currentImageIndex === originalImages.length - 1) {
+            saveAndCompleteBtn.innerHTML = '<i class="fas fa-check me-2"></i>마지막 이미지 저장 후 완료';
+            saveAndCompleteBtn.classList.remove('btn-success');
+            saveAndCompleteBtn.classList.add('btn-primary');
+        } else {
+            saveAndCompleteBtn.innerHTML = '<i class="fas fa-check me-2"></i>저장 후 완료';
+            saveAndCompleteBtn.classList.remove('btn-primary');
+            saveAndCompleteBtn.classList.add('btn-success');
+        }
+    }
+    
+    // 이미지 번호 표시 - 안전하게 체크
+    if (!originalImages || originalImages.length === 0) {
+        console.warn('⚠️ originalImages가 비어있거나 null입니다');
+        return;
+    }
+    
+    const imageCountText = `${currentImageIndex + 1}/${originalImages.length}`;
+    const navigationImageCountText = `${currentImageIndex + 1} / ${originalImages.length}`;
+    
+    if (currentImageNumber) {
+        currentImageNumber.textContent = imageCountText; // 상단: "1/5" 형식
+        console.log('✅ 상단 이미지 번호 업데이트:', imageCountText);
+    }
+    if (navigationImageNumber) {
+        navigationImageNumber.textContent = navigationImageCountText; // 하단: "1 / 5" 형식
+        console.log('✅ 하단 이미지 번호 업데이트:', navigationImageCountText);
+    }
+    
+    console.log(`📊 네비게이션 업데이트 완료: ${currentImageIndex + 1}/${originalImages.length}`);
+}
+
+// 키워드 클릭 함수를 전역으로 노출 (HTML onclick에서 사용)
+window.handleKeywordClick = handleKeywordClick;
+window.goToNextImage = goToNextImage;
+window.goToPreviousImage = goToPreviousImage;
+
+console.log('📋 facility-image-facilityCropper.js 로드 완료 - 폴더 선택 및 관리 기능 포함');
