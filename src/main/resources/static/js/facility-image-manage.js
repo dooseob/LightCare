@@ -286,63 +286,62 @@ function setupEventDelegation() {
             return;
         }
         
-        // Bootstrap 드롭다운 토글 (간소화된 방식)
-        if (target.closest('[data-bs-toggle="dropdown"]')) {
+        // Bootstrap 드롭다운 토글 (안정화된 방식)
+        if (target.closest('[data-bs-toggle="dropdown"]') || target.classList.contains('dropdown-toggle')) {
             console.log('🔽 드롭다운 토글 클릭 감지');
-            const dropdownToggle = target.closest('[data-bs-toggle="dropdown"]');
+            const dropdownToggle = target.closest('[data-bs-toggle="dropdown"]') || target;
             
             event.preventDefault();
             event.stopPropagation();
             
-            // Bootstrap 5 Dropdown API 사용
+            console.log('🔍 드롭다운 토글 요소:', {
+                element: dropdownToggle,
+                id: dropdownToggle.id,
+                className: dropdownToggle.className,
+                hasBootstrap: typeof bootstrap !== 'undefined',
+                hasDropdown: typeof bootstrap !== 'undefined' && !!bootstrap.Dropdown
+            });
+            
+            // 모든 다른 드롭다운 닫기 (충돌 방지)
+            closeAllDropdowns();
+            
+            // Bootstrap 5 Dropdown API 사용 시도
             if (typeof bootstrap !== 'undefined' && bootstrap.Dropdown) {
                 try {
+                    console.log('🔧 Bootstrap Dropdown API 사용');
                     let dropdown = bootstrap.Dropdown.getInstance(dropdownToggle);
+                    
                     if (!dropdown) {
-                        dropdown = new bootstrap.Dropdown(dropdownToggle);
+                        console.log('💫 새 Dropdown 인스턴스 생성');
+                        dropdown = new bootstrap.Dropdown(dropdownToggle, {
+                            autoClose: true,
+                            boundary: 'viewport'
+                        });
                     }
+                    
                     dropdown.toggle();
                     console.log('✅ Bootstrap 드롭다운 토글 성공');
+                    
                 } catch (error) {
                     console.error('❌ Bootstrap 드롭다운 오류:', error);
-                    
-                    // 폴백: 수동 토글
-                    const dropdownMenu = dropdownToggle.nextElementSibling;
-                    if (dropdownMenu && dropdownMenu.classList.contains('dropdown-menu')) {
-                        dropdownMenu.classList.toggle('show');
-                        dropdownToggle.classList.toggle('show');
-                        console.log('🔄 수동 드롭다운 토글 완료');
-                    }
+                    fallbackDropdownToggle(dropdownToggle);
                 }
             } else {
                 console.warn('⚠️ Bootstrap이 로드되지 않음 - 수동 토글');
-                const dropdownMenu = dropdownToggle.nextElementSibling;
-                if (dropdownMenu && dropdownMenu.classList.contains('dropdown-menu')) {
-                    // 다른 열린 드롭다운 닫기
-                    document.querySelectorAll('.dropdown-menu.show').forEach(menu => {
-                        if (menu !== dropdownMenu) {
-                            menu.classList.remove('show');
-                        }
-                    });
-                    document.querySelectorAll('[data-bs-toggle="dropdown"].show').forEach(toggle => {
-                        if (toggle !== dropdownToggle) {
-                            toggle.classList.remove('show');
-                        }
-                    });
-                    
-                    // 현재 드롭다운 토글
-                    dropdownMenu.classList.toggle('show');
-                    dropdownToggle.classList.toggle('show');
-                    console.log('🔄 수동 드롭다운 토글 완료');
-                }
+                fallbackDropdownToggle(dropdownToggle);
             }
             return;
         }
         
-        // 파일 선택 버튼들은 facility-image-cropper.js에서 캡처링 단계에서 처리됨
-        if (target.id === 'fileSelectBtn' || target.id === 'folderSelectBtn') {
-            console.log(`📂 ${target.id} 클릭 - facility-image-cropper.js에서 이미 처리됨`);
-            // 이미 처리된 이벤트이므로 여기서는 무시
+        // 파일 선택 버튼은 facility-image-cropper.js에서 처리됨
+        if (target.id === 'fileSelectBtn') {
+            console.log(`📂 ${target.id} 클릭 - facility-image-cropper.js에서 처리됨`);
+            return;
+        }
+        
+        // 폴더 선택 버튼은 facility-folder-selection.js에서 처리됨
+        if (target.id === 'folderSelectBtn') {
+            console.log(`📂 ${target.id} 클릭 - facility-folder-selection.js에서 처리됨`);
             return;
         }
         
@@ -366,6 +365,85 @@ function setupEventDelegation() {
     });
     
     console.log('✅ 이벤트 위임 설정 완료 (상세 로그 포함)');
+}
+
+// 모든 드롭다운 닫기 헬퍼 함수
+function closeAllDropdowns() {
+    console.log('🔐 모든 드롭다운 닫기');
+    
+    // Bootstrap 인스턴스가 있는 드롭다운들 닫기
+    if (typeof bootstrap !== 'undefined' && bootstrap.Dropdown) {
+        document.querySelectorAll('[data-bs-toggle="dropdown"]').forEach(toggle => {
+            const dropdown = bootstrap.Dropdown.getInstance(toggle);
+            if (dropdown) {
+                try {
+                    dropdown.hide();
+                } catch (e) {
+                    console.warn('드롭다운 닫기 실패:', e);
+                }
+            }
+        });
+    }
+    
+    // 수동으로 열린 드롭다운들 닫기
+    document.querySelectorAll('.dropdown-menu.show').forEach(menu => {
+        menu.classList.remove('show');
+    });
+    document.querySelectorAll('[data-bs-toggle="dropdown"].show').forEach(toggle => {
+        toggle.classList.remove('show');
+    });
+    document.querySelectorAll('.dropdown-toggle.show').forEach(toggle => {
+        toggle.classList.remove('show');
+    });
+}
+
+// 수동 드롭다운 토글 함수
+function fallbackDropdownToggle(dropdownToggle) {
+    console.log('🔄 수동 드롭다운 토글 시작');
+    
+    const dropdownMenu = dropdownToggle.nextElementSibling;
+    
+    if (!dropdownMenu || !dropdownMenu.classList.contains('dropdown-menu')) {
+        console.error('❌ 드롭다운 메뉴를 찾을 수 없음');
+        return;
+    }
+    
+    console.log('🔍 드롭다운 메뉴:', {
+        menu: dropdownMenu,
+        isShown: dropdownMenu.classList.contains('show'),
+        toggleShown: dropdownToggle.classList.contains('show')
+    });
+    
+    // 현재 상태 토글
+    const isCurrentlyShown = dropdownMenu.classList.contains('show');
+    
+    if (isCurrentlyShown) {
+        // 닫기
+        dropdownMenu.classList.remove('show');
+        dropdownToggle.classList.remove('show');
+        dropdownToggle.setAttribute('aria-expanded', 'false');
+        console.log('✅ 드롭다운 닫힘');
+    } else {
+        // 열기
+        dropdownMenu.classList.add('show');
+        dropdownToggle.classList.add('show');
+        dropdownToggle.setAttribute('aria-expanded', 'true');
+        console.log('✅ 드롭다운 열림');
+        
+        // 외부 클릭 시 닫기 설정
+        setTimeout(() => {
+            const closeHandler = (event) => {
+                if (!dropdownToggle.contains(event.target) && !dropdownMenu.contains(event.target)) {
+                    dropdownMenu.classList.remove('show');
+                    dropdownToggle.classList.remove('show');
+                    dropdownToggle.setAttribute('aria-expanded', 'false');
+                    document.removeEventListener('click', closeHandler);
+                    console.log('👆 외부 클릭으로 드롭다운 닫힘');
+                }
+            };
+            document.addEventListener('click', closeHandler);
+        }, 10);
+    }
 }
 
 // 메시지 표시 함수
