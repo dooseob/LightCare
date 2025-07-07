@@ -164,7 +164,7 @@ function executeMainImageSetting(imageId) {
     // 버튼 비활성화
     disableAllActionButtons(true);
     
-    fetch(`/api/facility/images/${imageId}/set-main`, {
+    fetch(`/facility/facility-images/${imageId}/set-main`, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
@@ -214,7 +214,7 @@ function executeImageDeletion(imageId) {
     // 버튼 비활성화
     disableAllActionButtons(true);
     
-    fetch(`/api/facility/images/${imageId}`, {
+    fetch(`/facility/facility-images/${imageId}`, {
         method: 'DELETE',
         headers: {
             'Content-Type': 'application/json',
@@ -383,7 +383,7 @@ function loadExistingImages() {
         return;
     }
     
-    fetch(`/api/facility/${window.facilityImageStep3.facilityId}/images`)
+    fetch(`/facility/facility-images/${window.facilityImageStep3.facilityId}`)
         .then(response => response.json())
         .then(data => {
             if (data.success && data.images) {
@@ -406,7 +406,7 @@ function refreshImageGrid() {
     }
     
     // 현재 이미지 목록 다시 로드
-    fetch(`/api/facility/${window.facilityImageStep3.facilityId}/images`)
+    fetch(`/facility/facility-images/${window.facilityImageStep3.facilityId}`)
         .then(response => response.json())
         .then(data => {
             if (data.success && data.images) {

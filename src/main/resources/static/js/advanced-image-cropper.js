@@ -695,23 +695,7 @@ class AdvancedImageCropper {
                 zoomIndicator.style.display = 'none';
             }
         }, 3000);
-                console.log('📉 최소 축소 근처 - 페이지 스크롤 실행');
-                
-                // 페이지 스크롤을 더 부드럽게 실행
-                const scrollAmount = event.deltaY * 0.5; // 스크롤 강도 조절
-                window.scrollBy({
-                    top: scrollAmount,
-                    behavior: 'smooth'
-                });
-                return;
-            }
-            
-            // 이미지 확대/축소 범위 내에서는 기본 스크롤 차단하고 줌 적용
-            event.preventDefault();
-            event.stopPropagation();
-            
-            const zoomDelta = isZoomingIn ? 0.1 : -0.1;
-            this.cropper.zoom(zoomDelta);
+    }
             
             // 줌 표시기 업데이트
             const newZoom = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, currentZoom + zoomDelta));

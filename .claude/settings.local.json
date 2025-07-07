@@ -19,7 +19,8 @@
       "Bash(ls:*)",
       "Bash(javac:*)",
       "Bash(java:*)",
-      "Bash(mv:*)"
+      "Bash(mv:*)",
+      "Bash(node:*)"
     ],
     "deny": []
   }

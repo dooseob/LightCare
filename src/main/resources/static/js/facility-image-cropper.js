@@ -2252,7 +2252,7 @@ function updateFinalImagesGrid() {
     finalImagesGrid.innerHTML = '<div class="text-center"><i class="fas fa-spinner fa-spin"></i> 저장된 이미지 목록을 불러오는 중...</div>';
     
     // 서버에서 실제 저장된 이미지 목록을 가져와서 표시
-    fetch(`/api/facility/${facilityId}/images`)
+    fetch(`/facility/facility-images/${facilityId}`)
         .then(response => {
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);
@@ -2587,7 +2587,7 @@ window.deleteImage = function(imageId) {
     
     console.log('🗑️ 이미지 삭제 요청:', imageId);
     
-    fetch(`/api/facility/images/${imageId}`, {
+    fetch(`/facility/facility-images/${imageId}`, {
         method: 'DELETE',
         headers: {
             'Content-Type': 'application/json'
@@ -2865,7 +2865,7 @@ function updateManageImagesGrid() {
     `;
     
     // 서버에서 저장된 이미지 목록 가져오기 (정합성 검증 포함)
-    fetch(`/api/facility/${facilityId}/images`)
+    fetch(`/facility/facility-images/${facilityId}`)
         .then(response => {
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);
@@ -3139,7 +3139,7 @@ function updateFinalSummary() {
     `;
     
     // 서버에서 최종 이미지 정보 가져오기
-    fetch(`/api/facility/${facilityId}/images`)
+    fetch(`/facility/facility-images/${facilityId}`)
         .then(response => response.json())
         .then(images => {
             const mainImage = images.find(img => img.isMainImage);

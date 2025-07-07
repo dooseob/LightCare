@@ -239,7 +239,7 @@ $(document).ready(function() {
 
 function loadFacilityDetail(facilityId) {
     // AJAX로 시설 상세 정보 조회 (통합된 API 사용)
-    $.get(`/api/facility/${facilityId}/info`, function(data) {
+    $.get(`/facility/facility-info/${facilityId}`, function(data) {
         if (data.success) {
             updateFacilityDetail(data.facility);
         } else {

@@ -79,7 +79,7 @@ function setupGlobalFunctions() {
         const buttons = document.querySelectorAll('.set-main-image-btn');
         buttons.forEach(btn => btn.disabled = true);
         
-        fetch(`/api/facility/images/${imageId}/set-main`, {
+        fetch(`/facility/facility-images/${imageId}/set-main`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -159,7 +159,7 @@ function setupGlobalFunctions() {
         const buttons = document.querySelectorAll('.delete-image-btn');
         buttons.forEach(btn => btn.disabled = true);
         
-        fetch(`/api/facility/images/${imageId}`, {
+        fetch(`/facility/facility-images/${imageId}`, {
             method: 'DELETE',
             headers: {
                 'Content-Type': 'application/json',

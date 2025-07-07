@@ -214,22 +214,41 @@ public class FacilityImageService {
                 log.info("업로드 디렉토리 생성: {} - {}", uploadDir, created ? "성공" : "실패");
             }
             
-            // 파일명 생성 (사용자 지정명 우선 처리)
+            // 확장자 먼저 추출 (프로필 이미지 방식 적용)
             String originalFilename = file.getOriginalFilename();
             String extension = "";
+            String baseName = "";
             
             if (originalFilename != null && originalFilename.contains(".")) {
                 extension = originalFilename.substring(originalFilename.lastIndexOf("."));
+                baseName = originalFilename.substring(0, originalFilename.lastIndexOf("."));
+            } else if (originalFilename != null) {
+                baseName = originalFilename;
+                extension = ".jpg"; // 기본 확장자
             }
             
             String finalFileName;
             
             if (customFileName != null && !customFileName.trim().isEmpty()) {
-                // 사용자 지정 파일명 사용
-                String englishBaseName = convertKoreanToEnglish(customFileName.trim());
+                // 사용자 지정 파일명에서도 확장자 분리
+                String userFileName = customFileName.trim();
+                String userBaseName = userFileName;
+                String userExtension = extension; // 원본 파일의 확장자 유지
+                
+                // 사용자 파일명에 확장자가 포함된 경우 분리
+                if (userFileName.contains(".")) {
+                    userBaseName = userFileName.substring(0, userFileName.lastIndexOf("."));
+                    userExtension = userFileName.substring(userFileName.lastIndexOf("."));
+                }
+                
+                // 한글 파일명을 영문으로 변환 (확장자 제외)
+                String englishBaseName = convertKoreanToEnglish(userBaseName);
                 String cleanBaseName = sanitizeFilename(englishBaseName);
+                
+                // 최종 파일명 생성 (확장자를 맨 마지막에 추가)
                 finalFileName = String.format("facility_%s_%d_%s_%s%s", 
-                        facilityId, index, cleanBaseName, UUID.randomUUID().toString().substring(0, 8), extension);
+                        facilityId, index, cleanBaseName, 
+                        UUID.randomUUID().toString().substring(0, 8), userExtension);
                 log.info("📝 사용자 지정 파일명 적용: '{}' → '{}'", customFileName, finalFileName);
             } else {
                 // 기본 파일명 로직 사용
@@ -479,53 +498,113 @@ public class FacilityImageService {
     }
     
     /**
-     * 한글 파일명을 영문으로 변환
+     * 한글 파일명을 영문으로 변환 (실제 번역 + 로마자 변환)
      */
     private String convertKoreanToEnglish(String korean) {
         if (korean == null || korean.trim().isEmpty()) {
             return "facility_image";
         }
         
-        // 한글 키워드를 영문으로 매핑
+        String input = korean.toLowerCase().trim();
+        String result = input;
+        
+        // 1단계: 의미 있는 한글 키워드를 영문으로 번역
         java.util.Map<String, String> koreanToEnglish = java.util.Map.ofEntries(
-            // 시설 관련
+            // 시설 종류
             java.util.Map.entry("시설", "facility"),
             java.util.Map.entry("요양원", "nursing_home"),
+            java.util.Map.entry("요양병원", "nursing_hospital"),
             java.util.Map.entry("병원", "hospital"),
-            java.util.Map.entry("의료", "medical"),
-            java.util.Map.entry("건물", "building"),
+            java.util.Map.entry("의원", "clinic"),
+            java.util.Map.entry("데이케어", "daycare"),
+            java.util.Map.entry("센터", "center"),
+            java.util.Map.entry("홈", "home"),
+            java.util.Map.entry("케어", "care"),
             
-            // 공간 관련
+            // 공간 (기본)
             java.util.Map.entry("외관", "exterior"),
+            java.util.Map.entry("외부", "exterior"), 
+            java.util.Map.entry("건물", "building"),
+            java.util.Map.entry("입구", "entrance"),
+            java.util.Map.entry("현관", "entrance"),
             java.util.Map.entry("내부", "interior"),
             java.util.Map.entry("로비", "lobby"),
             java.util.Map.entry("복도", "corridor"),
+            java.util.Map.entry("홀", "hall"),
+            
+            // 공간 (거주)
             java.util.Map.entry("방", "room"),
             java.util.Map.entry("객실", "room"),
             java.util.Map.entry("침실", "bedroom"),
-            java.util.Map.entry("식당", "dining"),
+            java.util.Map.entry("생활실", "living_room"),
+            java.util.Map.entry("휴게실", "rest_room"),
+            
+            // 공간 (생활)
+            java.util.Map.entry("식당", "dining_room"),
             java.util.Map.entry("주방", "kitchen"),
-            java.util.Map.entry("화장실", "bathroom"),
+            java.util.Map.entry("카페", "cafe"),
+            java.util.Map.entry("화장실", "restroom"),
+            java.util.Map.entry("욕실", "bathroom"),
+            java.util.Map.entry("세탁실", "laundry"),
+            
+            // 공간 (의료)
+            java.util.Map.entry("치료실", "treatment_room"),
+            java.util.Map.entry("의무실", "medical_room"),
+            java.util.Map.entry("상담실", "consultation_room"),
+            java.util.Map.entry("간호사실", "nurses_station"),
+            
+            // 공간 (재활/운동)
+            java.util.Map.entry("재활실", "rehabilitation_room"),
+            java.util.Map.entry("물리치료실", "physical_therapy_room"),
+            java.util.Map.entry("운동실", "exercise_room"),
+            java.util.Map.entry("헬스장", "gym"),
+            
+            // 공간 (활동)
+            java.util.Map.entry("프로그램실", "program_room"),
+            java.util.Map.entry("강당", "auditorium"),
+            java.util.Map.entry("도서실", "library"),
+            java.util.Map.entry("오락실", "recreation_room"),
+            
+            // 공간 (외부)
             java.util.Map.entry("정원", "garden"),
             java.util.Map.entry("마당", "yard"),
-            java.util.Map.entry("주차장", "parking"),
+            java.util.Map.entry("테라스", "terrace"),
+            java.util.Map.entry("발코니", "balcony"),
+            java.util.Map.entry("주차장", "parking_lot"),
+            java.util.Map.entry("산책로", "walking_path"),
+            
+            // 공간 (기타)
             java.util.Map.entry("엘리베이터", "elevator"),
             java.util.Map.entry("계단", "stairs"),
+            java.util.Map.entry("사무실", "office"),
+            java.util.Map.entry("접수처", "reception"),
             
-            // 의료 관련
+            // 서비스/의료
             java.util.Map.entry("간호", "nursing"),
-            java.util.Map.entry("의무실", "medical_room"),
+            java.util.Map.entry("간병", "care"),
             java.util.Map.entry("치료", "treatment"),
             java.util.Map.entry("재활", "rehabilitation"),
             java.util.Map.entry("물리치료", "physical_therapy"),
+            java.util.Map.entry("건강관리", "health_care"),
             
-            // 기타
-            java.util.Map.entry("환경", "environment"),
-            java.util.Map.entry("시설물", "facilities"),
-            java.util.Map.entry("부대시설", "amenities"),
-            java.util.Map.entry("편의시설", "convenience"),
-            java.util.Map.entry("안전", "safety"),
-            java.util.Map.entry("보안", "security"),
+            // 특징/상태
+            java.util.Map.entry("깨끗한", "clean"),
+            java.util.Map.entry("밝은", "bright"),
+            java.util.Map.entry("넓은", "spacious"),
+            java.util.Map.entry("안전한", "safe"),
+            java.util.Map.entry("편안한", "comfortable"),
+            java.util.Map.entry("현대적", "modern"),
+            java.util.Map.entry("고급", "premium"),
+            
+            // 시간/위치
+            java.util.Map.entry("아침", "morning"),
+            java.util.Map.entry("점심", "lunch"),
+            java.util.Map.entry("저녁", "evening"),
+            java.util.Map.entry("앞", "front"),
+            java.util.Map.entry("뒤", "back"),
+            java.util.Map.entry("층", "floor"),
+            java.util.Map.entry("1층", "first_floor"),
+            java.util.Map.entry("2층", "second_floor"),
             
             // 숫자
             java.util.Map.entry("1", "one"),
@@ -535,21 +614,72 @@ public class FacilityImageService {
             java.util.Map.entry("5", "five"),
             java.util.Map.entry("첫번째", "first"),
             java.util.Map.entry("두번째", "second"),
-            java.util.Map.entry("세번째", "third"),
-            java.util.Map.entry("네번째", "fourth"),
-            java.util.Map.entry("다섯번째", "fifth")
+            java.util.Map.entry("세번째", "third")
         );
         
-        String result = korean.toLowerCase().trim();
-        
-        // 한글 키워드 변환
+        // 키워드 변환 적용
         for (java.util.Map.Entry<String, String> entry : koreanToEnglish.entrySet()) {
             result = result.replace(entry.getKey(), entry.getValue());
         }
         
-        // 아직 한글이 남아있으면 일반적인 변환
+        // 2단계: 남은 한글을 로마자로 변환
         if (containsKorean(result)) {
-            result = "facility_image_" + System.currentTimeMillis() % 10000;
+            result = convertKoreanToRomanization(result);
+        }
+        
+        return result;
+    }
+    
+    /**
+     * 한글을 로마자로 변환 (간단한 로마자 변환)
+     */
+    private String convertKoreanToRomanization(String korean) {
+        if (korean == null || korean.trim().isEmpty()) {
+            return "korean_text";
+        }
+        
+        // 기본적인 한글 자모 로마자 변환 테이블
+        java.util.Map<String, String> koreanRomanization = java.util.Map.ofEntries(
+            // 자음 (초성)
+            java.util.Map.entry("ㄱ", "g"), java.util.Map.entry("ㄴ", "n"), java.util.Map.entry("ㄷ", "d"),
+            java.util.Map.entry("ㄹ", "r"), java.util.Map.entry("ㅁ", "m"), java.util.Map.entry("ㅂ", "b"),
+            java.util.Map.entry("ㅅ", "s"), java.util.Map.entry("ㅇ", ""), java.util.Map.entry("ㅈ", "j"),
+            java.util.Map.entry("ㅊ", "ch"), java.util.Map.entry("ㅋ", "k"), java.util.Map.entry("ㅌ", "t"),
+            java.util.Map.entry("ㅍ", "p"), java.util.Map.entry("ㅎ", "h"),
+            
+            // 모음
+            java.util.Map.entry("ㅏ", "a"), java.util.Map.entry("ㅑ", "ya"), java.util.Map.entry("ㅓ", "eo"),
+            java.util.Map.entry("ㅕ", "yeo"), java.util.Map.entry("ㅗ", "o"), java.util.Map.entry("ㅛ", "yo"),
+            java.util.Map.entry("ㅜ", "u"), java.util.Map.entry("ㅠ", "yu"), java.util.Map.entry("ㅡ", "eu"),
+            java.util.Map.entry("ㅣ", "i"), java.util.Map.entry("ㅐ", "ae"), java.util.Map.entry("ㅔ", "e"),
+            
+            // 일반적인 한글 단어 로마자 변환
+            java.util.Map.entry("가", "ga"), java.util.Map.entry("나", "na"), java.util.Map.entry("다", "da"),
+            java.util.Map.entry("라", "ra"), java.util.Map.entry("마", "ma"), java.util.Map.entry("바", "ba"),
+            java.util.Map.entry("사", "sa"), java.util.Map.entry("자", "ja"), java.util.Map.entry("차", "cha"),
+            java.util.Map.entry("카", "ka"), java.util.Map.entry("타", "ta"), java.util.Map.entry("파", "pa"),
+            java.util.Map.entry("하", "ha"),
+            
+            // 자주 사용되는 한글 조합
+            java.util.Map.entry("김", "kim"), java.util.Map.entry("이", "lee"), java.util.Map.entry("박", "park"),
+            java.util.Map.entry("최", "choi"), java.util.Map.entry("정", "jung"), java.util.Map.entry("강", "kang"),
+            java.util.Map.entry("조", "cho"), java.util.Map.entry("윤", "yoon"), java.util.Map.entry("장", "jang"),
+            java.util.Map.entry("임", "lim"), java.util.Map.entry("한", "han"), java.util.Map.entry("오", "oh"),
+            java.util.Map.entry("서", "seo"), java.util.Map.entry("신", "shin"), java.util.Map.entry("권", "kwon"),
+            java.util.Map.entry("황", "hwang"), java.util.Map.entry("안", "ahn"), java.util.Map.entry("송", "song"),
+            java.util.Map.entry("류", "ryu"), java.util.Map.entry("전", "jeon"), java.util.Map.entry("홍", "hong")
+        );
+        
+        String result = korean;
+        
+        // 로마자 변환 적용
+        for (java.util.Map.Entry<String, String> entry : koreanRomanization.entrySet()) {
+            result = result.replace(entry.getKey(), entry.getValue());
+        }
+        
+        // 변환되지 않은 한글이 있으면 안전한 기본값 사용
+        if (containsKorean(result)) {
+            result = "korean_" + System.currentTimeMillis() % 10000;
         }
         
         return result;
@@ -654,6 +784,116 @@ public class FacilityImageService {
             
         } catch (Exception e) {
             log.error("❌ 이미지 순서 업데이트 중 오류 발생 - imageId: {}, newOrder: {}", imageId, imageOrder, e);
+            return false;
+        }
+    }
+    
+    /**
+     * 시설의 모든 이미지 순서 재정렬 (중복 방지 및 데이터 정합성 보장)
+     */
+    @Transactional
+    public boolean reorderAllFacilityImages(Long facilityId) {
+        try {
+            log.info("🔄 시설 이미지 순서 재정렬 시작 - facilityId: {}", facilityId);
+            
+            // 현재 이미지들을 순서대로 조회 (업로드 순서 기준)
+            List<FacilityImageDTO> images = facilityImageMapper.getImagesByFacilityId(facilityId);
+            
+            if (images.isEmpty()) {
+                log.info("ℹ️ 재정렬할 이미지가 없음 - facilityId: {}", facilityId);
+                return true;
+            }
+            
+            log.info("📊 재정렬할 이미지 수: {} - facilityId: {}", images.size(), facilityId);
+            
+            // 각 이미지의 순서를 0, 1, 2, 3, 4로 재설정
+            for (int i = 0; i < images.size(); i++) {
+                FacilityImageDTO image = images.get(i);
+                int newOrder = i;
+                
+                // 기존 순서와 다른 경우에만 업데이트
+                if (image.getImageOrder() == null || !image.getImageOrder().equals(newOrder)) {
+                    int updateResult = facilityImageMapper.updateImageOrder(image.getImageId(), newOrder);
+                    
+                    if (updateResult > 0) {
+                        log.debug("✅ 이미지 순서 재정렬 - imageId: {}, 기존: {} → 새로운: {}", 
+                            image.getImageId(), image.getImageOrder(), newOrder);
+                    } else {
+                        log.warn("⚠️ 이미지 순서 재정렬 실패 - imageId: {}, 새로운 순서: {}", 
+                            image.getImageId(), newOrder);
+                    }
+                }
+            }
+            
+            log.info("✅ 시설 이미지 순서 재정렬 완료 - facilityId: {}", facilityId);
+            return true;
+            
+        } catch (Exception e) {
+            log.error("❌ 시설 이미지 순서 재정렬 중 오류 발생 - facilityId: {}", facilityId, e);
+            return false;
+        }
+    }
+    
+    /**
+     * 배치로 이미지 순서 업데이트 (프론트에서 전달받은 순서대로)
+     */
+    @Transactional
+    public boolean updateImageOrdersBatch(Long facilityId, List<Long> imageIds) {
+        try {
+            log.info("🔢 배치 이미지 순서 업데이트 시작 - facilityId: {}, imageIds: {}", facilityId, imageIds);
+            
+            if (imageIds == null || imageIds.isEmpty()) {
+                log.warn("⚠️ 업데이트할 이미지 ID 목록이 비어있음 - facilityId: {}", facilityId);
+                return false;
+            }
+            
+            // 시설의 기존 이미지 개수 확인
+            int existingImageCount = facilityImageMapper.countImagesByFacilityId(facilityId);
+            
+            if (imageIds.size() > existingImageCount) {
+                log.warn("⚠️ 전달받은 이미지 ID 수가 기존 이미지 수보다 많음 - facilityId: {}, 전달받은: {}, 기존: {}", 
+                    facilityId, imageIds.size(), existingImageCount);
+                return false;
+            }
+            
+            int successCount = 0;
+            
+            // 각 이미지의 순서를 업데이트
+            for (int i = 0; i < imageIds.size(); i++) {
+                Long imageId = imageIds.get(i);
+                int newOrder = i; // 0부터 시작
+                
+                // 해당 이미지가 실제로 해당 시설의 이미지인지 확인
+                FacilityImageDTO existingImage = facilityImageMapper.getImageById(imageId);
+                if (existingImage == null || !existingImage.getFacilityId().equals(facilityId)) {
+                    log.warn("⚠️ 잘못된 이미지 ID 또는 시설 불일치 - imageId: {}, facilityId: {}", 
+                        imageId, facilityId);
+                    continue;
+                }
+                
+                int updateResult = facilityImageMapper.updateImageOrder(imageId, newOrder);
+                if (updateResult > 0) {
+                    successCount++;
+                    log.debug("✅ 이미지 순서 업데이트 - imageId: {}, 새로운 순서: {}", imageId, newOrder);
+                } else {
+                    log.warn("⚠️ 이미지 순서 업데이트 실패 - imageId: {}, 새로운 순서: {}", imageId, newOrder);
+                }
+            }
+            
+            boolean success = successCount == imageIds.size();
+            
+            if (success) {
+                log.info("✅ 배치 이미지 순서 업데이트 완료 - facilityId: {}, 성공: {}/{}", 
+                    facilityId, successCount, imageIds.size());
+            } else {
+                log.warn("⚠️ 배치 이미지 순서 업데이트 부분 실패 - facilityId: {}, 성공: {}/{}", 
+                    facilityId, successCount, imageIds.size());
+            }
+            
+            return success;
+            
+        } catch (Exception e) {
+            log.error("❌ 배치 이미지 순서 업데이트 중 오류 발생 - facilityId: {}", facilityId, e);
             return false;
         }
     }

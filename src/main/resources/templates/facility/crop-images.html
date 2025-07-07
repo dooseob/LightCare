@@ -85,7 +85,7 @@
                                             최대 5장까지 등록 가능
                                         </small>
                                     </div>
-                                    <div class="d-flex gap-3 mt-3 justify-content-center">
+                                    <div class="d-flex flex-column gap-3 mt-3 align-items-center">
                                         <!-- 통합된 이미지 불러오기 버튼 -->
                                         <div class="btn-group">
                                             <button type="button" class="btn btn-primary btn-lg" id="imageLoadBtn">
@@ -110,6 +110,26 @@
                                                 </li>
                                             </ul>
                                         </div>
+                                        
+                                        <!-- 선택된 이미지 미리보기 및 오더 설정 영역 -->
+                                        <div id="selectedImagesPreview" class="selected-images-preview w-100" style="display: none;">
+                                            <div class="card border-primary">
+                                                <div class="card-header bg-primary text-white">
+                                                    <h6 class="mb-0">
+                                                        <i class="fas fa-list me-2"></i>선택된 이미지 (최대 5장)
+                                                        <span class="badge bg-light text-dark ms-2" id="selectedCount">0</span>
+                                                    </h6>
+                                                </div>
+                                                <div class="card-body">
+                                                    <div id="imageOrderList" class="row g-3"></div>
+                                                    <div class="text-center mt-3">
+                                                        <button type="button" class="btn btn-success" id="proceedToCropBtn" style="display: none;">
+                                                            <i class="fas fa-crop-alt me-2"></i>크롭 시작
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -117,19 +137,6 @@
                             <input type="file" id="folderInput" webkitdirectory directory multiple style="display: none;">
                         </div>
 
-                        <!-- 이미지 리스트 -->
-                        <div id="imageListSection" class="mb-4" style="display: none;">
-                            <div class="d-flex justify-content-between align-items-center mb-3">
-                                <h5 class="mb-0">
-                                    <i class="fas fa-list me-2"></i>선택된 이미지
-                                    <span class="badge bg-primary ms-2" id="imageCount">0</span>
-                                </h5>
-                                <button type="button" class="btn btn-success" id="nextToCropBtn" style="display: none;">
-                                    <i class="fas fa-crop-alt me-2"></i>크롭 시작
-                                </button>
-                            </div>
-                            <div id="imageList" class="row g-3"></div>
-                        </div>
 
                         <!-- 2단계: 크롭 및 조정 (2줄 레이아웃) -->
                         <div id="cropSection" class="crop-section" style="display: none;">
@@ -665,7 +672,129 @@ console.log('⚙️ facility-image-step3-manage.js가 3단계 관리를 처리�
     font-weight: 600;
     color: #495057;
 }
+
+/* 이미지 순서 지정 애니메이션 */
+.image-order-item .card {
+    transition: all 0.3s ease;
+}
+
+.image-order-item .card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+.image-order-item .card.order-added {
+    animation: orderAdded 0.5s ease;
+    transform: scale(1.05);
+    box-shadow: 0 6px 20px rgba(40, 167, 69, 0.3);
+}
+
+.image-order-item .card.order-removed {
+    animation: orderRemoved 0.5s ease;
+    transform: scale(0.95);
+    box-shadow: 0 2px 8px rgba(220, 53, 69, 0.3);
+}
+
+@keyframes orderAdded {
+    0% { 
+        transform: scale(1);
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    50% { 
+        transform: scale(1.1);
+        box-shadow: 0 8px 25px rgba(40, 167, 69, 0.4);
+    }
+    100% { 
+        transform: scale(1.05);
+        box-shadow: 0 6px 20px rgba(40, 167, 69, 0.3);
+    }
+}
+
+@keyframes orderRemoved {
+    0% { 
+        transform: scale(1);
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    50% { 
+        transform: scale(0.9);
+        box-shadow: 0 8px 25px rgba(220, 53, 69, 0.4);
+    }
+    100% { 
+        transform: scale(0.95);
+        box-shadow: 0 2px 8px rgba(220, 53, 69, 0.3);
+    }
+}
+
+/* 순서 배지 애니메이션 */
+.order-badge {
+    transition: all 0.3s ease;
+}
+
+.order-badge.bg-success {
+    animation: badgeSuccess 0.5s ease;
+}
+
+.order-badge.bg-secondary {
+    animation: badgeSecondary 0.3s ease;
+}
+
+@keyframes badgeSuccess {
+    0% { 
+        transform: scale(1);
+        background-color: #6c757d;
+    }
+    50% { 
+        transform: scale(1.2);
+        background-color: #28a745;
+    }
+    100% { 
+        transform: scale(1);
+        background-color: #28a745;
+    }
+}
+
+@keyframes badgeSecondary {
+    0% { 
+        transform: scale(1);
+        background-color: #28a745;
+    }
+    50% { 
+        transform: scale(0.8);
+        background-color: #6c757d;
+    }
+    100% { 
+        transform: scale(1);
+        background-color: #6c757d;
+    }
+}
 </style>
+
+<!-- Cropper.js 및 관련 스크립트 -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.12/cropper.min.js"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.12/cropper.min.css">
+
+<!-- 시설 이미지 크롭 스타일 -->
+<link rel="stylesheet" href="/css/facility-image-uploader.css">
+
+<!-- 고급 이미지 크롭퍼 -->
+<link rel="stylesheet" href="/css/advanced-image-cropper.css">
+<script src="/js/advanced-image-cropper.js"></script>
+
+<!-- 이미지 압축 라이브러리 -->
+<link rel="stylesheet" href="/css/image-compressor.css">
+<script src="/js/image-compressor.js"></script>
+
+<!-- 시설 이미지 업로드 컴포넌트 -->
+<script src="/js/facility-image-uploader.js"></script>
+
+<!-- 시설 이미지 1단계 - 이미지 불러오기 및 오더 설정 -->
+<script src="/js/facility-image-step1-load.js"></script>
+
+<!-- 시설 이미지 SEO 키워드 관리 (파일명 영문변환 및 키워드 추가) -->
+<script src="/js/facility-image-seo-keywords.js"></script>
+
+<!-- 시설 이미지 3단계 관리 전용 (타임리프 충돌 방지) -->
+<script src="/js/facility-image-step3-manage.js"></script>
 
 </body>
 </html>

@@ -48,6 +48,61 @@ public class FacilityController {
     }
 
     /**
+     * 시설 상세 정보 API (내 시설 관리용)
+     */
+    @GetMapping("/facility-info/{facilityId}")
+    @ResponseBody
+    public Map<String, Object> getFacilityInfo(@PathVariable Long facilityId, HttpSession session) {
+        Map<String, Object> result = new HashMap<>();
+        
+        try {
+            MemberDTO member = (MemberDTO) session.getAttribute(Constants.SESSION_MEMBER);
+            if (member == null) {
+                result.put("success", false);
+                result.put("message", "로그인이 필요합니다.");
+                return result;
+            }
+            
+            FacilityDTO facility = facilityService.getFacilityById(facilityId);
+            if (facility == null) {
+                result.put("success", false);
+                result.put("message", "시설을 찾을 수 없습니다.");
+                return result;
+            }
+            
+            // 권한 확인 (시설 소유자 또는 관리자만)
+            if (!facility.getRegisteredMemberId().equals(member.getMemberId()) 
+                && !Constants.MEMBER_ROLE_ADMIN.equals(member.getRole())) {
+                result.put("success", false);
+                result.put("message", "해당 시설 정보를 조회할 권한이 없습니다.");
+                return result;
+            }
+            
+            result.put("success", true);
+            result.put("facility", facility);
+            
+            log.info("시설 상세 정보 API 조회 완료: facilityId={}, memberId={}", facilityId, member.getMemberId());
+            
+        } catch (Exception e) {
+            log.error("시설 상세 정보 API 조회 중 오류: facilityId={}", facilityId, e);
+            result.put("success", false);
+            result.put("message", "시설 정보 조회 중 오류가 발생했습니다.");
+        }
+        
+        return result;
+    }
+
+
+    /**
+     * 내 시설에서 시설 수정 페이지로 이동
+     */
+    @GetMapping("/manage/{facilityId}/edit")
+    public String redirectToEdit(@PathVariable Long facilityId) {
+        log.info("내 시설에서 시설 수정으로 리다이렉트: facilityId={}", facilityId);
+        return "redirect:/facility/edit/" + facilityId;
+    }
+
+    /**
      * 시설 검색 페이지 및 검색 결과 조회
      */
     @GetMapping("/search")
