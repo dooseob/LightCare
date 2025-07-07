@@ -128,6 +128,11 @@ function loadImageForCrop(index) {
                     console.log('✅ 크롭퍼 준비 완료 - 이미지:', index + 1);
                     updateImageInfo(file);
                     updateNavigationButtons();
+                    
+                    // Alt 태그 자동 생성 (다중 이미지 인덱스 고려)
+                    if (typeof generateAutoAltText === 'function') {
+                        generateAutoAltText(index);
+                    }
                 }
             });
         }

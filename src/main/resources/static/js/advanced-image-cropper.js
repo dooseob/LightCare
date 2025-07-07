@@ -696,13 +696,6 @@ class AdvancedImageCropper {
             }
         }, 3000);
     }
-            
-            // 줌 표시기 업데이트
-            const newZoom = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, currentZoom + zoomDelta));
-            this.updateZoomIndicator(newZoom, isZoomingIn ? '확대' : '축소');
-            
-        }, { passive: false }); // passive: false로 설정해야 preventDefault 작동
-    }
 
     updateZoomIndicator(zoomLevel, status) {
         const indicator = document.getElementById('zoomIndicator');

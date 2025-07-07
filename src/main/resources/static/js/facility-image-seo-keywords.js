@@ -114,6 +114,62 @@ const KEYWORD_CATEGORIES = {
     '시간/위치': ['morning', 'lunch', 'evening', 'first_floor', 'second_floor', 'front', 'back']
 };
 
+// Alt 태그 자동 생성 (새로 추가)
+function generateAutoAltText(imageIndex = 0) {
+    console.log('🏷️ Alt 태그 자동 생성 시작 - 이미지 인덱스:', imageIndex);
+    
+    const altTextInput = document.getElementById('altText');
+    if (!altTextInput) {
+        console.warn('⚠️ Alt 텍스트 입력 필드를 찾을 수 없습니다');
+        return '';
+    }
+    
+    // 시설명 가져오기 (여러 방법 시도)
+    let facilityName = '';
+    const facilityMeta = document.querySelector('meta[name="facility-name"]');
+    if (facilityMeta) {
+        facilityName = facilityMeta.getAttribute('content');
+    }
+    
+    if (!facilityName) {
+        facilityName = '시설';
+    }
+    
+    // 현재 선택된 키워드 확인
+    const selectedKeywords = Array.from(document.querySelectorAll('.keyword-btn.btn-success'))
+        .map(btn => btn.dataset.keyword || btn.textContent.trim())
+        .filter(keyword => keyword);
+    
+    // 파일명에서 키워드 추출
+    const fileNameInput = document.getElementById('seoFileName') || document.getElementById('imageNameInput');
+    let fileKeywords = [];
+    if (fileNameInput && fileNameInput.value) {
+        fileKeywords = fileNameInput.value.toLowerCase().split(/[-_]/)
+            .filter(part => part.length > 1);
+    }
+    
+    // Alt 텍스트 조합
+    let altText = facilityName;
+    
+    if (selectedKeywords.length > 0) {
+        altText += ' ' + selectedKeywords.join(' ');
+    } else if (fileKeywords.length > 0) {
+        altText += ' ' + fileKeywords.slice(0, 2).join(' ');
+    }
+    
+    altText += ' 사진';
+    
+    if (imageIndex > 0) {
+        altText += ` ${imageIndex + 1}`;
+    }
+    
+    // Alt 텍스트 설정
+    altTextInput.value = altText;
+    
+    console.log('✅ Alt 태그 자동 생성 완료:', altText);
+    return altText;
+}
+
 // 파일명에 키워드 추가 (확장자 위치 수정)
 function addKeywordToFileName(keyword) {
     console.log('🏷️ 키워드 추가:', keyword);
@@ -152,6 +208,9 @@ function addKeywordToFileName(keyword) {
     
     // 파일명 미리보기 업데이트
     updateFileNamePreview();
+    
+    // Alt 태그 자동 업데이트
+    generateAutoAltText();
     
     // 시각적 피드백
     showKeywordAddedFeedback(keyword);

@@ -37,6 +37,9 @@ document.addEventListener('DOMContentLoaded', function() {
     // 이벤트 리스너 설정
     setupEventListeners();
     
+    // 기존 이미지 로드
+    loadExistingImages();
+    
     console.log('✅ 시설 이미지 1단계 순수 초기화 완료');
 });
 
@@ -96,9 +99,29 @@ function initializeElements() {
 }
 
 /**
+ * 기존 이벤트 리스너 제거
+ */
+function removeExistingListeners() {
+    const listeners = window.FacilityImageStep1Pure.listeners;
+    
+    listeners.forEach(listener => {
+        if (listener.element) {
+            listener.element.removeEventListener(listener.event, listener.handler);
+        }
+    });
+    
+    // 리스너 배열 초기화
+    window.FacilityImageStep1Pure.listeners = [];
+    console.log('🧹 기존 이벤트 리스너 제거 완료');
+}
+
+/**
  * 이벤트 리스너 설정
  */
 function setupEventListeners() {
+    // 기존 리스너 제거 (중복 방지)
+    removeExistingListeners();
+    
     const elements = window.FacilityImageStep1Pure.elements;
     
     // 이미지 불러오기 버튼 (메인)
@@ -164,16 +187,31 @@ function setupEventListeners() {
         setupDragAndDrop();
     }
     
+    // 이미지 더 추가 버튼
+    const addMoreImagesBtn = document.getElementById('addMoreImagesBtn');
+    if (addMoreImagesBtn) {
+        addMoreImagesBtn.style.display = 'none';
+        
+        const listener6 = () => {
+            console.log('➕ 이미지 더 추가 버튼 클릭');
+            if (elements.imageInput) {
+                elements.imageInput.click();
+            }
+        };
+        addMoreImagesBtn.addEventListener('click', listener6);
+        window.FacilityImageStep1Pure.listeners.push({element: addMoreImagesBtn, event: 'click', handler: listener6});
+    }
+    
     // 크롭 진행 버튼 (초기에는 숨김)
     if (elements.proceedToCropBtn) {
         elements.proceedToCropBtn.style.display = 'none';
         
-        const listener6 = () => {
+        const listener7 = () => {
             console.log('🎨 크롭 단계로 진행');
             proceedToStep2();
         };
-        elements.proceedToCropBtn.addEventListener('click', listener6);
-        window.FacilityImageStep1Pure.listeners.push({element: elements.proceedToCropBtn, event: 'click', handler: listener6});
+        elements.proceedToCropBtn.addEventListener('click', listener7);
+        window.FacilityImageStep1Pure.listeners.push({element: elements.proceedToCropBtn, event: 'click', handler: listener7});
     }
     
     console.log('🔗 이벤트 리스너 설정 완료:', window.FacilityImageStep1Pure.listeners.length, '개');
@@ -213,14 +251,24 @@ function handleFileSelection(files, source) {
             imageFiles.splice(state.maxImages);
         }
         
-        // 3. 상태 업데이트
-        state.selectedFiles = imageFiles;
-        state.imageOrder = []; // 순서 초기화
+        // 3. 상태 업데이트 (기존 파일에 추가)
+        const currentCount = state.selectedFiles.length;
+        const newFiles = imageFiles.slice(0, state.maxImages - currentCount);
         
-        // 4. 미리보기 테이블 생성 (핵심!)
-        generateImagePreviewTable(imageFiles);
+        if (newFiles.length < imageFiles.length) {
+            showNotification(`최대 ${state.maxImages}장까지만 추가할 수 있습니다. ${newFiles.length}장을 추가합니다.`, 'info');
+        }
         
-        console.log('✅ 파일 선택 처리 완료:', imageFiles.length, '개 선택됨');
+        // 기존 파일 목록에 새 파일 추가
+        state.selectedFiles = [...state.selectedFiles, ...newFiles];
+        
+        // 기존 순서는 유지하고 새 파일의 인덱스만 추가
+        // (새 파일은 순서가 지정되지 않은 상태로 추가됨)
+        
+        // 4. 미리보기 테이블 생성 (전체 파일 목록 사용)
+        generateImagePreviewTable(state.selectedFiles);
+        
+        console.log('✅ 파일 선택 처리 완료:', newFiles.length, '개 추가됨, 총', state.selectedFiles.length, '개');
         
     } catch (error) {
         console.error('❌ 파일 선택 처리 오류:', error);
@@ -306,13 +354,22 @@ function createImagePreviewCard(file, index) {
         cardDiv.style.boxShadow = '';
     });
     
-    // 파일 읽기 및 미리보기 생성
-    const reader = new FileReader();
-    reader.onload = function(e) {
+    // 기존 이미지인지 새 파일인지 구분하여 처리
+    if (file.isExisting) {
+        // 기존 이미지: 서버의 이미지 URL 사용
+        const imageUrl = file.imagePath;
+        const fileName = file.altText || file.name;
+        const fileSize = file.size > 0 ? formatFileSize(file.size) : '서버 이미지';
+        
         cardDiv.innerHTML = `
             <div class="card-img-top position-relative" style="height: 150px; overflow: hidden;">
-                <img src="${e.target.result}" alt="미리보기 ${index + 1}" 
+                <img src="${imageUrl}" alt="${fileName}" 
                      class="img-fluid h-100 w-100" style="object-fit: cover;">
+                <div class="position-absolute top-0 start-0 m-2">
+                    <span class="badge bg-info">
+                        <i class="fas fa-database me-1"></i>기존
+                    </span>
+                </div>
                 <div class="position-absolute top-0 end-0 m-2">
                     <span class="badge bg-secondary order-badge" id="orderBadge_${index}">
                         <i class="fas fa-image me-1"></i>대기
@@ -325,11 +382,11 @@ function createImagePreviewCard(file, index) {
                 </div>
             </div>
             <div class="card-body p-2">
-                <h6 class="card-title mb-1 text-truncate" title="${file.name}">
-                    ${file.name}
+                <h6 class="card-title mb-1 text-truncate" title="${fileName}">
+                    ${fileName}
                 </h6>
                 <p class="card-text small text-muted mb-2">
-                    ${formatFileSize(file.size)}
+                    ${fileSize}
                 </p>
                 <div class="d-flex justify-content-between align-items-center">
                     <div class="order-status" id="orderStatus_${index}">
@@ -345,9 +402,55 @@ function createImagePreviewCard(file, index) {
                 </div>
             </div>
         `;
-    };
-    
-    reader.readAsDataURL(file);
+    } else {
+        // 새 파일: FileReader로 읽기
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            cardDiv.innerHTML = `
+                <div class="card-img-top position-relative" style="height: 150px; overflow: hidden;">
+                    <img src="${e.target.result}" alt="미리보기 ${index + 1}" 
+                         class="img-fluid h-100 w-100" style="object-fit: cover;">
+                    <div class="position-absolute top-0 start-0 m-2">
+                        <span class="badge bg-success">
+                            <i class="fas fa-plus me-1"></i>새로운
+                        </span>
+                    </div>
+                    <div class="position-absolute top-0 end-0 m-2">
+                        <span class="badge bg-secondary order-badge" id="orderBadge_${index}">
+                            <i class="fas fa-image me-1"></i>대기
+                        </span>
+                    </div>
+                    <div class="position-absolute bottom-0 start-0 end-0 p-2 bg-dark bg-opacity-75">
+                        <small class="text-white">
+                            <i class="fas fa-hand-pointer me-1"></i>클릭하여 순서 지정
+                        </small>
+                    </div>
+                </div>
+                <div class="card-body p-2">
+                    <h6 class="card-title mb-1 text-truncate" title="${file.name}">
+                        ${file.name}
+                    </h6>
+                    <p class="card-text small text-muted mb-2">
+                        ${formatFileSize(file.size)}
+                    </p>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div class="order-status" id="orderStatus_${index}">
+                            <small class="text-muted">
+                                <i class="fas fa-hand-pointer me-1"></i>클릭하여 순서 지정
+                            </small>
+                        </div>
+                        <button type="button" class="btn btn-outline-danger btn-sm" 
+                                onclick="removeImageFromPreview(${index})" 
+                                title="이미지 제거">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                </div>
+            `;
+        };
+        
+        reader.readAsDataURL(file);
+    }
     
     colDiv.appendChild(cardDiv);
     elements.imageOrderList.appendChild(colDiv);
@@ -420,6 +523,7 @@ function updateOrderUI() {
 function checkOrderCompletion() {
     const state = window.FacilityImageStep1Pure.state;
     const elements = window.FacilityImageStep1Pure.elements;
+    const addMoreImagesBtn = document.getElementById('addMoreImagesBtn');
     
     if (state.imageOrder.length === state.selectedFiles.length && state.selectedFiles.length > 0) {
         // 모든 이미지에 순서가 지정됨
@@ -430,10 +534,22 @@ function checkOrderCompletion() {
             elements.proceedToCropBtn.innerHTML = '<i class="fas fa-crop-alt me-2"></i>크롭 시작 (순서 완료)';
         }
         
-        showNotification('모든 이미지의 순서가 지정되었습니다! 크롭을 시작할 수 있습니다.', 'success');
+        // 최대 개수에 도달하지 않았으면 "이미지 더 추가" 버튼 표시
+        if (addMoreImagesBtn && state.selectedFiles.length < state.maxImages) {
+            addMoreImagesBtn.style.display = 'inline-block';
+        }
+        
+        showNotification('모든 이미지의 순서가 지정되었습니다! 크롭을 시작하거나 이미지를 더 추가할 수 있습니다.', 'success');
     } else {
         if (elements.proceedToCropBtn) {
             elements.proceedToCropBtn.style.display = 'none';
+        }
+        
+        // 이미지가 있지만 순서가 완료되지 않은 경우에도 "이미지 더 추가" 버튼 표시
+        if (addMoreImagesBtn && state.selectedFiles.length > 0 && state.selectedFiles.length < state.maxImages) {
+            addMoreImagesBtn.style.display = 'inline-block';
+        } else if (addMoreImagesBtn) {
+            addMoreImagesBtn.style.display = 'none';
         }
     }
 }
@@ -643,5 +759,72 @@ style.textContent = `
     }
 `;
 document.head.appendChild(style);
+
+/**
+ * 기존 데이터베이스 이미지 로드
+ */
+function loadExistingImages() {
+    const state = window.FacilityImageStep1Pure.state;
+    
+    if (!state.facilityId) {
+        console.warn('⚠️ 시설 ID가 없어 기존 이미지를 로드할 수 없습니다');
+        return;
+    }
+    
+    console.log('📋 기존 이미지 로드 시작 - facilityId:', state.facilityId);
+    
+    // API 호출
+    fetch(`/facility/facility-images/${state.facilityId}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success && data.images && data.images.length > 0) {
+                console.log('✅ 기존 이미지 로드 성공:', data.images.length, '개');
+                
+                // 기존 이미지들을 가상 파일 객체로 변환
+                const existingImageFiles = data.images.map((image, index) => {
+                    return createVirtualFileFromImage(image, index);
+                });
+                
+                // 상태에 기존 이미지 추가
+                state.selectedFiles = existingImageFiles;
+                
+                // 기존 이미지들의 순서 설정 (이미 DB에 저장된 순서대로)
+                state.imageOrder = existingImageFiles.map((_, index) => index);
+                
+                // 미리보기 테이블 생성
+                generateImagePreviewTable(state.selectedFiles);
+                
+                console.log('🔄 기존 이미지', existingImageFiles.length, '개가 1단계에 로드됨');
+                
+            } else {
+                console.log('ℹ️ 기존 이미지가 없습니다');
+            }
+        })
+        .catch(error => {
+            console.error('❌ 기존 이미지 로드 오류:', error);
+        });
+}
+
+/**
+ * 이미지 DTO를 가상 파일 객체로 변환
+ */
+function createVirtualFileFromImage(imageDto, index) {
+    // 가상 파일 객체 생성
+    const virtualFile = {
+        name: `기존이미지_${index + 1}.jpg`,
+        size: 0, // 크기는 알 수 없음
+        type: 'image/jpeg',
+        lastModified: new Date(imageDto.uploadDate || Date.now()).getTime(),
+        // 추가 속성들
+        isExisting: true,
+        imageId: imageDto.imageId,
+        imagePath: imageDto.imagePath,
+        altText: imageDto.imageAltText,
+        isMainImage: imageDto.isMainImage,
+        imageOrder: imageDto.imageOrder
+    };
+    
+    return virtualFile;
+}
 
 console.log('✅ 시설 이미지 1단계 순수 JavaScript 완전 로드됨');

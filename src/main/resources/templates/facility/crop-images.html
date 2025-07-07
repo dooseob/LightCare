@@ -123,9 +123,14 @@
                                                 <div class="card-body">
                                                     <div id="imageOrderList" class="row g-3"></div>
                                                     <div class="text-center mt-3">
-                                                        <button type="button" class="btn btn-success" id="proceedToCropBtn" style="display: none;">
-                                                            <i class="fas fa-crop-alt me-2"></i>크롭 시작
-                                                        </button>
+                                                        <div class="btn-group">
+                                                            <button type="button" class="btn btn-outline-primary" id="addMoreImagesBtn" style="display: none;">
+                                                                <i class="fas fa-plus me-2"></i>이미지 더 추가
+                                                            </button>
+                                                            <button type="button" class="btn btn-success" id="proceedToCropBtn" style="display: none;">
+                                                                <i class="fas fa-crop-alt me-2"></i>크롭 시작
+                                                            </button>
+                                                        </div>
                                                     </div>
                                                 </div>
                                             </div>
@@ -181,6 +186,22 @@
                                                 <span id="zoomLevel">100%</span>
                                                 <span id="zoomStatus" class="ms-2"></span>
                                             </span>
+                                        </div>
+                                        
+                                        <!-- 키보드 단축키 가이드 -->
+                                        <div class="mt-3">
+                                            <small class="text-muted d-block text-center mb-2">
+                                                <i class="fas fa-keyboard me-1"></i>키보드 단축키
+                                            </small>
+                                            <div class="small text-muted text-center">
+                                                <div class="d-flex justify-content-center gap-3 flex-wrap">
+                                                    <span><kbd>+/-</kbd> 확대/축소</span>
+                                                    <span><kbd>R/L</kbd> 회전</span>
+                                                    <span><kbd>Enter</kbd> 완료</span>
+                                                    <span><kbd>Esc</kbd> 리셋</span>
+                                                    <span><kbd>← →</kbd> 이미지 전환</span>
+                                                </div>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
@@ -299,41 +320,47 @@
                                     </div>
                                 </div>
                                 
-                                <!-- 3번 카드: 추천 키워드 + 단축키 (세로 정렬) -->
+                                <!-- 3번 카드: 확장된 키워드 선택 (3줄 최대) -->
                                 <div class="col-lg-4 mb-3">
                                     <div class="card h-100">
                                         <div class="card-body p-3">
                                             <h6 class="card-title text-center mb-3">
-                                                <i class="fas fa-tools me-2"></i>도구 & 가이드
+                                                <i class="fas fa-tags me-2"></i>키워드 선택
                                             </h6>
                                             
-                                            <!-- 추천 키워드 (가로 한줄) -->
-                                            <div class="mb-3">
-                                                <label class="form-label small">
-                                                    <i class="fas fa-tags me-1"></i>추천 키워드
-                                                </label>
-                                                <div class="keyword-suggestions">
+                                            <!-- 기본 키워드 (1줄) -->
+                                            <div class="mb-2">
+                                                <small class="text-muted d-block mb-1">기본</small>
+                                                <div class="keyword-row">
                                                     <button type="button" class="btn btn-outline-primary btn-sm keyword-btn me-1 mb-1" data-keyword="외관">외관</button>
                                                     <button type="button" class="btn btn-outline-primary btn-sm keyword-btn me-1 mb-1" data-keyword="내부">내부</button>
                                                     <button type="button" class="btn btn-outline-primary btn-sm keyword-btn me-1 mb-1" data-keyword="로비">로비</button>
-                                                    <button type="button" class="btn btn-outline-primary btn-sm keyword-btn me-1 mb-1" data-keyword="환경">환경</button>
-                                                    <button type="button" class="btn btn-outline-primary btn-sm keyword-btn me-1 mb-1" data-keyword="시설">시설</button>
+                                                    <button type="button" class="btn btn-outline-primary btn-sm keyword-btn me-1 mb-1" data-keyword="복도">복도</button>
+                                                    <button type="button" class="btn btn-outline-primary btn-sm keyword-btn me-1 mb-1" data-keyword="입구">입구</button>
                                                 </div>
                                             </div>
                                             
-                                            <!-- 키보드 단축키 (가로 한줄) -->
-                                            <div>
-                                                <label class="form-label small">
-                                                    <i class="fas fa-keyboard me-1"></i>키보드 단축키
-                                                </label>
-                                                <div class="small text-muted">
-                                                    <div class="row g-1">
-                                                        <div class="col-6"><kbd>+/-</kbd> 확대/축소</div>
-                                                        <div class="col-6"><kbd>R/L</kbd> 회전</div>
-                                                        <div class="col-6"><kbd>Enter</kbd> 완료</div>
-                                                        <div class="col-6"><kbd>Esc</kbd> 리셋</div>
-                                                        <div class="col-12 text-center"><kbd>← →</kbd> 이미지 전환</div>
-                                                    </div>
+                                            <!-- 공간 키워드 (2줄) -->
+                                            <div class="mb-2">
+                                                <small class="text-muted d-block mb-1">공간</small>
+                                                <div class="keyword-row">
+                                                    <button type="button" class="btn btn-outline-info btn-sm keyword-btn me-1 mb-1" data-keyword="거실">거실</button>
+                                                    <button type="button" class="btn btn-outline-info btn-sm keyword-btn me-1 mb-1" data-keyword="침실">침실</button>
+                                                    <button type="button" class="btn btn-outline-info btn-sm keyword-btn me-1 mb-1" data-keyword="식당">식당</button>
+                                                    <button type="button" class="btn btn-outline-info btn-sm keyword-btn me-1 mb-1" data-keyword="화장실">화장실</button>
+                                                    <button type="button" class="btn btn-outline-info btn-sm keyword-btn me-1 mb-1" data-keyword="의무실">의무실</button>
+                                                </div>
+                                            </div>
+                                            
+                                            <!-- 특징 키워드 (3줄) -->
+                                            <div class="mb-2">
+                                                <small class="text-muted d-block mb-1">특징</small>
+                                                <div class="keyword-row">
+                                                    <button type="button" class="btn btn-outline-success btn-sm keyword-btn me-1 mb-1" data-keyword="깨끗한">깨끗한</button>
+                                                    <button type="button" class="btn btn-outline-success btn-sm keyword-btn me-1 mb-1" data-keyword="밝은">밝은</button>
+                                                    <button type="button" class="btn btn-outline-success btn-sm keyword-btn me-1 mb-1" data-keyword="넓은">넓은</button>
+                                                    <button type="button" class="btn btn-outline-success btn-sm keyword-btn me-1 mb-1" data-keyword="안전한">안전한</button>
+                                                    <button type="button" class="btn btn-outline-success btn-sm keyword-btn me-1 mb-1" data-keyword="편안한">편안한</button>
                                                 </div>
                                             </div>
                                         </div>
