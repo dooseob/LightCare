@@ -303,15 +303,11 @@ function setupEventListeners() {
         console.log('📁 파일 입력 이벤트 리스너 등록됨');
     }
     
-    // 파일 선택 버튼
-    const fileSelectBtn = document.getElementById('fileSelectBtn');
-    if (fileSelectBtn) {
-        fileSelectBtn.addEventListener('click', () => {
-            console.log('📁 파일 선택 버튼 클릭됨');
-            if (elements.imageInput) {
-                elements.imageInput.click();
-            }
-        });
+    // 메인 파일 선택 버튼 (기존 버튼 사용하여 중복 방지)
+    const mainFileSelectBtn = document.getElementById('mainFileSelectBtn');
+    if (mainFileSelectBtn) {
+        // 기존 이벤트 리스너가 있으므로 중복 등록하지 않음
+        console.log('📁 기존 메인 파일 선택 버튼 감지됨 - 중복 이벤트 등록 생략');
     }
     
     // 통합된 이미지 불러오기 버튼 이벤트 설정
@@ -2130,7 +2126,7 @@ function setupDragAndDrop() {
     
     // 업로드 영역 클릭 시 파일 선택
     uploadArea.addEventListener('click', (event) => {
-        if (!event.target.closest('#fileSelectBtn')) {
+        if (!event.target.closest('#mainFileSelectBtn')) {
             console.log('🖱️ 업로드 영역 클릭됨');
             if (elements.imageInput) {
                 elements.imageInput.click();

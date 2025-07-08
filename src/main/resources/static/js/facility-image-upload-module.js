@@ -497,7 +497,20 @@
                     compressionRatio: Math.round((1 - compressedBlob.size / file.size) * 100) + '%'
                 });
                 
-                return compressedBlob;
+                // 압축된 파일에 원본 정보 보존
+                const compressedFile = new File([compressedBlob], file.name, {
+                    type: compressedBlob.type || file.type,
+                    lastModified: file.lastModified
+                });
+                
+                // 원본 파일 정보 추가
+                compressedFile.originalFile = file;
+                compressedFile.originalName = file.name;
+                compressedFile.originalSize = file.size;
+                compressedFile.originalType = file.type;
+                compressedFile.isCompressed = true;
+                
+                return compressedFile;
                 
             } catch (error) {
                 Core.logger.error('이미지 압축 실패:', error);
@@ -754,13 +767,8 @@
                 for (let i = 0; i < files.length; i++) {
                     const fileData = files[i];
                     
-                    // 압축 처리
-                    if (uploadState.settings.enableCompression) {
-                        const compressedBlob = await fileCompressor.compressImage(fileData.file);
-                        fileData.compressedBlob = compressedBlob;
-                    }
-                    
-                    // 미리보기 생성
+                    // 1단계에서는 압축 건너뛰기 (2단계에서 크롭 시 압축)
+                    // 미리보기 생성은 원본 파일로
                     await this.createPreview(fileData);
                     
                     // 진행률 업데이트
@@ -1206,7 +1214,8 @@
         getFiles: uploader.getFiles.bind(uploader),
         getCompressedFiles: uploader.getCompressedFiles.bind(uploader),
         getUploadState: uploader.getUploadState.bind(uploader),
-        destroy: uploader.destroy.bind(uploader)
+        destroy: uploader.destroy.bind(uploader),
+        compressImage: fileCompressor.compressImage.bind(fileCompressor)
     };
     
     // 전역 접근을 위한 단축 참조

@@ -21,7 +21,11 @@
       "Bash(java:*)",
       "Bash(mv:*)",
       "Bash(node:*)",
-      "Bash(touch:*)"
+      "Bash(touch:*)",
+      "Bash(for file in src/main/resources/static/js/facility-image-*.js)",
+      "Bash(do echo \"Checking $file\")",
+      "Bash(echo:*)",
+      "Bash(done)"
     ],
     "deny": []
   }

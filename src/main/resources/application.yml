@@ -73,3 +73,19 @@ file:
     facility: C:/carelink-uploads/facility/
     profile: C:/carelink-uploads/profile/
     temp: C:/carelink-uploads/temp/
+
+# SpringDoc OpenAPI 설정
+springdoc:
+  api-docs:
+    path: /api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+    tags-sorter: alpha
+    operations-sorter: method
+  show-actuator: true
+  default-consumes-media-type: application/json
+  default-produces-media-type: application/json
+  paths-to-match:
+    - /api/**
+  packages-to-scan:
+    - com.lightcare.controller
