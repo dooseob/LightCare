@@ -149,7 +149,8 @@
                                     <label class="form-label fw-bold">리뷰 내용 *</label>
                                     <textarea class="form-control" rows="8" th:field="*{content}" id="content"
                                               placeholder="시설 이용 경험을 자세히 작성해주세요." 
-                                              maxlength="2000" required></textarea>
+                                              maxlength="2000" required
+                                              data-rich-editor='{"height": "350px", "maxLength": 2000}'></textarea>
                                     <div class="form-text">
                                         <span id="contentLength">0</span>/2000자 (최소 10자 이상 작성해주세요)
                                     </div>

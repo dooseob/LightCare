@@ -44,59 +44,63 @@ public class JobController {
 
     /**
      * 구인구직 작성 페이지 로드
-     * 시설회원 또는 관리자만 접근 가능
+     * 로그인된 사용자 모두 접근 가능 (권한별 타입 제한은 POST에서 처리)
      */
     @GetMapping("/write")
     public String writePage(@RequestParam(defaultValue = "RECRUIT") String type, Model model, HttpSession session) {
-        // 로그인 체크
+        // 로그인 체크만 수행
         MemberDTO loggedInMember = getCurrentMember(session);
         if (loggedInMember == null) {
+            session.setAttribute("errorMessage", "로그인 후 이용해주세요.");
             return "redirect:/member/login";
         }
         
-        // 권한별 작성 가능 타입 체크
-        if ("RECRUIT".equals(type) && !canWriteRecruit(loggedInMember)) {
-            session.setAttribute("errorMessage", "구인공고는 시설회원 또는 관리자만 작성할 수 있습니다.");
-            return "redirect:/job";
+        // 권한별 기본 타입 설정 (엄격한 체크 제거)
+        String defaultType = type;
+        if ("FACILITY".equals(loggedInMember.getRole())) {
+            defaultType = "RECRUIT"; // 시설회원은 구인 기본
+        } else if ("USER".equals(loggedInMember.getRole())) {
+            defaultType = "SEARCH"; // 일반회원은 구직 기본
         }
-        
-        if ("SEARCH".equals(type) && !canWriteSearch(loggedInMember)) {
-            session.setAttribute("errorMessage", "구직공고는 일반회원 또는 관리자만 작성할 수 있습니다.");
-            return "redirect:/job";
-        }
+        // 관리자는 요청받은 타입 그대로 사용
 
         JobDTO jobDTO = new JobDTO();
-        jobDTO.setJobType(type); // 기본 타입 설정
+        jobDTO.setJobType(defaultType);
         model.addAttribute("jobDTO", jobDTO);
-        model.addAttribute("selectedType", type);
+        model.addAttribute("selectedType", defaultType);
         model.addAttribute("currentMember", loggedInMember);
         return "job/write";
     }
 
     /**
-     * 구인구직 등록 처리 (시설회원만 가능)
+     * 구인구직 등록 처리 (권한별 타입 제한 적용)
      */
     @PostMapping("/write")
     public String writeJob(@ModelAttribute JobDTO jobDTO, HttpSession session) {
         // 로그인 체크
         MemberDTO loggedInMember = getCurrentMember(session);
         if (loggedInMember == null) {
+            session.setAttribute("errorMessage", "로그인 후 이용해주세요.");
             return "redirect:/member/login";
         }
         
-        // 권한별 작성 가능 타입 체크
+        // 권한별 타입 유효성 검사 (POST 처리 시점에서 수행)
         String jobType = jobDTO.getJobType();
-        if ("RECRUIT".equals(jobType) && !canWriteRecruit(loggedInMember)) {
-            session.setAttribute("errorMessage", "구인공고는 시설회원 또는 관리자만 작성할 수 있습니다.");
-            return "redirect:/job";
+        String userRole = loggedInMember.getRole();
+        
+        // 시설회원이 구직글을 작성하려고 하는 경우
+        if ("FACILITY".equals(userRole) && "SEARCH".equals(jobType)) {
+            session.setAttribute("errorMessage", "시설회원은 구인공고만 작성할 수 있습니다.");
+            return "redirect:/job/write?type=RECRUIT";
         }
         
-        if ("SEARCH".equals(jobType) && !canWriteSearch(loggedInMember)) {
-            session.setAttribute("errorMessage", "구직공고는 일반회원 또는 관리자만 작성할 수 있습니다.");
-            return "redirect:/job";
+        // 일반회원이 구인글을 작성하려고 하는 경우
+        if ("USER".equals(userRole) && "RECRUIT".equals(jobType)) {
+            session.setAttribute("errorMessage", "일반회원은 구직공고만 작성할 수 있습니다.");
+            return "redirect:/job/write?type=SEARCH";
         }
 
-        // status 기본값 설정
+        // 기본값 설정
         if (jobDTO.getStatus() == null || jobDTO.getStatus().isEmpty()) {
             jobDTO.setStatus("ACTIVE");
         }
@@ -104,18 +108,20 @@ public class JobController {
         // 현재 로그인된 사용자 정보 설정
         jobDTO.setMemberId(loggedInMember.getMemberId());
 
-        // ★ 3. priority 기본값 설정 (가장 흔한 해결책) ★
-        // 예: 새로 생성되는 게시글의 우선순위를 0 (가장 낮은 우선순위)으로 설정
-        // JobDTO의 priority 필드 타입에 맞게 설정하세요 (int, Integer, long, Long 등).
-        if (jobDTO.getPriority() == null) { // Long/Integer 타입이라면 null 체크
-            jobDTO.setPriority(0); // 또는 10, 100 등 원하는 기본 우선순위 값
-
+        // priority 기본값 설정 (NULL 방지)
+        if (jobDTO.getPriority() == null) {
+            jobDTO.setPriority(0);
         }
 
-        // 4. 서비스 호출
-        jobService.insertJob(jobDTO);
-        return "redirect:/job";
-
+        try {
+            // 서비스 호출
+            jobService.insertJob(jobDTO);
+            session.setAttribute("successMessage", "공고가 성공적으로 등록되었습니다.");
+            return "redirect:/job";
+        } catch (Exception e) {
+            session.setAttribute("errorMessage", "공고 등록 중 오류가 발생했습니다. 다시 시도해주세요.");
+            return "redirect:/job/write?type=" + jobType;
+        }
     }
 
     @GetMapping("/detail/{id}")

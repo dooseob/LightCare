@@ -103,7 +103,7 @@
                                         <option value="운전원" th:selected="${position == '운전원'}">운전원</option>
                                         <option value="간호사" th:selected="${position == '간호사'}">간호사</option>
                                         <option value="영양사" th:selected="${position == '영양사'}">영양사</option>
-                                        <option value="기탄" th:selected="${position == '기타'}">기타</option>
+                                        <option value="기타" th:selected="${position == '기타'}">기타</option>
                                     </select>
                                 </div>
 
@@ -383,4 +383,42 @@
     <!-- JavaScript -->
     <div th:replace="~{layout/footer :: scripts}"></div>
 </body>
-    <script>\n        // 검색 필터 초기화\n        function resetFilters() {\n            document.getElementById('keyword').value = '';\n            document.querySelectorAll('input[name=\"type\"]')[0].checked = true;\n            document.getElementById('position').value = '';\n            document.getElementById('region').value = '';\n            document.getElementById('workType').value = '';\n            document.getElementById('experience').value = '';\n            document.getElementById('searchForm').submit();\n        }\n        \n        // 정렬 순서 변경\n        function changeSortOrder(value) {\n            const url = new URL(window.location);\n            url.searchParams.set('sortOrder', value);\n            window.location.href = url.toString();\n        }\n        \n        // 인기 검색어 클릭\n        document.addEventListener('DOMContentLoaded', function() {\n            const popularKeywords = document.querySelectorAll('.badge.bg-light');\n            popularKeywords.forEach(function(keyword) {\n                keyword.style.cursor = 'pointer';\n                keyword.addEventListener('click', function() {\n                    document.getElementById('keyword').value = this.textContent;\n                    document.getElementById('searchForm').submit();\n                });\n            });\n            \n            // 엔터키로 검색\n            document.getElementById('keyword').addEventListener('keypress', function(e) {\n                if (e.key === 'Enter') {\n                    e.preventDefault();\n                    document.getElementById('searchForm').submit();\n                }\n            });\n        });\n    </script>\n    \n    <style>\n        /* 구인구직 카드 스타일 */\n        .job-info {\n            font-size: 0.9rem;\n        }\n        \n        .job-meta {\n            font-size: 0.8rem;\n        }\n        \n        .badge.bg-light {\n            cursor: pointer;\n            transition: all 0.2s;\n        }\n        \n        .badge.bg-light:hover {\n            background-color: #e9ecef !important;\n            transform: translateY(-1px);\n        }\n        \n        .card:hover {\n            box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15) !important;\n            transform: translateY(-2px);\n            transition: all 0.3s;\n        }\n        \n        .btn-group .btn-check:checked + .btn {\n            background-color: var(--bs-primary);\n            border-color: var(--bs-primary);\n            color: white;\n        }\n    </style>\n</html> 
+    <script>
+        // 검색 필터 초기화
+        function resetFilters() {
+            document.getElementById('keyword').value = '';
+            document.querySelectorAll('input[name="type"]')[0].checked = true;
+            document.getElementById('position').value = '';
+            document.getElementById('region').value = '';
+            document.getElementById('workType').value = '';
+            document.getElementById('experience').value = '';
+            document.getElementById('searchForm').submit();
+        }
+        
+        // 정렬 순서 변경
+        function changeSortOrder(value) {
+            const url = new URL(window.location);
+            url.searchParams.set('sortOrder', value);
+            window.location.href = url.toString();
+        }
+        
+        // 인기 검색어 클릭
+        document.addEventListener('DOMContentLoaded', function() {
+            const popularKeywords = document.querySelectorAll('.badge.bg-light');
+            popularKeywords.forEach(function(keyword) {
+                keyword.style.cursor = 'pointer';
+                keyword.addEventListener('click', function() {
+                    document.getElementById('keyword').value = this.textContent;
+                    document.getElementById('searchForm').submit();
+                });
+            });
+            
+            // 엔터키로 검색
+            document.getElementById('keyword').addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    document.getElementById('searchForm').submit();
+                }
+            });
+        });
+    </script>\n    \n    <style>\n        /* 구인구직 카드 스타일 */\n        .job-info {\n            font-size: 0.9rem;\n        }\n        \n        .job-meta {\n            font-size: 0.8rem;\n        }\n        \n        .badge.bg-light {\n            cursor: pointer;\n            transition: all 0.2s;\n        }\n        \n        .badge.bg-light:hover {\n            background-color: #e9ecef !important;\n            transform: translateY(-1px);\n        }\n        \n        .card:hover {\n            box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15) !important;\n            transform: translateY(-2px);\n            transition: all 0.3s;\n        }\n        \n        .btn-group .btn-check:checked + .btn {\n            background-color: var(--bs-primary);\n            border-color: var(--bs-primary);\n            color: white;\n        }\n    </style>\n</html> 

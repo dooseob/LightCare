@@ -107,6 +107,9 @@ public class JobService {
             // 필수 값 검증
             validateJobData(jobDTO);
             
+            // 데이터 정리 및 중복 제거 (누적 방지)
+            cleanAndValidateJobData(jobDTO);
+            
             // 기본값 설정
             if (jobDTO.getStatus() == null) {
                 jobDTO.setStatus("ACTIVE");
@@ -140,6 +143,9 @@ public class JobService {
             
             // 필수 값 검증
             validateJobData(jobDTO);
+            
+            // 데이터 정리 및 중복 제거 (누적 방지)
+            cleanAndValidateJobData(jobDTO);
 
             // priority null 체크 및 기본값 설정 로직 추가
             if (jobDTO.getPriority() == null) {
@@ -213,6 +219,82 @@ public class JobService {
         }
         if (jobDTO.getMemberId() == null) {
             throw new IllegalArgumentException("작성자 정보가 필요합니다.");
+        }
+    }
+    
+    /**
+     * 구인구직 데이터 정리 및 중복 제거 (누적 방지)
+     */
+    private void cleanAndValidateJobData(JobDTO jobDTO) {
+        log.info("데이터 정리 시작 - jobId: {}", jobDTO.getJobId());
+        
+        // 제목 정리
+        if (jobDTO.getTitle() != null) {
+            jobDTO.setTitle(jobDTO.getTitle().trim());
+        }
+        
+        // 내용 정리
+        if (jobDTO.getContent() != null) {
+            jobDTO.setContent(jobDTO.getContent().trim());
+        }
+        
+        // 급여 설명 정리 (중복 제거)
+        if (jobDTO.getSalaryDescription() != null && !jobDTO.getSalaryDescription().trim().isEmpty()) {
+            String cleanSalaryDesc = cleanDuplicateValues(jobDTO.getSalaryDescription());
+            jobDTO.setSalaryDescription(cleanSalaryDesc);
+            log.debug("급여 설명 정리됨: {} -> {}", jobDTO.getSalaryDescription(), cleanSalaryDesc);
+        }
+        
+        // 근무시간 정리 (중복 제거)
+        if (jobDTO.getWorkHours() != null && !jobDTO.getWorkHours().trim().isEmpty()) {
+            String cleanWorkHours = cleanDuplicateValues(jobDTO.getWorkHours());
+            jobDTO.setWorkHours(cleanWorkHours);
+            log.debug("근무시간 정리됨: {} -> {}", jobDTO.getWorkHours(), cleanWorkHours);
+        }
+        
+        // 회사명 정리
+        if (jobDTO.getFacilityName() != null) {
+            jobDTO.setFacilityName(jobDTO.getFacilityName().trim());
+        }
+        
+        // 근무지 정리
+        if (jobDTO.getWorkLocation() != null) {
+            jobDTO.setWorkLocation(jobDTO.getWorkLocation().trim());
+        }
+        
+        // 연락처 정리
+        if (jobDTO.getContactPhone() != null) {
+            jobDTO.setContactPhone(jobDTO.getContactPhone().trim());
+        }
+        
+        // 자격증 정리 (중복 제거)
+        if (jobDTO.getQualifications() != null && !jobDTO.getQualifications().trim().isEmpty()) {
+            String cleanQualifications = cleanDuplicateValues(jobDTO.getQualifications());
+            jobDTO.setQualifications(cleanQualifications);
+        }
+        
+        log.info("데이터 정리 완료 - jobId: {}", jobDTO.getJobId());
+    }
+    
+    /**
+     * 콤마로 구분된 값들의 중복 제거 유틸리티 메서드
+     */
+    private String cleanDuplicateValues(String input) {
+        if (input == null || input.trim().isEmpty()) {
+            return input;
+        }
+        
+        try {
+            // 콤마로 분리하여 중복 제거
+            String[] values = input.split(",");
+            return java.util.Arrays.stream(values)
+                    .map(String::trim)
+                    .filter(s -> !s.isEmpty())
+                    .distinct()
+                    .collect(java.util.stream.Collectors.joining(", "));
+        } catch (Exception e) {
+            log.warn("값 정리 중 오류 발생, 원본 값 반환: {}", input, e);
+            return input.trim();
         }
     }
 
