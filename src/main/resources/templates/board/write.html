@@ -101,7 +101,7 @@
                                     <label class="form-label">내용 <span class="text-danger">*</span></label>
                                     <textarea class="form-control" id="content" rows="15" th:field="*{content}" 
                                               placeholder="내용을 입력해주세요" required minlength="20"
-                                              data-rich-editor='{"height": "400px", "enableImage": true, "enableTable": true, "enableLink": true}'></textarea>
+                                              data-rich-editor='{"height": "400px"}'></textarea>
                                     <div class="form-text">
                                         최소 20자 이상 작성해주세요. 리치 텍스트 에디터로 이미지, 테이블, 링크 등을 추가할 수 있습니다.
                                         <small class="float-end">
@@ -321,8 +321,5 @@
         });
     </script>
     
-    <!-- 리치 텍스트 에디터 -->
-    <link rel="stylesheet" href="/css/rich-text-editor.css">
-    <script src="/js/rich-text-editor.js"></script>
 </body>
 </html> 

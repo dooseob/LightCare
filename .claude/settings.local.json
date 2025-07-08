@@ -20,7 +20,8 @@
       "Bash(javac:*)",
       "Bash(java:*)",
       "Bash(mv:*)",
-      "Bash(node:*)"
+      "Bash(node:*)",
+      "Bash(touch:*)"
     ],
     "deny": []
   }

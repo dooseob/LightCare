@@ -199,7 +199,7 @@
                                     <textarea class="form-control" rows="8" th:field="*{content}" id="content"
                                               placeholder="시설 이용 경험을 자세히 작성해주세요.&#10;&#10;예시:&#10;- 시설의 장점과 단점&#10;- 직원들의 서비스 품질&#10;- 시설 환경과 청결도&#10;- 다른 이용자들에게 도움이 될 정보" 
                                               maxlength="2000" required
-                                              data-rich-editor='{"height": "350px", "enableImage": true, "enableTable": true, "enableLink": true}'></textarea>
+                                              data-rich-editor='{"height": "350px", "maxLength": 2000}'></textarea>
                                     <div class="form-text">
                                         <span id="contentLength">0</span>/2000자 (최소 10자 이상 작성해주세요)
                                     </div>
@@ -368,8 +368,5 @@
         }
     </style>
     
-    <!-- 리치 텍스트 에디터 -->
-    <link rel="stylesheet" href="/css/rich-text-editor.css">
-    <script src="/js/rich-text-editor.js"></script>
 </body>
 </html> 
