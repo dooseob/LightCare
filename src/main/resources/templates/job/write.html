@@ -109,7 +109,7 @@
                                 </label>
                                 <textarea class="form-control" rows="10" th:field="*{content}" required
                                           id="contentTextarea"
-                                          data-rich-editor='{"height": "350px", "enableImage": false, "enableTable": true, "enableLink": true}'></textarea>
+                                          data-rich-editor='{"height": "350px"}'></textarea>
                             </div>
                             
                             <!-- 구직글 전용 필드들 (메인 브랜치의 추가 기능) -->
@@ -240,11 +240,6 @@
                 </div>
             </div>
 
-            <!-- 현재 브랜치의 Fragment 재사용 시스템 유지 (권한 기반) -->
-            <div th:replace="~{fragments/jobFormFields :: jobFormFields (
-                                   jobDTO=${jobDTO},
-                                   isRecruitMode=${session.loginMember != null and session.loginMember.role == 'FACILITY'} or (session.loginMember != null and session.loginMember.role == 'ADMIN' and jobDTO.jobType == 'RECRUIT')
-                                 )}"></div>
 
             <div class="d-grid gap-2 mt-4">
                 <button type="submit" class="btn btn-primary">
@@ -270,9 +265,6 @@
 <!-- 구인구직 작성 페이지 전용 JavaScript (메인 브랜치의 개선된 스크립트) -->
 <script src="/js/job-edit.js"></script>
 
-<!-- 리치 텍스트 에디터 (메인 브랜치의 새로운 기능) -->
-<link rel="stylesheet" href="/css/rich-text-editor.css">
-<script src="/js/rich-text-editor.js"></script>
 
 <script>
     // 페이지 로드 시 초기 설정 (현재 브랜치 권한 시스템 + 메인 브랜치 동적 제어)
