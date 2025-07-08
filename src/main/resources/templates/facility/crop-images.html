@@ -522,27 +522,7 @@
 <!-- 고급 이미지 크롭퍼 CSS -->
 <link th:href="@{/css/advanced-image-cropper.css}" rel="stylesheet">
 
-<!-- 시설 이미지 크롭퍼 JavaScript (프로필 방식 기반) -->
-<script th:src="@{/js/facility-image-cropper.js}"></script>
-
-<!-- 시설 이미지 관리 전용 JavaScript (Thymeleaf 충돌 방지용) -->
-<script th:src="@{/js/facility-image-manage.js}"></script>
-
-<!-- 폴더 선택 전용 JavaScript (충돌 방지용 분리) -->
-<script th:src="@{/js/facility-folder-selection.js}"></script>
-
-<!-- 3단계 관리 전용 JavaScript (타임리프 충돌 완전 방지) -->
-<script th:src="@{/js/facility-image-step3-manage.js}"></script>
-
-<!-- 기존 인라인 스크립트를 별도 파일로 대체 -->
-<script>
-// 기본 설정만 유지 (별도 파일에서 모든 로직 처리)
-console.log('🎨 시설 이미지 크롭퍼 페이지 로드 완료');
-console.log('📚 facility-image-cropper.js가 메인 로직을 처리합니다.');
-console.log('🛠️ facility-image-manage.js가 관리 기능을 처리합니다.');
-console.log('📂 facility-folder-selection.js가 폴더 선택을 처리합니다.');
-console.log('⚙️ facility-image-step3-manage.js가 3단계 관리를 처리합니다.');
-</script>
+<!-- 기존 스크립트들은 모듈화된 시스템으로 대체됨 -->
 
 <style>
 /* 시설 이미지 크롭퍼 전용 스타일 */
@@ -799,38 +779,80 @@ console.log('⚙️ facility-image-step3-manage.js가 3단계 관리를 처리�
 }
 </style>
 
-<!-- Cropper.js 및 관련 스크립트 -->
+<!-- 외부 라이브러리 -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.12/cropper.min.js"></script>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.12/cropper.min.css">
 
-<!-- 시설 이미지 크롭 스타일 -->
+<!-- 모듈화된 시설 이미지 시스템 CSS -->
 <link rel="stylesheet" href="/css/facility-image-uploader.css">
-
-<!-- 고급 이미지 크롭퍼 -->
 <link rel="stylesheet" href="/css/advanced-image-cropper.css">
-<script src="/js/advanced-image-cropper.js"></script>
-
-<!-- 이미지 압축 라이브러리 -->
 <link rel="stylesheet" href="/css/image-compressor.css">
-<script src="/js/image-compressor.js"></script>
 
-<!-- 시설 이미지 마스터 컨트롤러 (단계 전환 및 데이터 관리) - 우선 로드 -->
-<script th:src="@{/js/facility-image-master-controller.js}"></script>
+<!-- 모듈화된 시설 이미지 시스템 JavaScript -->
+<!-- 1. Core Module (반드시 첫 번째로 로드) -->
+<script th:src="@{/js/facility-image-core.js}"></script>
 
-<!-- 시설 이미지 업로드 컴포넌트 -->
-<script src="/js/facility-image-uploader.js"></script>
+<!-- 2. 기능별 모듈들 (Core 모듈 이후에 로드) -->
+<script th:src="@{/js/facility-image-utils-module.js}"></script>
+<script th:src="@{/js/facility-image-ui-module.js}"></script>
+<script th:src="@{/js/facility-image-upload-module.js}"></script>
+<script th:src="@{/js/facility-image-cropper-module.js}"></script>
+<script th:src="@{/js/facility-image-data-module.js}"></script>
+<script th:src="@{/js/facility-image-seo-module.js}"></script>
 
-<!-- 시설 이미지 1단계 - 이미지 불러오기 및 오더 설정 (순수 JavaScript) -->
-<script th:src="@{/js/facility-image-step1-pure.js}"></script>
+<!-- 3. Main Controller (모든 모듈 이후에 로드) -->
+<script th:src="@{/js/facility-image-main-controller.js}"></script>
 
-<!-- 시설 이미지 2단계 - 크롭 및 편집 기능 (중요!) -->
-<script th:src="@{/js/facility-image-cropper.js}"></script>
+<!-- 4. 지원 유틸리티 -->
+<script th:src="@{/js/smart-scroll-utility.js}"></script>
 
-<!-- 시설 이미지 SEO 키워드 관리 (파일명 영문변환 및 키워드 추가) -->
-<script src="/js/facility-image-seo-keywords.js"></script>
-
-<!-- 시설 이미지 3단계 관리 전용 (타임리프 충돌 방지) -->
-<script src="/js/facility-image-step3-manage.js"></script>
+<script>
+    // 시설 정보 전역 변수
+    window.facilityInfo = {
+        facilityId: /*[[${facility?.facilityId}]]*/ 0,
+        facilityName: /*[[${facility?.facilityName}]]*/ '시설명'
+    };
+    
+    // 기존 이미지 정보 (서버에서 전달)
+    window.existingImages = /*[[${existingImages}]]*/ [];
+    
+    // 메인 컨트롤러가 자동으로 초기화를 수행하므로 별도의 초기화 코드 불필요
+    // DOMContentLoaded 이벤트에서 자동으로 초기화됨
+    
+    // 디버깅을 위한 전역 참조
+    window.FacilityImageDebug = {
+        facilityInfo: window.facilityInfo,
+        existingImages: window.existingImages,
+        getSystemState: function() {
+            return window.FacilityImageMainController ? 
+                window.FacilityImageMainController.getCurrentState() : 
+                'System not initialized';
+        },
+        getModuleInfo: function() {
+            if (!window.FacilityImageSystem) return 'System not loaded';
+            
+            return {
+                Core: window.FacilityImageCore?.getInfo(),
+                Cropper: window.FacilityImageCropper?.getInfo(),
+                Upload: window.FacilityImageUpload?.getInfo(),
+                UI: window.FacilityImageUI?.getInfo(),
+                Data: window.FacilityImageData?.getInfo(),
+                SEO: window.FacilityImageSEO?.getInfo(),
+                Utils: window.FacilityImageUtils?.getInfo(),
+                Main: window.FacilityImageMainController?.getInfo()
+            };
+        }
+    };
+    
+    // 개발 모드에서만 디버깅 정보 출력
+    if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+        console.log('🚀 시설 이미지 모듈화 시스템 v1.0.0');
+        console.log('📋 시설 정보:', window.facilityInfo);
+        console.log('🖼️ 기존 이미지:', window.existingImages);
+        console.log('🔧 디버깅 도구: window.FacilityImageDebug');
+        console.log('💡 사용법: FacilityImageDebug.getSystemState(), FacilityImageDebug.getModuleInfo()');
+    }
+</script>
 
 </body>
 </html>
