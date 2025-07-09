@@ -834,6 +834,57 @@
     // 기존 이미지 정보 (서버에서 전달)
     window.existingImages = /*[[${existingImages}]]*/ [];
     
+    // 세션 스토리지에서 선택된 파일 불러오기
+    function loadSelectedFilesFromSession() {
+        const storedFiles = sessionStorage.getItem('selectedImageFiles');
+        if (storedFiles) {
+            try {
+                const fileDataArray = JSON.parse(storedFiles);
+                console.log('📂 세션에서 파일 불러오기:', fileDataArray.length + '개');
+                
+                // File 객체로 변환
+                const fileObjects = fileDataArray.map(fileData => {
+                    // Base64를 Blob으로 변환
+                    const byteCharacters = atob(fileData.data.split(',')[1]);
+                    const byteNumbers = new Array(byteCharacters.length);
+                    for (let i = 0; i < byteCharacters.length; i++) {
+                        byteNumbers[i] = byteCharacters.charCodeAt(i);
+                    }
+                    const byteArray = new Uint8Array(byteNumbers);
+                    const blob = new Blob([byteArray], {type: fileData.type});
+                    
+                    // File 객체 생성
+                    return new File([blob], fileData.name, {
+                        type: fileData.type,
+                        lastModified: Date.now()
+                    });
+                });
+                
+                // 전역 변수에 저장
+                window.selectedImageFiles = fileObjects;
+                
+                // 메인 컨트롤러에 파일 전달
+                if (window.FacilityImageMainController && window.FacilityImageMainController.processFiles) {
+                    window.FacilityImageMainController.processFiles(fileObjects);
+                }
+                
+                console.log('✅ 세션에서 파일 불러오기 완료');
+                
+                // 세션 스토리지 정리
+                sessionStorage.removeItem('selectedImageFiles');
+                
+            } catch (error) {
+                console.error('❌ 세션에서 파일 불러오기 실패:', error);
+            }
+        }
+    }
+    
+    // 페이지 로드 시 세션 파일 불러오기
+    document.addEventListener('DOMContentLoaded', function() {
+        // 약간의 지연을 두어 모든 모듈이 로드된 후 실행
+        setTimeout(loadSelectedFilesFromSession, 1000);
+    });
+    
     // 메인 컨트롤러가 자동으로 초기화를 수행하므로 별도의 초기화 코드 불필요
     // DOMContentLoaded 이벤트에서 자동으로 초기화됨
     
