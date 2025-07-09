@@ -25,7 +25,16 @@
       "Bash(for file in src/main/resources/static/js/facility-image-*.js)",
       "Bash(do echo \"Checking $file\")",
       "Bash(echo:*)",
-      "Bash(done)"
+      "Bash(done)",
+      "Bash(systemctl status:*)",
+      "Bash(apt list:*)",
+      "Bash(sudo systemctl:*)",
+      "Bash(service mysql:*)",
+      "Bash(ss:*)",
+      "Bash(sudo:*)",
+      "Bash(git rm:*)",
+      "Bash(git add:*)",
+      "Bash(git config:*)"
     ],
     "deny": []
   }

@@ -314,7 +314,7 @@
 <div th:replace="~{layout/footer :: scripts}"></div>
 
 <!-- 카카오맵 API -->
-<script type="text/javascript" src="//dapi.kakao.com/v2/maps/sdk.js?appkey=3c4987cb946a721903add5fc474941a3&libraries=services,clusterer,drawing"></script>
+<script type="text/javascript" th:src="@{//dapi.kakao.com/v2/maps/sdk.js(appkey=${@environment.getProperty('KAKAO_APP_KEY')}, libraries='services,clusterer,drawing')}"></script>
 
 <script th:inline="javascript">
     /*<![CDATA[*/
@@ -547,7 +547,7 @@
 <script src="//developers.kakao.com/sdk/js/kakao.min.js"></script>
 <script>
     // 새로운 App Key로 카카오톡 SDK 초기화
-    Kakao.init('3c4987cb946a721903add5fc474941a3');
+    Kakao.init(/*[[${@environment.getProperty('KAKAO_APP_KEY')}]]*/);;
 </script>
 </body>
 </html>

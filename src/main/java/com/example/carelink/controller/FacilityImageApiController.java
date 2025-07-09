@@ -10,6 +10,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import javax.servlet.http.HttpSession;
 import java.util.HashMap;
@@ -271,6 +272,98 @@ public class FacilityImageApiController {
             
         } catch (Exception e) {
             log.error("❌ 메인 이미지 설정 API 오류 - imageId: {}", imageId, e);
+            response.put("success", false);
+            response.put("message", "서버 오류가 발생했습니다: " + e.getMessage());
+            return ResponseEntity.internalServerError().body(response);
+        }
+    }
+
+    /**
+     * 다중 이미지 업로드 API (Blob 방식)
+     */
+    @PostMapping("/upload")
+    public ResponseEntity<Map<String, Object>> uploadImages(
+            @RequestParam("facilityId") Long facilityId,
+            @RequestParam("images") List<MultipartFile> images,
+            HttpSession session) {
+        
+        Map<String, Object> response = new HashMap<>();
+        
+        try {
+            log.info("📤 시설 이미지 업로드 API 요청 - facilityId: {}, 이미지 수: {}", facilityId, images.size());
+            
+            // 권한 확인
+            MemberDTO member = (MemberDTO) session.getAttribute(Constants.SESSION_MEMBER);
+            if (member == null) {
+                response.put("success", false);
+                response.put("message", "로그인이 필요합니다.");
+                return ResponseEntity.status(401).body(response);
+            }
+            
+            // 시설 확인
+            FacilityDTO facility = facilityService.getFacilityById(facilityId);
+            if (facility == null) {
+                response.put("success", false);
+                response.put("message", "시설을 찾을 수 없습니다.");
+                return ResponseEntity.badRequest().body(response);
+            }
+            
+            // 시설 소유자 또는 관리자만 업로드 가능
+            if (!facility.getRegisteredMemberId().equals(member.getMemberId()) 
+                && !Constants.MEMBER_ROLE_ADMIN.equals(member.getRole())) {
+                response.put("success", false);
+                response.put("message", "해당 시설 이미지를 업로드할 권한이 없습니다.");
+                return ResponseEntity.status(403).body(response);
+            }
+            
+            // 파일 검증
+            if (images == null || images.isEmpty()) {
+                response.put("success", false);
+                response.put("message", "업로드할 이미지가 없습니다.");
+                return ResponseEntity.badRequest().body(response);
+            }
+            
+            // 최대 파일 수 체크 (10MB 제한)
+            final long MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
+            final int MAX_FILES = 5;
+            
+            if (images.size() > MAX_FILES) {
+                response.put("success", false);
+                response.put("message", "최대 " + MAX_FILES + "장까지만 업로드할 수 있습니다.");
+                return ResponseEntity.badRequest().body(response);
+            }
+            
+            // 파일 크기 및 형식 검증
+            for (MultipartFile image : images) {
+                if (image.getSize() > MAX_FILE_SIZE) {
+                    response.put("success", false);
+                    response.put("message", "파일 크기가 10MB를 초과할 수 없습니다: " + image.getOriginalFilename());
+                    return ResponseEntity.badRequest().body(response);
+                }
+                
+                String contentType = image.getContentType();
+                if (contentType == null || !contentType.startsWith("image/")) {
+                    response.put("success", false);
+                    response.put("message", "이미지 파일만 업로드할 수 있습니다: " + image.getOriginalFilename());
+                    return ResponseEntity.badRequest().body(response);
+                }
+            }
+            
+            // 이미지 업로드 처리
+            List<FacilityImageDTO> uploadedImages = facilityImageService.uploadMultipleImages(facilityId, images);
+            
+            response.put("success", true);
+            response.put("message", images.size() + "개의 이미지가 성공적으로 업로드되었습니다.");
+            response.put("uploadedImages", uploadedImages);
+            response.put("uploadCount", uploadedImages.size());
+            
+            log.info("✅ 시설 이미지 업로드 API 성공 - facilityId: {}, 업로드 수: {}, memberId: {}", 
+                    facilityId, uploadedImages.size(), member.getMemberId());
+            return ResponseEntity.ok(response);
+            
+        } catch (Exception e) {
+            log.error("❌ 시설 이미지 업로드 API 오류 - facilityId: {}", facilityId, e);
+            
             response.put("success", false);
             response.put("message", "서버 오류가 발생했습니다: " + e.getMessage());
             return ResponseEntity.internalServerError().body(response);
