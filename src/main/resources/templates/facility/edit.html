@@ -236,8 +236,34 @@
                                             <!-- 순서 변경과 메인 이미지 지정 기능을 통합한 단일 목록을 제공합니다 -->
                                         </div>
                                         
-                                        <!-- 2단계: 크롭 및 압축 -->
-                                        <div id="cropSection" class="crop-section" style="display: none;">
+                                        <!-- 1.5단계: 압축 진행 상황 표시 (새로 추가) -->
+                                        <div id="compressionProgress" class="compression-progress-section" style="display: none;">
+                                            <div class="card border-info mb-3">
+                                                <div class="card-header bg-info text-white">
+                                                    <h6 class="mb-0">
+                                                        <i class="fas fa-compress me-2"></i>파일 압축 진행 중
+                                                    </h6>
+                                                </div>
+                                                <div class="card-body">
+                                                    <div class="progress mb-3" style="height: 20px;">
+                                                        <div id="compressionProgressBar" class="progress-bar progress-bar-striped progress-bar-animated bg-info" 
+                                                             role="progressbar" style="width: 0%"></div>
+                                                    </div>
+                                                    <div id="compressionStatus" class="text-center text-muted">
+                                                        <i class="fas fa-compress fa-spin me-2"></i>압축 준비 중...
+                                                    </div>
+                                                    <div id="compressionStats" class="mt-3 text-center" style="display: none;">
+                                                        <small class="text-success">
+                                                            <i class="fas fa-check-circle me-1"></i>
+                                                            <span id="compressionResult"></span>
+                                                        </small>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        
+                                        <!-- 2단계: 크롭 및 압축 (새창 방식 사용으로 비활성화) -->
+                                        <div id="cropSection" class="crop-section" style="display: none !important;">
                                             <div class="compression-header mb-3">
                                                 <h6 class="text-success">
                                                     <i class="fas fa-crop-alt me-2"></i>이미지 크롭 및 고성능 압축
@@ -249,8 +275,8 @@
                                             
                                             <!-- 크롭 영역 -->
                                             <div id="cropContainer" class="crop-container mb-3">
-                                                <div class="crop-image-container">
-                                                    <img id="cropImage" style="max-width: 100%;">
+                                                <div class="crop-image-container" style="min-height: 400px; background-color: #f8f9fa; border: 1px solid #dee2e6; border-radius: 8px;">
+                                                    <img id="cropImage" style="max-width: 100%; height: auto; display: block;">
                                                     <canvas id="cropCanvas" style="display: none;"></canvas>
                                                     
                                                     <!-- 로딩 인디케이터 -->
@@ -437,6 +463,27 @@
                             <!-- Alt 텍스트 입력 (SEO용) -->
                             <input type="hidden" id="facilityImageAltText" name="facilityImageAltText" 
                                    th:value="${facility.facilityImageAltText}">
+                            
+                            <!-- 저장된 이미지 목록 (크롭 페이지에서 돌아온 경우 표시) -->
+                            <div id="savedImagesSection" class="saved-images-section mt-3" style="display: none;">
+                                <div class="card border-success">
+                                    <div class="card-header bg-success text-white d-flex align-items-center">
+                                        <i class="fas fa-check-circle me-2"></i>
+                                        <h6 class="mb-0">저장된 이미지 목록</h6>
+                                        <span class="badge bg-light text-success ms-auto" id="savedImageCount">0개</span>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="row g-3" id="savedImagesGrid">
+                                            <!-- 저장된 이미지 카드들이 여기에 동적으로 생성됩니다 -->
+                                        </div>
+                                        <div class="mt-3 text-center">
+                                            <button type="button" class="btn btn-outline-primary btn-sm" onclick="openImageCropPage()">
+                                                <i class="fas fa-plus me-2"></i>이미지 추가/편집
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
 
                         <!-- 수용 인원 -->
@@ -1515,14 +1562,24 @@ function initializeDragAndDrop() {
                         cropSection.isInitialized = true; // 중복 초기화 방지
                         console.log('🔄 크롭 섹션 표시됨 - 즉시 초기화 시작');
                         
+                        // 크롭 섹션 강제 표시
+                        cropSection.style.display = 'block';
+                        cropSection.style.visibility = 'visible';
+                        
                         // 즉시 크롭 이미지 로드 시도
-                        loadCropImageFromMainState();
+                        setTimeout(() => {
+                            loadCropImageFromMainState();
+                        }, 100);
                         
                         // 압축 통계 초기화
-                        updateCompressionStats(85, 'webp');
+                        setTimeout(() => {
+                            updateCompressionStats(85, 'webp');
+                        }, 200);
                         
                         // SEO 필드 초기화
-                        initializeSEOFields();
+                        setTimeout(() => {
+                            initializeSEOFields();
+                        }, 300);
                     }
                 }
             });
@@ -1563,6 +1620,16 @@ function initializeDragAndDrop() {
                 cropImage.src = e.target.result;
                 cropImage.style.display = 'block';
                 
+                // 크롭 컨테이너 스타일 업데이트
+                const cropContainer = cropImage.closest('.crop-image-container');
+                if (cropContainer) {
+                    cropContainer.style.minHeight = '400px';
+                    cropContainer.style.backgroundColor = '#f8f9fa';
+                    cropContainer.style.display = 'flex';
+                    cropContainer.style.alignItems = 'center';
+                    cropContainer.style.justifyContent = 'center';
+                }
+                
                 // 로딩 숨기기
                 if (cropLoading) cropLoading.style.display = 'none';
                 if (cropError) cropError.style.display = 'none';
@@ -1590,34 +1657,81 @@ function initializeDragAndDrop() {
     // 크롭퍼 인스턴스 초기화
     function initializeCropperInstance() {
         const cropImage = document.getElementById('cropImage');
-        if (!cropImage || !cropImage.src) return;
+        if (!cropImage || !cropImage.src) {
+            console.error('❌ 크롭 이미지 또는 소스를 찾을 수 없습니다.');
+            return;
+        }
         
         // 기존 크롭퍼 파괴
         if (cropImage.cropper) {
             cropImage.cropper.destroy();
         }
         
-        // 새 크롭퍼 생성
-        if (window.Cropper) {
-            cropImage.cropper = new Cropper(cropImage, {
-                aspectRatio: 16 / 9,
-                viewMode: 1,
-                dragMode: 'move',
-                autoCropArea: 1,
-                responsive: true,
-                restore: false,
-                guides: false,
-                center: false,
-                highlight: false,
-                cropBoxMovable: true,
-                cropBoxResizable: true,
-                toggleDragModeOnDblclick: false,
-                ready: function() {
-                    console.log('✅ 크롭퍼 초기화 완료');
-                }
-            });
+        // 이미지 로드 완료 확인
+        if (cropImage.complete) {
+            initializeCropper();
         } else {
-            console.warn('⚠️ Cropper.js 라이브러리가 로드되지 않았습니다.');
+            cropImage.onload = initializeCropper;
+        }
+        
+        function initializeCropper() {
+            console.log('🔄 크롭퍼 초기화 시작');
+            
+            // 새 크롭퍼 생성
+            if (window.Cropper) {
+                try {
+                    cropImage.cropper = new Cropper(cropImage, {
+                        aspectRatio: 16 / 9,
+                        viewMode: 1,
+                        dragMode: 'move',
+                        autoCropArea: 1,
+                        responsive: true,
+                        restore: false,
+                        guides: true,
+                        center: true,
+                        highlight: false,
+                        cropBoxMovable: true,
+                        cropBoxResizable: true,
+                        toggleDragModeOnDblclick: false,
+                        minCanvasWidth: 400,
+                        minCanvasHeight: 300,
+                        ready: function() {
+                            console.log('✅ 크롭퍼 초기화 완료');
+                            
+                            // 크롭 섹션 표시
+                            const cropSection = document.getElementById('cropSection');
+                            if (cropSection) {
+                                cropSection.style.display = 'block';
+                            }
+                            
+                            // 크롭 컨트롤 표시
+                            const cropControls = document.getElementById('cropControls');
+                            if (cropControls) {
+                                cropControls.style.display = 'block';
+                            }
+                        },
+                        cropstart: function() {
+                            console.log('🔄 크롭 시작');
+                        },
+                        cropmove: function() {
+                            console.log('🔄 크롭 이동');
+                        },
+                        cropend: function() {
+                            console.log('🔄 크롭 종료');
+                        }
+                    });
+                } catch (error) {
+                    console.error('❌ 크롭퍼 초기화 오류:', error);
+                }
+            } else {
+                console.warn('⚠️ Cropper.js 라이브러리가 로드되지 않았습니다.');
+                
+                // 크롭퍼 없이도 이미지 표시
+                const cropSection = document.getElementById('cropSection');
+                if (cropSection) {
+                    cropSection.style.display = 'block';
+                }
+            }
         }
     }
     
@@ -1853,8 +1967,24 @@ function initializeFinalUpload() {
     
     const proceedButton = document.getElementById('proceedToStep2');
     if (proceedButton) {
-        proceedButton.addEventListener('click', function() {
-            console.log('🔄 2단계 크롭 페이지로 이동');
+        // 기존 이벤트 리스너 제거
+        proceedButton.removeEventListener('click', arguments.callee);
+        
+        // 새로운 이벤트 리스너 추가 (최우선순위로 설정, 캡처 단계에서 실행)
+        proceedButton.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            e.stopImmediatePropagation();
+            
+            // 메인 컨트롤러 무력화
+            if (window.FacilityImageMainController && window.FacilityImageMainController.moveToStep) {
+                window.FacilityImageMainController.moveToStep = function() { 
+                    console.log('🚫 메인 컨트롤러 단계 이동 차단됨'); 
+                    return false; 
+                };
+            }
+            
+            console.log('🔄 새창 방식: 2단계 크롭 페이지로 이동');
             
             // 시설 ID 가져오기
             const facilityId = document.querySelector('meta[name="facility-id"]')?.content || '1';
@@ -1863,6 +1993,10 @@ function initializeFinalUpload() {
             if (window.selectedImageFiles && window.selectedImageFiles.length > 0) {
                 const fileDataArray = [];
                 let processedCount = 0;
+                
+                // 로딩 표시
+                proceedButton.disabled = true;
+                proceedButton.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>파일 준비 중...';
                 
                 // 각 파일을 Base64로 변환하여 저장
                 window.selectedImageFiles.forEach((file, index) => {
@@ -1876,19 +2010,25 @@ function initializeFinalUpload() {
                         };
                         processedCount++;
                         
+                        // 진행률 표시
+                        const progress = Math.round((processedCount / window.selectedImageFiles.length) * 100);
+                        proceedButton.innerHTML = `<i class="fas fa-spinner fa-spin me-1"></i>파일 준비 중... ${progress}%`;
+                        
                         // 모든 파일 처리 완료 시 페이지 이동
                         if (processedCount === window.selectedImageFiles.length) {
                             sessionStorage.setItem('selectedImageFiles', JSON.stringify(fileDataArray));
-                            window.location.href = `/facility/${facilityId}/crop-images`;
+                            console.log('✅ 파일 세션 저장 완료, 크롭 페이지로 이동');
+                            window.location.href = `/facility/crop-images/${facilityId}`;
                         }
                     };
                     reader.readAsDataURL(file);
                 });
             } else {
                 // 선택된 파일이 없으면 바로 이동
+                console.log('⚠️ 선택된 파일이 없어 빈 크롭 페이지로 이동');
                 window.location.href = `/facility/${facilityId}/crop-images`;
             }
-        });
+        }, true); // 캡처 단계에서 실행하여 다른 이벤트 리스너보다 먼저 실행
     }
 }
 
@@ -2604,6 +2744,711 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     // 드래그앤드롭 영역 클릭 이벤트 제거 (중복 방지 - 모듈 시스템에서 처리)
+    
+    // 🔥 1단계 파일 압축 모듈
+    function compressImageFile(file, quality = 0.8, maxWidth = 1920, maxHeight = 1080) {
+        return new Promise((resolve, reject) => {
+            // 이미지 파일이 아닌 경우 원본 반환
+            if (!file.type.startsWith('image/')) {
+                resolve(file);
+                return;
+            }
+            
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            const img = new Image();
+            
+            img.onload = function() {
+                // 비율 유지하면서 리사이즈
+                let { width, height } = img;
+                
+                if (width > maxWidth || height > maxHeight) {
+                    const ratio = Math.min(maxWidth / width, maxHeight / height);
+                    width *= ratio;
+                    height *= ratio;
+                }
+                
+                canvas.width = width;
+                canvas.height = height;
+                
+                // 이미지 그리기
+                ctx.drawImage(img, 0, 0, width, height);
+                
+                // 압축된 Blob 생성
+                canvas.toBlob(
+                    (blob) => {
+                        if (blob) {
+                            // 압축된 File 객체 생성
+                            const compressedFile = new File([blob], file.name, {
+                                type: blob.type,
+                                lastModified: Date.now()
+                            });
+                            
+                            console.log(`📦 압축 완료: ${file.name}`);
+                            console.log(`   원본: ${(file.size / 1024 / 1024).toFixed(2)}MB → 압축: ${(compressedFile.size / 1024 / 1024).toFixed(2)}MB`);
+                            console.log(`   압축률: ${(((file.size - compressedFile.size) / file.size) * 100).toFixed(1)}%`);
+                            
+                            resolve(compressedFile);
+                        } else {
+                            reject(new Error('압축 실패'));
+                        }
+                    },
+                    'image/webp', // WebP 형식으로 압축 (최고 압축률)
+                    quality
+                );
+            };
+            
+            img.onerror = () => reject(new Error('이미지 로드 실패'));
+            
+            // 파일을 이미지로 로드
+            const reader = new FileReader();
+            reader.onload = (e) => img.src = e.target.result;
+            reader.onerror = () => reject(new Error('파일 읽기 실패'));
+            reader.readAsDataURL(file);
+        });
+    }
+    
+    // 🔥 압축 진행 상황 UI 업데이트 함수
+    function updateCompressionUI(progress) {
+        const progressSection = document.getElementById('compressionProgress');
+        const progressBar = document.getElementById('compressionProgressBar');
+        const statusText = document.getElementById('compressionStatus');
+        const statsDiv = document.getElementById('compressionStats');
+        const resultSpan = document.getElementById('compressionResult');
+        
+        // 진행 상황 섹션 표시
+        if (progressSection) {
+            progressSection.style.display = 'block';
+        }
+        
+        // 진행률 바 업데이트
+        if (progressBar) {
+            const percentage = Math.round((progress.current / progress.total) * 100);
+            progressBar.style.width = percentage + '%';
+            progressBar.setAttribute('aria-valuenow', percentage);
+        }
+        
+        // 상태 텍스트 업데이트
+        if (statusText) {
+            if (progress.status === 'compressing') {
+                statusText.innerHTML = `<i class="fas fa-compress fa-spin me-2"></i>압축 중... ${progress.current}/${progress.total} - ${progress.fileName}`;
+            } else if (progress.status === 'completed') {
+                statusText.innerHTML = `<i class="fas fa-check me-2"></i>압축 완료: ${progress.fileName}`;
+            } else if (progress.status === 'error') {
+                statusText.innerHTML = `<i class="fas fa-exclamation-triangle me-2"></i>오류: ${progress.fileName} - ${progress.error}`;
+            }
+        }
+        
+        // 완료 시 통계 표시
+        if (progress.current === progress.total && progress.stats) {
+            if (statsDiv && resultSpan) {
+                const stats = progress.stats;
+                resultSpan.textContent = `${(stats.originalSize / 1024 / 1024).toFixed(2)}MB → ${(stats.compressedSize / 1024 / 1024).toFixed(2)}MB (${stats.compressionRatio}% 절약)`;
+                statsDiv.style.display = 'block';
+            }
+            
+            // 상태 텍스트를 완료로 업데이트
+            if (statusText) {
+                statusText.innerHTML = `<i class="fas fa-check text-success me-2"></i>모든 파일 압축 완료! 잠시 후 크롭 페이지로 이동합니다...`;
+            }
+        }
+    }
+    
+    // 🔥 압축 진행 상황 숨기기 함수
+    function hideCompressionUI() {
+        const progressSection = document.getElementById('compressionProgress');
+        if (progressSection) {
+            progressSection.style.display = 'none';
+        }
+    }
+    
+    // 🔥 다중 파일 압축 함수
+    async function compressMultipleFiles(files, onProgress = null) {
+        const compressedFiles = [];
+        let totalOriginalSize = 0;
+        let totalCompressedSize = 0;
+        
+        for (let i = 0; i < files.length; i++) {
+            const file = files[i];
+            totalOriginalSize += file.size;
+            
+            try {
+                if (onProgress) {
+                    onProgress({
+                        current: i + 1,
+                        total: files.length,
+                        fileName: file.name,
+                        status: 'compressing'
+                    });
+                }
+                
+                const compressedFile = await compressImageFile(file, 0.85, 1920, 1080);
+                compressedFiles.push(compressedFile);
+                totalCompressedSize += compressedFile.size;
+                
+                if (onProgress) {
+                    onProgress({
+                        current: i + 1,
+                        total: files.length,
+                        fileName: file.name,
+                        status: 'completed'
+                    });
+                }
+                
+            } catch (error) {
+                console.error(`❌ ${file.name} 압축 실패:`, error);
+                
+                if (onProgress) {
+                    onProgress({
+                        current: i + 1,
+                        total: files.length,
+                        fileName: file.name,
+                        status: 'error',
+                        error: error.message
+                    });
+                }
+                
+                // 압축 실패 시 원본 파일 사용
+                compressedFiles.push(file);
+                totalCompressedSize += file.size;
+            }
+        }
+        
+        const savedSize = totalOriginalSize - totalCompressedSize;
+        const compressionRatio = ((savedSize / totalOriginalSize) * 100).toFixed(1);
+        
+        console.log('📊 전체 압축 결과:');
+        console.log(`   원본 총 크기: ${(totalOriginalSize / 1024 / 1024).toFixed(2)}MB`);
+        console.log(`   압축 총 크기: ${(totalCompressedSize / 1024 / 1024).toFixed(2)}MB`);
+        console.log(`   절약된 크기: ${(savedSize / 1024 / 1024).toFixed(2)}MB (${compressionRatio}%)`);
+        
+        const stats = {
+            originalSize: totalOriginalSize,
+            compressedSize: totalCompressedSize,
+            savedSize: savedSize,
+            compressionRatio: parseFloat(compressionRatio)
+        };
+        
+        // 최종 완료 시 UI 업데이트
+        if (onProgress) {
+            onProgress({
+                current: files.length,
+                total: files.length,
+                status: 'completed',
+                stats: stats
+            });
+        }
+        
+        return {
+            files: compressedFiles,
+            stats: stats
+        };
+    }
+    
+    // 🔥 메인 컨트롤러 moveToStep 함수 완전 덮어쓰기
+    function overrideMainController() {
+        if (window.FacilityImageMainController && window.FacilityImageMainController.moveToStep) {
+            const originalMoveToStep = window.FacilityImageMainController.moveToStep;
+            
+            window.FacilityImageMainController.moveToStep = async function(step) {
+                console.log(`🔄 moveToStep 호출됨: ${step}`);
+                
+                if (step === 2) {
+                    console.log('🚫 2단계 이동 차단 - 새창 방식으로 전환');
+                    
+                    const facilityId = document.querySelector('meta[name="facility-id"]')?.content || '1';
+                    
+                    if (window.selectedImageFiles && window.selectedImageFiles.length > 0) {
+                        console.log('📦 파일 압축 시작 - 1단계에서 처리');
+                        
+                        // 1단계 업로드 섹션 숨기기
+                        const uploadSection = document.getElementById('uploadSection');
+                        if (uploadSection) {
+                            uploadSection.style.display = 'none';
+                        }
+                        
+                        // 압축 진행 UI 표시
+                        const compressionProgress = document.getElementById('compressionProgress');
+                        if (compressionProgress) {
+                            compressionProgress.style.display = 'block';
+                        }
+                        
+                        // 압축 진행 표시를 위한 UI 업데이트
+                        const proceedBtn = document.getElementById('proceedToStep2');
+                        if (proceedBtn) {
+                            proceedBtn.disabled = true;
+                            proceedBtn.innerHTML = '<i class="fas fa-compress fa-spin me-1"></i>파일 압축 중...';
+                        }
+                        
+                        try {
+                            // 파일 압축 실행 (UI 업데이트 포함)
+                            const compressionResult = await compressMultipleFiles(window.selectedImageFiles, (progress) => {
+                                updateCompressionUI(progress);
+                                if (proceedBtn) {
+                                    proceedBtn.innerHTML = `<i class="fas fa-compress fa-spin me-1"></i>압축 중... ${progress.current}/${progress.total}`;
+                                }
+                            });
+                            
+                            const compressedFiles = compressionResult.files;
+                            const stats = compressionResult.stats;
+                            
+                            // 압축된 파일을 Base64로 변환하여 세션 저장
+                            const fileDataArray = [];
+                            let processedCount = 0;
+                            
+                            if (proceedBtn) {
+                                proceedBtn.innerHTML = '<i class="fas fa-upload fa-spin me-1"></i>세션 저장 중...';
+                            }
+                            
+                            for (let i = 0; i < compressedFiles.length; i++) {
+                                const file = compressedFiles[i];
+                                const reader = new FileReader();
+                                
+                                reader.onload = function(e) {
+                                    fileDataArray[i] = {
+                                        name: file.name,
+                                        type: file.type,
+                                        size: file.size,
+                                        data: e.target.result,
+                                        originalSize: window.selectedImageFiles[i]?.size || file.size
+                                    };
+                                    processedCount++;
+                                    
+                                    if (proceedBtn) {
+                                        const progress = Math.round((processedCount / compressedFiles.length) * 100);
+                                        proceedBtn.innerHTML = `<i class="fas fa-upload fa-spin me-1"></i>세션 저장 중... ${progress}%`;
+                                    }
+                                    
+                                    // 모든 파일 처리 완료
+                                    if (processedCount === compressedFiles.length) {
+                                        try {
+                                            sessionStorage.setItem('selectedImageFiles', JSON.stringify(fileDataArray));
+                                            
+                                            // 압축 통계도 함께 저장
+                                            sessionStorage.setItem('compressionStats', JSON.stringify(stats));
+                                            
+                                            console.log('✅ 압축 및 세션 저장 완료, 크롭 페이지로 이동');
+                                            console.log(`📊 압축 효과: ${(stats.originalSize / 1024 / 1024).toFixed(2)}MB → ${(stats.compressedSize / 1024 / 1024).toFixed(2)}MB (${stats.compressionRatio}% 절약)`);
+                                            
+                                            // 잠시 후 페이지 이동
+                                            setTimeout(() => {
+                                                window.location.href = `/facility/crop-images/${facilityId}`;
+                                            }, 1000);
+                                            
+                                        } catch (storageError) {
+                                            console.error('❌ 세션 저장 실패:', storageError);
+                                            
+                                            // 세션 저장 실패 시 전역 변수 사용
+                                            window.transferSelectedFiles = compressedFiles;
+                                            window.transferCompressionStats = stats;
+                                            
+                                            if (proceedBtn) {
+                                                proceedBtn.innerHTML = '<i class="fas fa-exclamation-triangle me-1"></i>저장 실패 - 직접 이동';
+                                            }
+                                            
+                                            setTimeout(() => {
+                                                window.location.href = `/facility/crop-images/${facilityId}`;
+                                            }, 1000);
+                                        }
+                                    }
+                                };
+                                
+                                reader.onerror = function() {
+                                    console.error(`❌ 파일 읽기 실패: ${file.name}`);
+                                    processedCount++;
+                                    
+                                    if (processedCount === compressedFiles.length) {
+                                        console.log('⚠️ 일부 파일 읽기 실패 - 가능한 파일로 진행');
+                                        window.transferSelectedFiles = compressedFiles;
+                                        window.location.href = `/facility/crop-images/${facilityId}`;
+                                    }
+                                };
+                                
+                                reader.readAsDataURL(file);
+                            }
+                            
+                        } catch (compressionError) {
+                            console.error('❌ 파일 압축 실패:', compressionError);
+                            
+                            // 압축 실패 시 원본 파일로 진행
+                            window.transferSelectedFiles = window.selectedImageFiles;
+                            
+                            if (proceedBtn) {
+                                proceedBtn.innerHTML = '<i class="fas fa-exclamation-triangle me-1"></i>압축 실패 - 원본으로 진행';
+                                proceedBtn.disabled = false;
+                            }
+                            
+                            setTimeout(() => {
+                                window.location.href = `/facility/crop-images/${facilityId}`;
+                            }, 1000);
+                        }
+                        
+                    } else {
+                        console.log('⚠️ 선택된 파일이 없어 빈 크롭 페이지로 이동');
+                        window.location.href = `/facility/${facilityId}/crop-images`;
+                    }
+                    
+                    return; // 여기서 함수 종료
+                }
+                
+                // 다른 단계는 원래 함수 실행
+                return originalMoveToStep.call(this, step);
+            };
+            
+            console.log('✅ 메인 컨트롤러 moveToStep 함수 덮어쓰기 완료');
+        }
+    }
+    
+    // 메인 컨트롤러 감시 및 덮어쓰기
+    const controllerObserver = setInterval(function() {
+        if (window.FacilityImageMainController && window.FacilityImageMainController.moveToStep) {
+            overrideMainController();
+            clearInterval(controllerObserver);
+        }
+    }, 100);
+    
+    // 즉시 실행도 시도
+    overrideMainController();
+    
+    // 🔥 새창 방식 강제 구현: 메인 컨트롤러 우회 (안전 장치 포함)
+    function forceNewWindowApproach() {
+        try {
+            const proceedButton = document.getElementById('proceedToStep2');
+            if (!proceedButton) {
+                console.warn('⚠️ proceedToStep2 버튼을 찾을 수 없습니다.');
+                return false;
+            }
+            
+            // 이미 덮어쓰기 처리된 버튼인지 확인
+            if (proceedButton.hasAttribute('data-overridden')) {
+                console.log('🔄 이미 새창 방식으로 설정된 버튼');
+                return true;
+            }
+            
+            // 기존 모든 이벤트 리스너 제거 (안전하게)
+            const newButton = proceedButton.cloneNode(true);
+            if (proceedButton.parentNode) {
+                proceedButton.parentNode.replaceChild(newButton, proceedButton);
+            } else {
+                console.error('❌ 버튼의 부모 요소를 찾을 수 없습니다.');
+                return false;
+            }
+            
+            // 새로운 이벤트 리스너 등록
+            newButton.addEventListener('click', function(e) {
+                try {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    e.stopImmediatePropagation();
+                    
+                        console.log('🔄 새창 방식 강제 실행: 크롭 페이지로 이동');
+                    
+                    const facilityId = document.querySelector('meta[name="facility-id"]')?.content || '1';
+                    
+                    if (window.selectedImageFiles && window.selectedImageFiles.length > 0) {
+                        const fileDataArray = [];
+                        let processedCount = 0;
+                        
+                        newButton.disabled = true;
+                        newButton.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>파일 준비 중...';
+                        
+                        window.selectedImageFiles.forEach((file, index) => {
+                            try {
+                                const reader = new FileReader();
+                                reader.onload = function(e) {
+                                    try {
+                                        fileDataArray[index] = {
+                                            name: file.name,
+                                            type: file.type,
+                                            size: file.size,
+                                            data: e.target.result
+                                        };
+                                        processedCount++;
+                                        
+                                        const progress = Math.round((processedCount / window.selectedImageFiles.length) * 100);
+                                        newButton.innerHTML = `<i class="fas fa-spinner fa-spin me-1"></i>파일 준비 중... ${progress}%`;
+                                        
+                                        if (processedCount === window.selectedImageFiles.length) {
+                                            sessionStorage.setItem('selectedImageFiles', JSON.stringify(fileDataArray));
+                                            console.log('✅ 파일 세션 저장 완료, 크롭 페이지로 이동');
+                                            window.location.href = `/facility/crop-images/${facilityId}`;
+                                        }
+                                    } catch (error) {
+                                        console.error('❌ 파일 처리 중 오류:', error);
+                                        newButton.innerHTML = '<i class="fas fa-exclamation-triangle me-1"></i>파일 처리 오류';
+                                        newButton.disabled = false;
+                                    }
+                                };
+                                reader.onerror = function() {
+                                    console.error('❌ 파일 읽기 오류:', file.name);
+                                    newButton.innerHTML = '<i class="fas fa-exclamation-triangle me-1"></i>파일 읽기 오류';
+                                    newButton.disabled = false;
+                                };
+                                reader.readAsDataURL(file);
+                            } catch (error) {
+                                console.error('❌ FileReader 초기화 오류:', error);
+                                newButton.innerHTML = '<i class="fas fa-exclamation-triangle me-1"></i>파일 처리 오류';
+                                newButton.disabled = false;
+                            }
+                        });
+                    } else {
+                        console.log('⚠️ 선택된 파일이 없어 빈 크롭 페이지로 이동');
+                        window.location.href = `/facility/${facilityId}/crop-images`;
+                    }
+                } catch (error) {
+                    console.error('❌ 버튼 클릭 처리 중 오류:', error);
+                    // 폴백: 기본 이동
+                    const facilityId = document.querySelector('meta[name="facility-id"]')?.content || '1';
+                    window.location.href = `/facility/${facilityId}/crop-images`;
+                }
+            }, true);
+            
+            // 덮어쓰기 완료 마킹
+            newButton.setAttribute('data-overridden', 'true');
+            console.log('✅ 새창 방식 버튼 이벤트 리스너 등록 완료');
+            return true;
+            
+        } catch (error) {
+            console.error('❌ 새창 방식 버튼 덮어쓰기 중 오류:', error);
+            return false;
+        }
+    }
+    
+    // 버튼 감시 및 덮어쓰기 (안전 장치 포함)
+    let buttonObserver = null;
+    try {
+        buttonObserver = new MutationObserver(function(mutations) {
+            try {
+                mutations.forEach(function(mutation) {
+                    if (mutation.type === 'childList') {
+                        const proceedButton = document.getElementById('proceedToStep2');
+                        if (proceedButton && !proceedButton.hasAttribute('data-overridden')) {
+                            forceNewWindowApproach();
+                        }
+                    }
+                });
+            } catch (error) {
+                console.error('❌ MutationObserver 처리 중 오류:', error);
+            }
+        });
+        
+        buttonObserver.observe(document.body, {
+            childList: true,
+            subtree: true
+        });
+    } catch (error) {
+        console.error('❌ MutationObserver 설정 중 오류:', error);
+    }
+    
+    // 즉시 실행 (안전하게)
+    setTimeout(function() {
+        try {
+            forceNewWindowApproach();
+        } catch (error) {
+            console.error('❌ 즉시 실행 중 오류:', error);
+        }
+    }, 100);
+    
+    // 주기적으로 확인 (메인 컨트롤러가 늦게 로드될 수 있음)
+    let retryCount = 0;
+    const maxRetries = 20; // 최대 10초 동안 시도
+    
+    const retryInterval = setInterval(function() {
+        try {
+            retryCount++;
+            const proceedButton = document.getElementById('proceedToStep2');
+            if (proceedButton && !proceedButton.hasAttribute('data-overridden')) {
+                const success = forceNewWindowApproach();
+                if (success) {
+                    console.log('✅ 새창 방식 버튼 설정 완료');
+                    clearInterval(retryInterval);
+                }
+            }
+            
+            // 최대 재시도 횟수 초과시 정리
+            if (retryCount >= maxRetries) {
+                console.log('⚠️ 새창 방식 버튼 설정 재시도 완료');
+                clearInterval(retryInterval);
+            }
+        } catch (error) {
+            console.error('❌ 주기적 확인 중 오류:', error);
+        }
+    }, 500);
+    
+    // 저장된 이미지들을 로드하고 표시하는 함수
+    function loadSavedImages() {
+        const savedImages = sessionStorage.getItem('savedImages');
+        if (savedImages) {
+            try {
+                const images = JSON.parse(savedImages);
+                displaySavedImages(images);
+                
+                // 세션 스토리지 정리
+                sessionStorage.removeItem('savedImages');
+                
+                console.log('✅ 저장된 이미지 표시 완료:', images.length + '개');
+                
+            } catch (error) {
+                console.error('❌ 저장된 이미지 로드 실패:', error);
+            }
+        }
+    }
+    
+    // 저장된 이미지들을 화면에 표시하는 함수  
+    function displaySavedImages(images) {
+        if (!images || images.length === 0) {
+            return;
+        }
+        
+        const savedImagesSection = document.getElementById('savedImagesSection');
+        const savedImagesGrid = document.getElementById('savedImagesGrid');
+        const savedImageCount = document.getElementById('savedImageCount');
+        
+        if (!savedImagesSection || !savedImagesGrid || !savedImageCount) {
+            console.error('❌ 저장된 이미지 섹션 DOM 요소를 찾을 수 없습니다');
+            return;
+        }
+        
+        // 카운트 업데이트
+        savedImageCount.textContent = images.length + '개';
+        
+        // 이미지 카드들 생성
+        let html = '';
+        images.forEach((image, index) => {
+            const imageUrl = image.url || image.path || '/images/default_facility.jpg';
+            const imageName = image.name || `이미지 ${index + 1}`;
+            const altText = image.altText || image.seoData?.altText || '';
+            const keywords = image.keywords || image.seoData?.keywords || [];
+            const isMain = image.isMain || index === 0;
+            
+            html += `
+                <div class="col-md-6 col-lg-4">
+                    <div class="card saved-image-card h-100">
+                        <div class="position-relative">
+                            <img src="${imageUrl}" class="card-img-top" alt="${altText}" 
+                                 style="height: 200px; object-fit: cover;">
+                            ${isMain ? '<span class="badge bg-warning position-absolute top-0 end-0 m-2">메인</span>' : ''}
+                        </div>
+                        <div class="card-body p-3">
+                            <h6 class="card-title text-truncate">${imageName}</h6>
+                            ${altText ? `<p class="card-text small text-muted mb-2">${altText}</p>` : ''}
+                            ${keywords.length > 0 ? `
+                                <div class="mb-2">
+                                    ${keywords.map(keyword => `<span class="badge bg-light text-dark me-1">${keyword}</span>`).join('')}
+                                </div>
+                            ` : ''}
+                            <div class="d-flex justify-content-between align-items-center">
+                                <small class="text-muted">
+                                    <i class="fas fa-check-circle text-success me-1"></i>저장됨
+                                </small>
+                                <button type="button" class="btn btn-sm btn-outline-danger" 
+                                        onclick="removeSavedImage(${index})">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        });
+        
+        savedImagesGrid.innerHTML = html;
+        savedImagesSection.style.display = 'block';
+        
+        // 저장된 이미지가 있으면 기본 업로드 섹션을 축소
+        const uploadSection = document.getElementById('uploadSection');
+        if (uploadSection) {
+            uploadSection.style.opacity = '0.6';
+        }
+    }
+    
+    // 저장된 이미지 삭제 함수
+    function removeSavedImage(index) {
+        if (confirm('이 이미지를 삭제하시겠습니까?')) {
+            const savedImages = getCurrentSavedImages();
+            if (savedImages && savedImages.length > index) {
+                savedImages.splice(index, 1);
+                displaySavedImages(savedImages);
+                
+                if (savedImages.length === 0) {
+                    document.getElementById('savedImagesSection').style.display = 'none';
+                    const uploadSection = document.getElementById('uploadSection');
+                    if (uploadSection) {
+                        uploadSection.style.opacity = '1';
+                    }
+                }
+            }
+        }
+    }
+    
+    // 현재 저장된 이미지 목록 가져오기
+    function getCurrentSavedImages() {
+        const savedImagesGrid = document.getElementById('savedImagesGrid');
+        if (!savedImagesGrid) return [];
+        
+        // DOM에서 현재 이미지 정보 추출 (단순화)
+        const imageCards = savedImagesGrid.querySelectorAll('.saved-image-card');
+        const images = [];
+        
+        imageCards.forEach((card, index) => {
+            const img = card.querySelector('.card-img-top');
+            const title = card.querySelector('.card-title');
+            const altText = card.querySelector('.card-text');
+            const keywords = Array.from(card.querySelectorAll('.badge')).map(badge => badge.textContent);
+            
+            if (img) {
+                images.push({
+                    url: img.src,
+                    name: title ? title.textContent : `이미지 ${index + 1}`,
+                    altText: altText ? altText.textContent : '',
+                    keywords: keywords,
+                    isMain: card.querySelector('.badge.bg-warning') !== null
+                });
+            }
+        });
+        
+        return images;
+    }
+    
+    // 크롭 페이지로 이동하는 함수
+    function openImageCropPage() {
+        const facilityId = getFacilityId();
+        if (!facilityId) {
+            alert('시설 정보를 찾을 수 없습니다.');
+            return;
+        }
+        
+        console.log('🖼️ 이미지 크롭 페이지로 이동:', facilityId);
+        window.location.href = `/facility/crop-images/${facilityId}`;
+    }
+    
+    // 시설 ID 가져오기 헬퍼 함수
+    function getFacilityId() {
+        // 메타 태그에서 추출
+        const facilityIdMeta = document.querySelector('meta[name="facility-id"]');
+        if (facilityIdMeta && facilityIdMeta.getAttribute('content')) {
+            return facilityIdMeta.getAttribute('content');
+        }
+        
+        // 폼 action URL에서 추출
+        const form = document.getElementById('facilityEditForm');
+        if (form && form.action) {
+            const match = form.action.match(/\/facility\/edit\/(\d+)/);
+            if (match && match[1]) {
+                return match[1];
+            }
+        }
+        
+        return null;
+    }
+    
+    // 전역 함수로 등록
+    window.openImageCropPage = openImageCropPage;
+    window.removeSavedImage = removeSavedImage;
+    
+    // 페이지 로드 시 저장된 이미지 확인
+    setTimeout(loadSavedImages, 1000);
+    
 });
 </script>
 

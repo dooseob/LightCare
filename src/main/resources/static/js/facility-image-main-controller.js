@@ -458,6 +458,29 @@
         async moveToStep(step) {
             if (step === mainState.currentStep) return;
             
+            // 🔥 새창 방식 강제: 2단계 이동 차단
+            if (step === 2) {
+                Core.logger.log(`🚫 2단계 이동 차단 - 새창 방식 사용`);
+                
+                // 시설 ID 가져오기
+                const facilityId = document.querySelector('meta[name="facility-id"]')?.content || '1';
+                
+                // 🔥 1단계 압축 후 세션 저장 (이 코드는 edit.html의 덮어쓰기로 대체됨)
+                Core.logger.log('⚠️ 이 코드는 edit.html의 압축 모듈로 대체되었습니다.');
+                
+                // 폴백: 압축 없이 직접 전송
+                if (window.selectedImageFiles && window.selectedImageFiles.length > 0) {
+                    window.transferSelectedFiles = window.selectedImageFiles;
+                    Core.logger.log('✅ 폴백: 원본 파일로 크롭 페이지 이동');
+                    window.location.href = `/facility/crop-images/${facilityId}`;
+                } else {
+                    Core.logger.log('⚠️ 선택된 파일이 없어 빈 크롭 페이지로 이동');
+                    window.location.href = `/facility/crop-images/${facilityId}`;
+                }
+                
+                return; // 여기서 함수 종료
+            }
+            
             Core.logger.log(`단계 이동: ${mainState.currentStep} → ${step}`);
             
             try {
