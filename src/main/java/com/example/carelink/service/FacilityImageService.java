@@ -945,4 +945,101 @@ public class FacilityImageService {
             return false;
         }
     }
+
+    /**
+     * 다중 이미지 업로드 (Blob 방식)
+     */
+    @Transactional
+    public List<FacilityImageDTO> uploadMultipleImages(Long facilityId, List<MultipartFile> images) {
+        List<FacilityImageDTO> uploadedImages = new ArrayList<>();
+        
+        try {
+            log.info("📤 다중 이미지 업로드 시작 - facilityId: {}, 이미지 수: {}", facilityId, images.size());
+            
+            // 현재 이미지 수 체크
+            List<FacilityImageDTO> existingImages = facilityImageMapper.getImagesByFacilityId(facilityId);
+            int currentCount = existingImages.size();
+            int nextOrderNum = currentCount + 1;
+            
+            log.info("기존 이미지 수: {}, 시작 순서 번호: {}", currentCount, nextOrderNum);
+            
+            // 업로드 디렉토리 생성
+            String uploadDir = Constants.FACILITY_UPLOAD_PATH;
+            File directory = new File(uploadDir);
+            if (!directory.exists()) {
+                boolean created = directory.mkdirs();
+                log.info("업로드 디렉토리 생성: {} (성공: {})", uploadDir, created);
+            }
+            
+            // 각 이미지 처리
+            for (int i = 0; i < images.size(); i++) {
+                MultipartFile image = images.get(i);
+                
+                try {
+                    // 파일명 생성 (UUID + 확장자)
+                    String originalFilename = image.getOriginalFilename();
+                    String extension = "";
+                    if (originalFilename != null && originalFilename.contains(".")) {
+                        extension = originalFilename.substring(originalFilename.lastIndexOf("."));
+                    }
+                    
+                    String uniqueFilename = UUID.randomUUID().toString() + extension;
+                    String filePath = uploadDir + uniqueFilename;
+                    
+                    // 파일 저장
+                    File destinationFile = new File(filePath);
+                    image.transferTo(destinationFile);
+                    
+                    log.info("파일 저장 완료: {} -> {}", originalFilename, uniqueFilename);
+                    
+                    // DTO 생성
+                    FacilityImageDTO imageDTO = new FacilityImageDTO();
+                    imageDTO.setFacilityId(facilityId);
+                    imageDTO.setImagePath("/uploads/facility/" + uniqueFilename);
+                    imageDTO.setImageAltText(originalFilename); // ALT 텍스트에 원본 파일명 저장
+                    imageDTO.setImageOrder(nextOrderNum + i);
+                    imageDTO.setIsMainImage(currentCount == 0 && i == 0); // 첫 번째 이미지가 메인
+                    
+                    // DB 저장
+                    int result = facilityImageMapper.insertFacilityImage(imageDTO);
+                    
+                    if (result > 0) {
+                        uploadedImages.add(imageDTO);
+                        log.info("이미지 DB 저장 완료: {} (순서: {})", uniqueFilename, imageDTO.getImageOrder());
+                    } else {
+                        log.warn("이미지 DB 저장 실패: {}", uniqueFilename);
+                        // 실패한 파일 삭제
+                        destinationFile.delete();
+                    }
+                    
+                } catch (IOException e) {
+                    log.error("이미지 파일 저장 실패: {}", image.getOriginalFilename(), e);
+                } catch (Exception e) {
+                    log.error("이미지 처리 중 오류: {}", image.getOriginalFilename(), e);
+                }
+            }
+            
+            log.info("✅ 다중 이미지 업로드 완료 - facilityId: {}, 성공: {}/{}", 
+                    facilityId, uploadedImages.size(), images.size());
+            
+            return uploadedImages;
+            
+        } catch (Exception e) {
+            log.error("❌ 다중 이미지 업로드 중 오류 발생 - facilityId: {}", facilityId, e);
+            
+            // 실패 시 업로드된 파일들 롤백
+            for (FacilityImageDTO uploadedImage : uploadedImages) {
+                try {
+                    if (uploadedImage.getImageId() != null) {
+                        facilityImageMapper.deleteFacilityImage(uploadedImage.getImageId());
+                    }
+                    deleteImageFile(uploadedImage.getImagePath());
+                } catch (Exception rollbackException) {
+                    log.error("롤백 중 오류:", rollbackException);
+                }
+            }
+            
+            throw new RuntimeException("이미지 업로드 중 오류가 발생했습니다.", e);
+        }
+    }
 }

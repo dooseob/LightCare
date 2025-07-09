@@ -90,10 +90,27 @@
                 </div>
             `;
             
-            const container = document.querySelector('main, .container, body');
-            if (container) {
+            // 더 안전한 컨테이너 선택 로직
+            let container = document.querySelector('#uploadSection, .upload-section, .content-wrapper, main, .container, body');
+            if (!container) {
+                container = document.body;
+                Core.logger.warn('기본 컨테이너를 사용합니다.');
+            }
+            
+            try {
                 container.insertAdjacentHTML('afterbegin', html);
                 uiState.elements.stepContainer = document.getElementById('stepsIndicator');
+                Core.logger.success('단계 표시기 생성 완료');
+            } catch (error) {
+                Core.logger.error('단계 표시기 생성 실패:', error);
+                // 대체 방법으로 body에 직접 추가
+                try {
+                    document.body.insertAdjacentHTML('afterbegin', html);
+                    uiState.elements.stepContainer = document.getElementById('stepsIndicator');
+                    Core.logger.success('단계 표시기 대체 생성 완료');
+                } catch (fallbackError) {
+                    Core.logger.error('단계 표시기 대체 생성도 실패:', fallbackError);
+                }
             }
         },
         
@@ -193,31 +210,47 @@
     
     const notificationManager = {
         show(message, type = UI_CONSTANTS.NOTIFICATION_TYPES.INFO, timeout = UI_CONSTANTS.NOTIFICATION_TIMEOUT) {
-            const id = Core.utils.generateUniqueId();
-            const typeClass = this.getTypeClass(type);
-            const icon = this.getTypeIcon(type);
-            
-            const notificationHtml = `
-                <div class="alert alert-${typeClass} alert-dismissible fade show" id="notification-${id}" 
-                     style="position: fixed; top: 20px; right: 20px; z-index: 1060; max-width: 400px;">
-                    <i class="${icon} me-2"></i>
-                    ${message}
-                    <button type="button" class="btn-close" onclick="FacilityImageUI.dismissNotification('${id}')"></button>
-                </div>
-            `;
-            
-            const container = this.getNotificationContainer();
-            container.insertAdjacentHTML('beforeend', notificationHtml);
-            
-            uiState.activeNotifications.push(id);
-            
-            if (timeout > 0) {
-                setTimeout(() => {
-                    this.dismiss(id);
-                }, timeout);
+            try {
+                const id = Core.utils.generateUniqueId();
+                const typeClass = this.getTypeClass(type);
+                const icon = this.getTypeIcon(type);
+                
+                const notificationHtml = `
+                    <div class="alert alert-${typeClass} alert-dismissible fade show" id="notification-${id}" 
+                         style="position: fixed; top: 20px; right: 20px; z-index: 1060; max-width: 400px;">
+                        <i class="${icon} me-2"></i>
+                        ${message}
+                        <button type="button" class="btn-close" onclick="FacilityImageUI.dismissNotification('${id}')"></button>
+                    </div>
+                `;
+                
+                const container = this.getNotificationContainer();
+                if (container) {
+                    container.insertAdjacentHTML('beforeend', notificationHtml);
+                    uiState.activeNotifications.push(id);
+                    
+                    if (timeout > 0) {
+                        setTimeout(() => {
+                            this.dismiss(id);
+                        }, timeout);
+                    }
+                    
+                    return id;
+                } else {
+                    // 컨테이너가 없으면 콘솔에 메시지 출력
+                    Core.logger.log(`알림: ${message}`);
+                    return null;
+                }
+            } catch (error) {
+                Core.logger.error('알림 표시 실패:', error);
+                // 브라우저 기본 알림 사용
+                try {
+                    alert(message);
+                } catch (alertError) {
+                    Core.logger.error('기본 알림도 실패:', alertError);
+                }
+                return null;
             }
-            
-            return id;
         },
         
         dismiss(id) {
@@ -395,6 +428,9 @@
             Core.logger.log('UI 모듈 초기화 시작');
             
             try {
+                // DOM이 준비될 때까지 대기
+                await this.waitForDOM();
+                
                 stepIndicator.initialize();
                 eventManager.setupGlobalEvents();
                 this.setupStyles();
@@ -407,6 +443,17 @@
                 Core.logger.error('UI 모듈 초기화 실패:', error);
                 return false;
             }
+        },
+        
+        // DOM 준비 대기
+        async waitForDOM() {
+            return new Promise((resolve) => {
+                if (document.readyState === 'loading') {
+                    document.addEventListener('DOMContentLoaded', resolve);
+                } else {
+                    resolve();
+                }
+            });
         },
         
         setupStyles() {
@@ -550,6 +597,12 @@
         updateProgress: ui.updateProgress.bind(ui),
         hideProgress: ui.hideProgress.bind(ui),
         updateStep: ui.updateStep.bind(ui),
+        show: ui.show.bind(ui),
+        hide: ui.hide.bind(ui),
+        toggle: ui.toggle.bind(ui),
+        addClass: ui.addClass.bind(ui),
+        removeClass: ui.removeClass.bind(ui),
+        toggleClass: ui.toggleClass.bind(ui),
         destroy: ui.destroy.bind(ui)
     };
     

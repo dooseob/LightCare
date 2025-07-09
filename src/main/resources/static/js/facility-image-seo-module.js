@@ -84,6 +84,24 @@
             );
         },
         
+        selectKeyword(keyword) {
+            if (!keyword || typeof keyword !== 'string') return;
+            
+            // 선택된 키워드 목록에 추가
+            if (!seoState.selectedKeywords.includes(keyword)) {
+                seoState.selectedKeywords.push(keyword);
+                Core.logger.log('키워드 선택됨:', keyword);
+            }
+        },
+        
+        deselectKeyword(keyword) {
+            const index = seoState.selectedKeywords.indexOf(keyword);
+            if (index > -1) {
+                seoState.selectedKeywords.splice(index, 1);
+                Core.logger.log('키워드 선택 해제됨:', keyword);
+            }
+        },
+        
         addCustomKeyword(keyword) {
             if (!seoState.selectedKeywords.includes(keyword)) {
                 seoState.selectedKeywords.push(keyword);
@@ -107,6 +125,11 @@
     
     const fileNameGenerator = {
         generateSEOFileName(originalName, keywords = [], index = 0) {
+            // 입력값 검증
+            if (!originalName || typeof originalName !== 'string') {
+                originalName = 'image.jpg';
+            }
+            
             const baseName = this.cleanFileName(originalName);
             const keywordString = keywords.slice(0, 3).join(SEO_CONSTANTS.KEYWORD_SEPARATOR);
             const facilityPart = this.convertKoreanToEnglish(seoState.facilityName);
@@ -138,6 +161,11 @@
         },
         
         cleanFileName(fileName) {
+            // 입력값 검증
+            if (!fileName || typeof fileName !== 'string') {
+                return 'image';
+            }
+            
             // 확장자 분리
             const lastDotIndex = fileName.lastIndexOf('.');
             const nameWithoutExt = lastDotIndex > 0 ? fileName.substring(0, lastDotIndex) : fileName;
@@ -485,7 +513,10 @@
         analyzeFileName: seo.analyzeFileName.bind(seo),
         analyzeAltText: seo.analyzeAltText.bind(seo),
         bulkOptimize: seo.bulkOptimize.bind(seo),
-        destroy: seo.destroy.bind(seo)
+        destroy: seo.destroy.bind(seo),
+        cleanFileName: fileNameGenerator.cleanFileName.bind(fileNameGenerator),
+        selectKeyword: keywordManager.selectKeyword.bind(keywordManager),
+        deselectKeyword: keywordManager.deselectKeyword.bind(keywordManager)
     };
     
     window.FacilityImageSEO = window.FacilityImageSystem.SEO;

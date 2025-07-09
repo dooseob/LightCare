@@ -4,7 +4,8 @@
  * 이미지 확대/축소 한계점에서 자동으로 페이지 스크롤로 전환
  */
 
-class SmartScrollUtility {
+if (typeof SmartScrollUtility === 'undefined') {
+    class SmartScrollUtility {
     constructor(cropper, options = {}) {
         this.cropper = cropper;
         this.options = {
@@ -286,6 +287,8 @@ class SmartScrollUtility {
 
 // 전역 접근을 위한 윈도우 객체 등록
 window.SmartScrollUtility = SmartScrollUtility;
+
+}
 
 // 간편 사용 함수
 window.createSmartScroll = function(cropper, options = {}) {

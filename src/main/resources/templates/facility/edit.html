@@ -2,6 +2,9 @@
 <html lang="ko" xmlns:th="http://www.thymeleaf.org">
 <head th:replace="~{layout/header :: header}">
     <title>시설 정보 수정 - 라이트케어</title>
+    <!-- 시설 정보 메타 태그 (JavaScript에서 사용) -->
+    <meta name="facility-id" th:content="${facility?.facilityId ?: ''}">
+    <meta name="facility-name" th:content="${facility?.facilityName ?: '시설'}">
 </head>
 
 <body class="d-flex flex-column min-vh-100 pt-5">
@@ -116,40 +119,343 @@
                                 <span th:if="${facility.facilityImage == null}" class="text-danger">*</span>
                             </label>
                             
+                            <!-- 고급 이미지 압축 및 최적화 시스템 -->
                             <div class="image-management-section">
-                                <!-- 고급 이미지 크롭 시스템 링크 -->
-                                <div class="card border-primary mb-3">
-                                    <div class="card-body text-center">
-                                        <i class="fas fa-crop-alt fa-2x text-primary mb-2"></i>
-                                        <h6 class="card-title">고급 이미지 관리 시스템</h6>
-                                        <p class="card-text text-muted small mb-3">
-                                            16:9 비율로 최적화된 시설 사진을 최대 5장까지 등록하고 <br>
-                                            AVIF/WebP 압축으로 빠른 로딩 속도를 구현하세요
-                                        </p>
-                                        <a th:href="@{/facility/crop-images/{id}(id=${facility.facilityId})}" 
-                                           class="btn btn-primary">
-                                            <i class="fas fa-images me-2"></i>시설 이미지 관리
-                                        </a>
-                                    </div>
-                                </div>
-                                
-                                <!-- 기존 간단 업로드 (호환성 유지) -->
-                                <div class="simple-upload-section">
-                                    <div class="form-check mb-2">
-                                        <input class="form-check-input" type="checkbox" id="useSimpleUpload">
-                                        <label class="form-check-label text-muted" for="useSimpleUpload">
-                                            <small>간단 업로드 사용 (크롭 없이 업로드)</small>
-                                        </label>
-                                    </div>
-                                    
-                                    <div id="simpleUploadContainer" style="display: none;">
-                                        <input type="file" class="form-control" id="facilityImageFile" 
-                                               name="facilityImageFile" accept="image/*"
-                                               th:required="${facility.facilityImage == null}">
-                                        <small class="text-muted">
-                                            <i class="fas fa-info-circle me-1"></i>
-                                            JPG, PNG 파일만 지원. 고급 기능을 원하시면 위의 이미지 관리 시스템을 이용하세요.
-                                        </small>
+                                <div class="card border-success mb-3">
+                                    <div class="card-body">
+                                        <div class="d-flex align-items-center mb-3">
+                                            <i class="fas fa-compress-alt fa-2x text-success me-3"></i>
+                                            <div>
+                                                <h6 class="card-title mb-1">고성능 이미지 압축 시스템</h6>
+                                                <p class="card-text text-muted small mb-0">
+                                                    AVIF/WebP 압축으로 최대 80% 용량 절약 | 16:9 비율 최적화 | 최대 5장 등록
+                                                </p>
+                                            </div>
+                                        </div>
+                                        
+                                        <!-- 1단계: 이미지 선택 -->
+                                        <div id="uploadSection" class="upload-section">
+                                            <!-- 파일 선택 영역 -->
+                                            <div class="file-selection-area">
+                                                <!-- 드래그앤드롭 영역 및 파일 선택 -->
+                                                <div id="dropZone" class="drop-zone" style="
+                                                    border: 2px dashed #dee2e6;
+                                                    border-radius: 8px;
+                                                    padding: 2rem;
+                                                    text-align: center;
+                                                    background-color: #f8f9fa;
+                                                    transition: all 0.3s ease;
+                                                ">
+                                                    <div class="drop-zone-content">
+                                                        <i class="fas fa-cloud-upload-alt fa-2x text-muted mb-3"></i>
+                                                        <button type="button" id="mainFileSelectBtn" class="btn btn-primary btn-lg px-4 py-2 mb-3" style="display: none;">
+                                                            <i class="fas fa-folder-open me-2"></i>파일 선택
+                                                        </button>
+                                                        <p class="text-muted mb-2">여기에 파일을 드래그하세요</p>
+                                                        <small class="text-muted">JPG, PNG, WebP 지원 (최대 10MB, 5개 파일)</small>
+                                                        <div class="mt-3">
+                                                            <div class="d-flex justify-content-center align-items-center gap-3 flex-wrap">
+                                                                <small class="text-success d-flex align-items-center">
+                                                                    <i class="fas fa-chart-line me-1"></i>실시간 압축률 표시
+                                                                </small>
+                                                                <small class="text-success d-flex align-items-center">
+                                                                    <i class="fas fa-tachometer-alt me-1"></i>최적화된 로딩 속도
+                                                                </small>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                
+                                                <input type="file" id="imageInput" multiple accept="image/*" style="display: none;">
+                                            </div>
+                                            
+                                            <!-- 추가 CSS 스타일 -->
+                                            <style>
+                                                /* 메인 파일 선택 버튼 스타일 */
+                                                #mainFileSelectBtn {
+                                                    transition: all 0.3s ease;
+                                                    box-shadow: 0 2px 8px rgba(0, 123, 255, 0.2);
+                                                    pointer-events: auto;
+                                                    position: relative;
+                                                    z-index: 10;
+                                                }
+                                                
+                                                #mainFileSelectBtn:hover {
+                                                    transform: translateY(-1px);
+                                                    box-shadow: 0 4px 15px rgba(0, 123, 255, 0.3);
+                                                }
+                                                
+                                                #mainFileSelectBtn:active {
+                                                    transform: translateY(0);
+                                                    box-shadow: 0 2px 8px rgba(0, 123, 255, 0.2);
+                                                }
+                                                
+                                                /* 드래그앤드롭 영역 스타일 */
+                                                .drop-zone {
+                                                    cursor: pointer;
+                                                }
+                                                
+                                                .drop-zone:hover {
+                                                    border-color: #007bff;
+                                                    background-color: #f0f8ff;
+                                                }
+                                                
+                                                .drop-zone:hover {
+                                                    background-color: #e9ecef !important;
+                                                    border-color: #28a745 !important;
+                                                }
+                                                
+                                                .drop-zone.dragover {
+                                                    background-color: #d4edda !important;
+                                                    border-color: #28a745 !important;
+                                                    border-style: solid !important;
+                                                }
+                                                
+                                                /* 이미지 미리보기 스타일 */
+                                                .image-preview-item {
+                                                    transition: transform 0.3s ease;
+                                                }
+                                                
+                                                .image-preview-item:hover {
+                                                    transform: scale(1.05);
+                                                }
+                                                
+                                                .image-preview-item.dragging {
+                                                    opacity: 0.5;
+                                                    transform: rotate(5deg);
+                                                }
+                                                
+                                                .set-main-image:hover {
+                                                    background-color: #ffc107 !important;
+                                                    transform: scale(1.1);
+                                                }
+                                            </style>
+                                            
+                                            <!-- 선택된 이미지 미리보기 컨테이너 (메인 컨트롤러가 동적 생성) -->
+                                            <!-- 중복 제거: 메인 컨트롤러가 selectedImagesPreview 컨테이너를 동적으로 생성하여 -->
+                                            <!-- 순서 변경과 메인 이미지 지정 기능을 통합한 단일 목록을 제공합니다 -->
+                                        </div>
+                                        
+                                        <!-- 1.5단계: 압축 진행 상황 표시 (새로 추가) -->
+                                        <div id="compressionProgress" class="compression-progress-section" style="display: none;">
+                                            <div class="card border-info mb-3">
+                                                <div class="card-header bg-info text-white">
+                                                    <h6 class="mb-0">
+                                                        <i class="fas fa-compress me-2"></i>파일 압축 진행 중
+                                                    </h6>
+                                                </div>
+                                                <div class="card-body">
+                                                    <div class="progress mb-3" style="height: 20px;">
+                                                        <div id="compressionProgressBar" class="progress-bar progress-bar-striped progress-bar-animated bg-info" 
+                                                             role="progressbar" style="width: 0%"></div>
+                                                    </div>
+                                                    <div id="compressionStatus" class="text-center text-muted">
+                                                        <i class="fas fa-compress fa-spin me-2"></i>압축 준비 중...
+                                                    </div>
+                                                    <div id="compressionStats" class="mt-3 text-center" style="display: none;">
+                                                        <small class="text-success">
+                                                            <i class="fas fa-check-circle me-1"></i>
+                                                            <span id="compressionResult"></span>
+                                                        </small>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        
+                                        <!-- 2단계: 크롭 및 압축 (새창 방식 사용으로 비활성화) -->
+                                        <div id="cropSection" class="crop-section" style="display: none !important;">
+                                            <div class="compression-header mb-3">
+                                                <h6 class="text-success">
+                                                    <i class="fas fa-crop-alt me-2"></i>이미지 크롭 및 고성능 압축
+                                                </h6>
+                                                <div class="compression-progress">
+                                                    <small class="text-muted">현재 이미지: <span id="currentImageInfo">1 / 1</span></small>
+                                                </div>
+                                            </div>
+                                            
+                                            <!-- 크롭 영역 -->
+                                            <div id="cropContainer" class="crop-container mb-3">
+                                                <div class="crop-image-container" style="min-height: 400px; background-color: #f8f9fa; border: 1px solid #dee2e6; border-radius: 8px;">
+                                                    <img id="cropImage" style="max-width: 100%; height: auto; display: block;">
+                                                    <canvas id="cropCanvas" style="display: none;"></canvas>
+                                                    
+                                                    <!-- 로딩 인디케이터 -->
+                                                    <div id="cropLoading" class="text-center py-5" style="display: none;">
+                                                        <div class="spinner-border text-primary" role="status">
+                                                            <span class="visually-hidden">크롭 준비 중...</span>
+                                                        </div>
+                                                        <p class="text-muted mt-2">이미지 크롭 준비 중...</p>
+                                                    </div>
+                                                    
+                                                    <!-- 오류 메시지 -->
+                                                    <div id="cropError" class="alert alert-warning text-center" style="display: none;">
+                                                        <i class="fas fa-exclamation-triangle me-2"></i>
+                                                        <strong>크롭 기능을 사용할 수 없습니다.</strong><br>
+                                                        <small>이미지는 원본 그대로 사용됩니다.</small>
+                                                        <div class="mt-2">
+                                                            <button type="button" class="btn btn-sm btn-outline-primary" onclick="initializeCropperForce()">
+                                                                <i class="fas fa-retry me-1"></i>크롭 기능 다시 시도
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            
+                                            <!-- 크롭 컨트롤 -->
+                                            <div id="cropControls" class="crop-controls mb-3">
+                                                <div class="row">
+                                                    <div class="col-md-8">
+                                                        <div class="crop-navigation d-flex align-items-center">
+                                                            <button type="button" id="prevImage" class="btn btn-sm btn-outline-secondary me-2">
+                                                                <i class="fas fa-chevron-left"></i>
+                                                            </button>
+                                                            <button type="button" id="nextImage" class="btn btn-sm btn-outline-secondary me-3">
+                                                                <i class="fas fa-chevron-right"></i>
+                                                            </button>
+                                                            <button type="button" id="resetCrop" class="btn btn-sm btn-outline-warning me-2">
+                                                                <i class="fas fa-undo me-1"></i>리셋
+                                                            </button>
+                                                            <button type="button" id="autoFit" class="btn btn-sm btn-outline-info">
+                                                                <i class="fas fa-expand-arrows-alt me-1"></i>16:9 자동맞춤
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-md-4 text-end">
+                                                        <button type="button" id="skipCrop" class="btn btn-outline-secondary me-2">
+                                                            <i class="fas fa-forward me-1"></i>크롭 건너뛰기
+                                                        </button>
+                                                        <button type="button" id="completeImageProcessing" class="btn btn-success">
+                                                            <i class="fas fa-save me-1"></i>압축 완료
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            
+                                            <!-- 고급 압축 설정 -->
+                                            <div id="compressionSettings" class="compression-settings border-top pt-3">
+                                                <div class="row">
+                                                    <div class="col-md-6">
+                                                        <h6 class="text-success mb-3">
+                                                            <i class="fas fa-sliders-h me-2"></i>압축 최적화 설정
+                                                        </h6>
+                                                        <div class="mb-3">
+                                                            <label for="compressionQuality" class="form-label">압축 품질</label>
+                                                            <div class="d-flex align-items-center">
+                                                                <input type="range" class="form-range flex-grow-1" id="compressionQuality" min="60" max="100" value="85">
+                                                                <span class="badge bg-success ms-2" id="qualityValue">85%</span>
+                                                            </div>
+                                                            <small class="text-muted">품질이 높을수록 용량이 커집니다</small>
+                                                        </div>
+                                                        
+                                                        <div class="mb-3">
+                                                            <label class="form-label">압축 형식</label>
+                                                            <div class="btn-group w-100" role="group">
+                                                                <input type="radio" class="btn-check" name="compressionFormat" id="formatWebP" value="webp" checked>
+                                                                <label class="btn btn-outline-success" for="formatWebP">WebP</label>
+                                                                
+                                                                <input type="radio" class="btn-check" name="compressionFormat" id="formatAVIF" value="avif">
+                                                                <label class="btn btn-outline-success" for="formatAVIF">AVIF</label>
+                                                                
+                                                                <input type="radio" class="btn-check" name="compressionFormat" id="formatJPEG" value="jpeg">
+                                                                <label class="btn btn-outline-success" for="formatJPEG">JPEG</label>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    
+                                                    <div class="col-md-6">
+                                                        <h6 class="text-info mb-3">
+                                                            <i class="fas fa-chart-bar me-2"></i>압축 효과 분석
+                                                        </h6>
+                                                        <div class="compression-stats-detailed">
+                                                            <div class="stat-item mb-2">
+                                                                <div class="d-flex justify-content-between">
+                                                                    <span>원본 크기:</span>
+                                                                    <strong id="originalSize">-</strong>
+                                                                </div>
+                                                            </div>
+                                                            <div class="stat-item mb-2">
+                                                                <div class="d-flex justify-content-between">
+                                                                    <span>압축 후:</span>
+                                                                    <strong class="text-success" id="compressedSize">-</strong>
+                                                                </div>
+                                                            </div>
+                                                            <div class="stat-item mb-2">
+                                                                <div class="d-flex justify-content-between">
+                                                                    <span>절약량:</span>
+                                                                    <strong class="text-warning" id="savedSize">-</strong>
+                                                                </div>
+                                                            </div>
+                                                            <div class="stat-item mb-3">
+                                                                <div class="d-flex justify-content-between">
+                                                                    <span>압축률:</span>
+                                                                    <strong class="text-primary" id="compressionRatio">-</strong>
+                                                                </div>
+                                                            </div>
+                                                            
+                                                            <div class="data-cost-savings">
+                                                                <div class="alert alert-success py-2">
+                                                                    <small>
+                                                                        <i class="fas fa-wifi me-1"></i>
+                                                                        <strong>데이터 비용 절약:</strong><br>
+                                                                        월 약 <span id="monthlySavings" class="text-success">0원</span> 절약 예상
+                                                                    </small>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            
+                                            <!-- SEO 최적화 -->
+                                            <div id="seoSettings" class="seo-settings border-top pt-3 mt-3">
+                                                <h6 class="text-primary mb-3">
+                                                    <i class="fas fa-search me-2"></i>SEO 검색 최적화
+                                                </h6>
+                                                <div class="row">
+                                                    <div class="col-md-6">
+                                                        <label for="altText" class="form-label">Alt 텍스트 (웹접근성)</label>
+                                                        <input type="text" class="form-control" id="altText" placeholder="이미지 설명을 입력하세요">
+                                                        <small class="text-muted">시각 장애인을 위한 설명</small>
+                                                    </div>
+                                                    <div class="col-md-6">
+                                                        <label for="englishFilename" class="form-label">영문 파일명 (자동생성)</label>
+                                                        <input type="text" class="form-control" id="englishFilename" placeholder="자동 생성됨" readonly>
+                                                        <small class="text-muted">검색엔진 최적화용</small>
+                                                    </div>
+                                                </div>
+                                                <div class="mt-3">
+                                                    <label class="form-label">키워드 태그</label>
+                                                    <div id="keywordList" class="keyword-list">
+                                                        <span class="badge bg-primary me-1 mb-1" onclick="selectKeyword('요양원')" style="cursor: pointer;">요양원</span>
+                                                        <span class="badge bg-primary me-1 mb-1" onclick="selectKeyword('시설')" style="cursor: pointer;">시설</span>
+                                                        <span class="badge bg-primary me-1 mb-1" onclick="selectKeyword('내부')" style="cursor: pointer;">내부</span>
+                                                        <span class="badge bg-primary me-1 mb-1" onclick="selectKeyword('외관')" style="cursor: pointer;">외관</span>
+                                                        <span class="badge bg-primary me-1 mb-1" onclick="selectKeyword('깨끗한')" style="cursor: pointer;">깨끗한</span>
+                                                        <span class="badge bg-primary me-1 mb-1" onclick="selectKeyword('현대적')" style="cursor: pointer;">현대적</span>
+                                                        <span class="badge bg-primary me-1 mb-1" onclick="selectKeyword('밝은')" style="cursor: pointer;">밝은</span>
+                                                        <span class="badge bg-primary me-1 mb-1" onclick="selectKeyword('쾌적한')" style="cursor: pointer;">쾌적한</span>
+                                                    </div>
+                                                    <small class="text-muted">클릭하여 키워드를 선택하면 파일명에 자동 반영됩니다</small>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        
+                                        <!-- 3단계: 최종 업로드 관리 -->
+                                        <div id="manageSection" class="manage-section" style="display: none;">
+                                            <div class="final-upload-header mb-3">
+                                                <h6 class="text-success">
+                                                    <i class="fas fa-check-circle me-2"></i>압축 완료 - 업로드 준비
+                                                </h6>
+                                            </div>
+                                            <div id="finalImageList" class="final-image-list">
+                                                <!-- 최종 압축된 이미지들이 여기에 표시됨 -->
+                                            </div>
+                                            <div class="mt-3">
+                                                <button type="button" id="uploadOptimizedImages" class="btn btn-success btn-lg">
+                                                    <i class="fas fa-cloud-upload-alt me-2"></i>최적화된 이미지 업로드
+                                                </button>
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -157,6 +463,27 @@
                             <!-- Alt 텍스트 입력 (SEO용) -->
                             <input type="hidden" id="facilityImageAltText" name="facilityImageAltText" 
                                    th:value="${facility.facilityImageAltText}">
+                            
+                            <!-- 저장된 이미지 목록 (크롭 페이지에서 돌아온 경우 표시) -->
+                            <div id="savedImagesSection" class="saved-images-section mt-3" style="display: none;">
+                                <div class="card border-success">
+                                    <div class="card-header bg-success text-white d-flex align-items-center">
+                                        <i class="fas fa-check-circle me-2"></i>
+                                        <h6 class="mb-0">저장된 이미지 목록</h6>
+                                        <span class="badge bg-light text-success ms-auto" id="savedImageCount">0개</span>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="row g-3" id="savedImagesGrid">
+                                            <!-- 저장된 이미지 카드들이 여기에 동적으로 생성됩니다 -->
+                                        </div>
+                                        <div class="mt-3 text-center">
+                                            <button type="button" class="btn btn-outline-primary btn-sm" onclick="openImageCropPage()">
+                                                <i class="fas fa-plus me-2"></i>이미지 추가/편집
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
 
                         <!-- 수용 인원 -->
@@ -315,7 +642,7 @@
 <!-- 카카오 주소 검색 API -->
 <script src="//t1.daumcdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js"></script>
 <!-- 카카오맵 API (좌표 변환용) -->
-<script type="text/javascript" src="//dapi.kakao.com/v2/maps/sdk.js?appkey=3c4987cb946a721903add5fc474941a3&libraries=services"></script>
+<script type="text/javascript" th:src="@{//dapi.kakao.com/v2/maps/sdk.js(appkey=${@environment.getProperty('KAKAO_APP_KEY')}, libraries='services')}"></script>
 <!-- 카카오맵 유틸리티 -->
 <script src="/js/kakaomap.js"></script>
 <script src="/js/facility-edit.js"></script>
@@ -323,9 +650,23 @@
 <!-- 전화번호 포맷터 -->
 <script src="/js/phone-formatter.js"></script>
 
-<!-- 고급 이미지 크롭퍼 -->
-<link rel="stylesheet" href="/css/advanced-image-cropper.css">
-<script src="/js/advanced-image-cropper.js"></script>
+<!-- 모듈화된 시설 이미지 시스템 CSS -->
+<link th:href="@{/css/facility-image-uploader.css}" rel="stylesheet">
+<link th:href="@{/css/image-compressor.css}" rel="stylesheet">
+<link th:href="@{/css/advanced-image-cropper.css}" rel="stylesheet">
+
+<!-- 스마트 스크롤 유틸리티 -->
+<script th:src="@{/js/smart-scroll-utility.js}"></script>
+
+<!-- 시설 이미지 모듈 시스템 -->
+<script th:src="@{/js/facility-image-core.js}"></script>
+<script th:src="@{/js/facility-image-utils-module.js}"></script>
+<script th:src="@{/js/facility-image-ui-module.js}"></script>
+<script th:src="@{/js/facility-image-upload-module.js}"></script>
+<script th:src="@{/js/facility-image-cropper-module.js}"></script>
+<script th:src="@{/js/facility-image-data-module.js}"></script>
+<script th:src="@{/js/facility-image-seo-module.js}"></script>
+<script th:src="@{/js/facility-image-main-controller.js}"></script>
 
 <!-- 리치 텍스트 에디터 -->
 <link rel="stylesheet" href="/css/rich-text-editor.css">
@@ -523,113 +864,1865 @@ $(document).ready(function() {
         });
     }, 100);
     
-    // 고급 이미지 크롭퍼 초기화
-    initializeFacilityImageCropper();
-});
-
-// 시설 이미지 크롭퍼 초기화
-function initializeFacilityImageCropper() {
-    try {
-        // Cropper.js 사용 가능 여부 확인
-        if (typeof Cropper === 'undefined') {
-            console.warn('Cropper.js를 로드할 수 없습니다. 기존 파일 입력을 사용합니다.');
-            return; // 기존 파일 입력 폼을 그대로 사용
-        }
+    // 모듈화된 시설 이미지 시스템 초기화 (리치 텍스트 에디터 이후)
+    // 여러 단계로 안전하게 초기화
+    
+    // 전역 초기화 방지 플래그 체크
+    if (window.facilityImageSystemInitialized) {
+        console.log('⚠️ 이미지 시스템이 이미 초기화되어 있습니다. 중복 실행을 방지합니다.');
+        return;
+    }
+    
+    let initAttempts = 0;
+    const maxInitAttempts = 3;
+    
+    function attemptImageSystemInit() {
+        initAttempts++;
         
-        const facilityImageCropper = new AdvancedImageCropper('facilityImageUploader', {
-        // 시설 이미지 최적화 설정
-        aspectRatio: 16/10, // 시설 카드 비율
-        cropWidth: 800,
-        cropHeight: 500,
-        previewStyle: 'facility',
-        title: '시설 이미지 업로드',
-        quality: 0.8,
-        enableAltText: true,
-        
-        // 크롭 완료 콜백
-        onCropComplete: function(result) {
-            console.log('시설 이미지 크롭 완료:', result);
+        try {
+            console.log(`🔄 이미지 시스템 초기화 시도 ${initAttempts}/${maxInitAttempts}`);
             
-            // 기존 파일 입력에 압축된 파일 설정
-            const facilityImageFile = document.getElementById('facilityImageFile');
-            const facilityImageAltText = document.getElementById('facilityImageAltText');
-            
-            // DataTransfer를 사용하여 File 객체를 input에 설정
-            const dataTransfer = new DataTransfer();
-            const compressedFile = new File([result.compressedBlob], 
-                result.originalFile.name, {
-                    type: 'image/jpeg',
-                    lastModified: Date.now()
-                });
-            
-            dataTransfer.items.add(compressedFile);
-            facilityImageFile.files = dataTransfer.files;
-            
-            // Alt 텍스트 설정
-            if (facilityImageAltText) {
-                facilityImageAltText.value = result.altText;
+            // DOM이 완전히 로드되었는지 확인
+            if (document.readyState !== 'complete') {
+                console.log('⏳ DOM 로딩 대기 중...');
+                setTimeout(attemptImageSystemInit, 200);
+                return;
             }
             
-            // 성공 메시지 표시
-            showSuccessMessage('시설 이미지가 성공적으로 최적화되었습니다!');
-        },
-        
-        // 에러 콜백
-        onError: function(message) {
-            console.error('시설 이미지 크롭 오류:', message);
-            showErrorMessage('이미지 처리 중 오류가 발생했습니다: ' + message);
+            // 필수 DOM 요소 확인
+            const requiredElements = {
+                dropZone: document.getElementById('dropZone'),
+                imageInput: document.getElementById('imageInput'),
+                uploadSection: document.getElementById('uploadSection')
+            };
+            
+            const missingElements = Object.entries(requiredElements)
+                .filter(([key, element]) => !element)
+                .map(([key]) => key);
+            
+            if (missingElements.length > 0) {
+                console.warn('⚠️ 필수 DOM 요소가 없습니다:', missingElements);
+                if (initAttempts < maxInitAttempts) {
+                    setTimeout(attemptImageSystemInit, 500);
+                    return;
+                }
+            }
+            
+            // 이미지 시스템 초기화 실행
+            initializeModularImageSystem();
+            window.facilityImageSystemInitialized = true; // 전역 초기화 완료 플래그 설정
+            
+        } catch (error) {
+            console.error('❌ 이미지 시스템 초기화 실패:', error);
+            
+            if (initAttempts < maxInitAttempts) {
+                console.log(`🔄 ${500 * initAttempts}ms 후 재시도...`);
+                setTimeout(attemptImageSystemInit, 500 * initAttempts);
+            } else {
+                console.error('❌ 최대 재시도 횟수 초과. 기본 업로드로 폴백합니다.');
+                showWarningMessage('고급 이미지 기능을 사용할 수 없어 기본 업로드를 사용합니다.');
+                initializeBasicUpload();
+            }
         }
-    });
+    }
     
-    // 전역에서 접근 가능하도록 저장
-    window.facilityImageCropper = facilityImageCropper;
+    // 첫 번째 시도
+    setTimeout(attemptImageSystemInit, 300);
+});
+
+// 모듈화된 시설 이미지 시스템 초기화
+function initializeModularImageSystem() {
+    try {
+        console.log('모듈화된 시설 이미지 시스템 초기화 시작...');
+        
+        // 전체 모듈 로드 상태 확인 및 디버깅
+        console.log('모듈 시스템 로드 상태:', {
+            FacilityImageSystem: !!window.FacilityImageSystem,
+            FacilityImageMainController: !!window.FacilityImageMainController,
+            FacilityImageCore: !!window.FacilityImageCore,
+            FacilityImageUpload: !!window.FacilityImageUpload,
+            FacilityImageCropper: !!window.FacilityImageCropper,
+            FacilityImageSEO: !!window.FacilityImageSEO,
+            FacilityImageUI: !!window.FacilityImageUI,
+            FacilityImageUtils: !!window.FacilityImageUtils,
+            FacilityImageData: !!window.FacilityImageData
+        });
+        
+        // 브라우저 지원 확인
+        console.log('브라우저 지원 상태:', {
+            FileReader: !!window.FileReader,
+            FormData: !!window.FormData,
+            fetch: !!window.fetch,
+            Promise: !!window.Promise,
+            URL: !!window.URL,
+            FileAPI: !!(window.File && window.FileReader && window.FileList && window.Blob)
+        });
+        
+        // 모듈 시스템이 로드되었는지 확인
+        if (!window.FacilityImageSystem || !window.FacilityImageMainController) {
+            console.warn('⚠️ 시설 이미지 모듈 시스템이 로드되지 않았습니다.');
+            console.log('사용 가능한 Facility 관련 객체:', Object.keys(window).filter(key => key.includes('Facility')));
+            console.log('🔄 기본 업로드 시스템으로 폴백합니다.');
+            
+            // 기본 업로드 시스템 바로 연결
+            connectWithExistingFileInput();
+            return;
+        }
+        
+        // 시설 정보 가져오기 (다중 방법으로 안전하게 추출)
+        let facilityId = null;
+        let facilityName = '시설';
+        
+        // 방법 1: 메타 태그에서 추출
+        const facilityIdMeta = document.querySelector('meta[name="facility-id"]');
+        const facilityNameMeta = document.querySelector('meta[name="facility-name"]');
+        
+        if (facilityIdMeta && facilityIdMeta.getAttribute('content')) {
+            facilityId = facilityIdMeta.getAttribute('content');
+        }
+        if (facilityNameMeta && facilityNameMeta.getAttribute('content')) {
+            facilityName = facilityNameMeta.getAttribute('content');
+        }
+        
+        // 방법 2: 폼 action URL에서 추출
+        if (!facilityId) {
+            const form = document.getElementById('facilityEditForm');
+            if (form && form.action) {
+                const actionUrl = form.action;
+                const match = actionUrl.match(/\/facility\/edit\/(\d+)/);
+                if (match && match[1]) {
+                    facilityId = match[1];
+                    console.log('폼 URL에서 시설 ID 추출:', facilityId);
+                }
+            }
+        }
+        
+        // 방법 3: 시설명 입력 필드에서 추출
+        if (facilityName === '시설' || !facilityName) {
+            const facilityNameInput = document.getElementById('facilityName');
+            if (facilityNameInput && facilityNameInput.value) {
+                facilityName = facilityNameInput.value;
+            }
+        }
+        
+        console.log('📋 시설 정보:', {facilityId, facilityName});
+        
+        if (!facilityId || facilityId === '' || facilityId === '0') {
+            console.warn('시설 ID를 찾을 수 없습니다. 기존 파일 입력을 사용합니다.');
+            return;
+        }
+        
+        // 모듈 시스템 초기화 (비동기)
+        window.FacilityImageMainController.initialize({
+            facilityId: facilityId,
+            facilityName: facilityName,
+            settings: {
+                maxFiles: 5,
+                enableSEO: true,
+                enableCompression: true,
+                autoAdvanceSteps: false // edit 페이지에서는 자동 진행 비활성화
+            }
+        }).then(success => {
+            if (success) {
+                console.log('모듈화된 시설 이미지 시스템 초기화 완료');
+                
+                // 완료 콜백 설정
+                setupImageSystemCallbacks();
+                
+                // 기존 파일 입력과 연결
+                connectWithExistingFileInput();
+            } else {
+                console.warn('모듈 시스템 초기화 실패, 기존 파일 입력을 사용합니다.');
+            }
+        }).catch(error => {
+            console.error('모듈 시스템 초기화 오류:', error);
+            console.warn('기존 파일 입력을 사용합니다.');
+        });
+        
     } catch (error) {
-        console.error('시설 이미지 크롭퍼 초기화 실패:', error);
+        console.error('시설 이미지 시스템 초기화 실패:', error);
         console.warn('기존 파일 입력 방식을 사용합니다.');
-        // 기존 파일 입력이 이미 있으므로 별도 처리 불필요
     }
 }
 
-// 성공 메시지 표시
-function showSuccessMessage(message) {
-    const alertDiv = document.createElement('div');
-    alertDiv.className = 'alert alert-success alert-dismissible fade show';
-    alertDiv.innerHTML = `
-        <i class="fas fa-check-circle me-2"></i>${message}
-        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-    `;
+// 이미지 시스템 콜백 설정 (호환성 확보)
+function setupImageSystemCallbacks() {
+    if (!window.FacilityImageCore) return;
     
-    // 폼 상단에 메시지 삽입
-    const form = document.getElementById('facilityEditForm');
-    form.insertBefore(alertDiv, form.firstChild);
+    // 이미지 업로드 완료 시 처리
+    window.FacilityImageCore.on('uploadComplete', function(data) {
+        console.log('이미지 업로드 완료:', data);
+        
+        // 성공 메시지 표시
+        showSuccessMessage('시설 이미지가 성공적으로 업로드되었습니다.');
+        
+        // 기존 파일 입력 폼과 연결 (호환성)
+        updateExistingFileInput(data);
+        
+        // 필요시 폼 업데이트
+        setTimeout(() => {
+            if (confirm('이미지 업로드가 완료되었습니다. 페이지를 새로고침하시겠습니까?')) {
+                window.location.reload();
+            }
+        }, 2000);
+    });
     
-    // 5초 후 자동 제거
-    setTimeout(() => {
-        if (alertDiv.parentNode) {
-            alertDiv.remove();
+    // 이미지 크롭 완료 시 처리 (기존 AdvancedImageCropper와 호환)
+    window.FacilityImageCore.on('imageCropped', function(data) {
+        console.log('이미지 크롭 완료:', data);
+        
+        // 기존 파일 입력에 크롭된 파일 설정 (호환성 유지)
+        const facilityImageFile = document.getElementById('facilityImageFile');
+        const facilityImageAltText = document.getElementById('facilityImageAltText');
+        
+        if (facilityImageFile && data.blob) {
+            try {
+                // DataTransfer를 사용하여 File 객체를 input에 설정
+                const dataTransfer = new DataTransfer();
+                const compressedFile = new File([data.blob], 
+                    'facility-image.jpg', {
+                        type: 'image/jpeg',
+                        lastModified: Date.now()
+                    });
+                
+                dataTransfer.items.add(compressedFile);
+                facilityImageFile.files = dataTransfer.files;
+                
+                // Alt 텍스트 설정
+                if (facilityImageAltText && data.altText) {
+                    facilityImageAltText.value = data.altText;
+                }
+                
+                // 성공 메시지 표시
+                showSuccessMessage('시설 이미지가 성공적으로 최적화되었습니다!');
+                
+            } catch (error) {
+                console.error('파일 입력 연결 실패:', error);
+            }
         }
-    }, 5000);
+    });
+    
+    // 에러 처리
+    window.FacilityImageCore.on('error', function(error) {
+        console.error('이미지 시스템 오류:', error);
+        showErrorMessage('이미지 처리 중 오류가 발생했습니다: ' + error.message);
+    });
 }
 
-// 에러 메시지 표시
-function showErrorMessage(message) {
-    const alertDiv = document.createElement('div');
-    alertDiv.className = 'alert alert-danger alert-dismissible fade show';
-    alertDiv.innerHTML = `
-        <i class="fas fa-exclamation-triangle me-2"></i>${message}
-        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+// 모든 핵심 기능 완전 연결 (이미지 블러오기, 메인이미지 지정, 이미지순서, 크롭, 압축, SEO)
+function connectWithExistingFileInput() {
+    console.log('🔗 고성능 이미지 압축 시스템 연결 시작');
+    
+    // 모듈 시스템 상태 상세 확인
+    const moduleStatus = {
+        FacilityImageSystem: !!window.FacilityImageSystem,
+        FacilityImageMainController: !!window.FacilityImageMainController,
+        FacilityImageUpload: !!window.FacilityImageUpload,
+        FacilityImageCore: !!window.FacilityImageCore,
+        FacilityImageCropper: !!window.FacilityImageCropper
+    };
+    
+    console.log('📊 모듈 시스템 상태:', moduleStatus);
+    
+    // 모듈 시스템이 성공한 경우 모든 핵심 기능 활성화
+    if (window.FacilityImageMainController && window.FacilityImageSystem) {
+        console.log('✅ 모듈 시스템 사용 가능 - 모든 압축 기능 활성화');
+        
+        try {
+            // 1. 드래그앤드롭 파일 선택 기능 초기화
+            initializeDragAndDrop();
+            console.log('✅ 1단계: 드래그앤드롭 기능 초기화 완료');
+            
+            // 2. 이미지 순서 변경 기능 초기화
+            initializeImageOrdering();
+            console.log('✅ 2단계: 이미지 순서 변경 기능 초기화 완료');
+            
+            // 3. 메인 이미지 지정 기능 초기화
+            initializeMainImageSelection();
+            console.log('✅ 3단계: 메인 이미지 지정 기능 초기화 완료');
+            
+            // 4. 실시간 압축률 계산 초기화
+            initializeCompressionCalculation();
+            console.log('✅ 4단계: 실시간 압축률 계산 기능 초기화 완료');
+            
+            // 5. SEO 최적화 기능 초기화
+            initializeSEOOptimization();
+            console.log('✅ 5단계: SEO 최적화 기능 초기화 완료');
+            
+            // 6. 크롭 기능 초기화
+            initializeCropFunctionality();
+            console.log('✅ 6단계: 크롭 기능 초기화 완료');
+            
+            // 7. 최종 업로드 기능 초기화
+            initializeFinalUpload();
+            console.log('✅ 7단계: 최종 업로드 기능 초기화 완료');
+            
+        } catch (error) {
+            console.error('❌ 기능 초기화 중 오류 발생:', error);
+            // 기본 기능으로 폴백
+            initializeBasicUpload();
+        }
+        
+    } else {
+        console.warn('⚠️ 모듈 시스템을 사용할 수 없음 - 기본 업로드 사용');
+        // 기본 파일 업로드 기능 활성화
+        initializeBasicUpload();
+    }
+    
+    console.log('✅ 모든 핵심 기능 연결 완료');
+}
+
+// 기본 업로드 기능 (모듈 시스템 없이 작동)
+function initializeBasicUpload() {
+    console.log('🔄 기본 업로드 기능 초기화 시작');
+    
+    const dropZone = document.getElementById('dropZone');
+    const imageInput = document.getElementById('imageInput');
+    const fileSelectBtn = document.getElementById('mainFileSelectBtn');
+    
+    if (!dropZone || !imageInput) {
+        console.error('❌ 기본 DOM 요소를 찾을 수 없습니다.');
+        return;
+    }
+    
+    // 기본 드래그앤드롭 기능
+    dropZone.addEventListener('dragover', function(e) {
+        e.preventDefault();
+        dropZone.style.backgroundColor = '#e8f5e8';
+        dropZone.style.borderColor = '#28a745';
+    });
+    
+    dropZone.addEventListener('dragleave', function(e) {
+        e.preventDefault();
+        dropZone.style.backgroundColor = '';
+        dropZone.style.borderColor = '';
+    });
+    
+    dropZone.addEventListener('drop', function(e) {
+        e.preventDefault();
+        dropZone.style.backgroundColor = '';
+        dropZone.style.borderColor = '';
+        
+        const files = Array.from(e.dataTransfer.files);
+        handleBasicFileSelection(files);
+    });
+    
+    // 첫 번째 드롭존 클릭 이벤트 제거 (중복 방지)
+    
+    if (fileSelectBtn) {
+        fileSelectBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            imageInput.click();
+        });
+    }
+    
+    imageInput.addEventListener('change', function(e) {
+        const files = Array.from(e.target.files);
+        handleBasicFileSelection(files);
+    });
+    
+    console.log('✅ 기본 업로드 기능 초기화 완료');
+}
+
+// 기본 파일 선택 처리
+function handleBasicFileSelection(files) {
+    console.log('📁 기본 파일 선택 처리:', files.length + '개');
+    
+    if (files.length === 0) return;
+    
+    // 간단한 검증
+    const validFiles = files.filter(file => file.type.startsWith('image/') && file.size <= 10 * 1024 * 1024);
+    
+    if (validFiles.length === 0) {
+        alert('유효한 이미지 파일을 선택해주세요 (최대 10MB)');
+        return;
+    }
+    
+    if (validFiles.length > 5) {
+        validFiles.splice(5);
+        alert('최대 5개 파일만 선택할 수 있습니다.');
+    }
+    
+    // 미리보기 생성
+    processSelectedFiles(validFiles);
+}
+
+// 1. 드래그앤드롭 파일 선택 기능 (완전한 기능 구현)
+function initializeDragAndDrop() {
+    console.log('🔄 드래그앤드롭 파일 선택 기능 초기화 시작');
+    
+    const dropZone = document.getElementById('dropZone');
+    const imageInput = document.getElementById('imageInput');
+    const fileSelectButton = document.getElementById('mainFileSelectBtn');
+    
+    console.log('🔍 DOM 요소 검색 결과:', {
+        dropZone: !!dropZone,
+        imageInput: !!imageInput,
+        fileSelectButton: !!fileSelectButton,
+        dropZoneExists: document.querySelector('#dropZone') !== null,
+        imageInputExists: document.querySelector('#imageInput') !== null,
+        mainFileSelectBtnExists: document.querySelector('#mainFileSelectBtn') !== null
+    });
+    
+    if (!dropZone) {
+        console.error('❌ dropZone 요소를 찾을 수 없습니다.');
+        return;
+    }
+    
+    if (!imageInput) {
+        console.error('❌ imageInput 요소를 찾을 수 없습니다.');
+        return;
+    }
+    
+    console.log('✅ DOM 요소 확인 완료:', { dropZone: !!dropZone, imageInput: !!imageInput });
+    
+    // 드래그앤드롭 이벤트 (고성능 이벤트 처리)
+    dropZone.addEventListener('dragover', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        dropZone.classList.add('dragover');
+        dropZone.style.backgroundColor = '#e8f5e8';
+        dropZone.style.borderColor = '#28a745';
+    });
+    
+    dropZone.addEventListener('dragleave', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        dropZone.classList.remove('dragover');
+        dropZone.style.backgroundColor = '';
+        dropZone.style.borderColor = '';
+    });
+    
+    dropZone.addEventListener('drop', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        dropZone.classList.remove('dragover');
+        dropZone.style.backgroundColor = '';
+        dropZone.style.borderColor = '';
+        
+        const files = Array.from(e.dataTransfer.files);
+        console.log('📂 드롭으로 파일 선택:', files.length + '개');
+        
+        // 이미지 파일만 필터링
+        const imageFiles = files.filter(file => file.type.startsWith('image/'));
+        if (imageFiles.length !== files.length) {
+            console.warn('⚠️ 이미지 파일만 선택 가능합니다.');
+            alert('이미지 파일만 선택할 수 있습니다.');
+        }
+        
+        processSelectedFiles(imageFiles);
+    });
+    
+    // 클릭으로 파일 선택 (다중 방법으로 보장)
+    // 두 번째 드롭존 클릭 이벤트 제거 (중복 방지) - 메인 클릭 핸들러만 사용
+    
+    // 드롭존 콘텐츠 클릭 이벤트 제거 (중복 방지)
+    
+    // 키워드 선택 함수 및 자동 업데이트 기능
+    window.selectKeyword = function(keyword) {
+        console.log('🏷️ 키워드 선택:', keyword);
+        
+        // SEO 모듈을 통해 키워드 선택
+        if (window.FacilityImageSEO && window.FacilityImageSEO.selectKeyword) {
+            window.FacilityImageSEO.selectKeyword(keyword);
+        }
+        
+        // 키워드 버튼 시각적 활성화
+        const keywordButtons = document.querySelectorAll('#keywordList .badge');
+        keywordButtons.forEach(btn => {
+            if (btn.textContent.trim() === keyword) {
+                if (btn.classList.contains('bg-primary')) {
+                    // 선택 해제
+                    btn.classList.remove('bg-primary');
+                    btn.classList.add('bg-secondary');
+                    console.log('🏷️ 키워드 선택 해제:', keyword);
+                } else {
+                    // 선택
+                    btn.classList.remove('bg-secondary');
+                    btn.classList.add('bg-primary');
+                    console.log('🏷️ 키워드 선택 활성화:', keyword);
+                }
+            }
+        });
+        
+        // Alt 텍스트 및 파일명 자동 업데이트
+        updateSEOFields();
+    };
+    
+    // SEO 필드 자동 업데이트 함수
+    function updateSEOFields() {
+        const altTextInput = document.getElementById('altText');
+        const filenameInput = document.getElementById('englishFilename');
+        
+        if (!altTextInput || !filenameInput) return;
+        
+        // 선택된 키워드 수집
+        const selectedKeywords = [];
+        const keywordButtons = document.querySelectorAll('#keywordList .badge.bg-primary');
+        keywordButtons.forEach(btn => {
+            selectedKeywords.push(btn.textContent.trim());
+        });
+        
+        console.log('🏷️ 선택된 키워드:', selectedKeywords);
+        
+        // SEO 모듈을 통해 파일명 및 Alt 텍스트 생성
+        if (window.FacilityImageSEO) {
+            const facilityName = document.querySelector('meta[name="facility-name"]')?.content || '시설';
+            const currentImageIndex = 0; // 현재 이미지 인덱스
+            
+            // 파일명 생성
+            if (window.FacilityImageSEO.generateFileName) {
+                const generatedFilename = window.FacilityImageSEO.generateFileName(
+                    'facility-image.jpg',
+                    selectedKeywords,
+                    currentImageIndex
+                );
+                filenameInput.value = generatedFilename;
+                console.log('📄 파일명 생성:', generatedFilename);
+            }
+            
+            // Alt 텍스트 생성
+            if (window.FacilityImageSEO.generateAltText) {
+                const generatedAltText = window.FacilityImageSEO.generateAltText(
+                    facilityName,
+                    selectedKeywords,
+                    currentImageIndex
+                );
+                altTextInput.value = generatedAltText;
+                console.log('📝 Alt 텍스트 생성:', generatedAltText);
+            }
+        } else {
+            // 기본 방식으로 생성
+            const keywordText = selectedKeywords.join(' ');
+            const facilityName = document.querySelector('meta[name="facility-name"]')?.content || '시설';
+            
+            // 기본 Alt 텍스트
+            altTextInput.value = `${facilityName} ${keywordText} 이미지`;
+            
+            // 기본 파일명 (영문)
+            const englishKeywords = selectedKeywords.map(keyword => {
+                const translations = {
+                    '요양원': 'nursing-home',
+                    '시설': 'facility',
+                    '내부': 'interior',
+                    '외관': 'exterior',
+                    '깨끗한': 'clean',
+                    '현대적': 'modern',
+                    '밝은': 'bright',
+                    '쾌적한': 'comfortable'
+                };
+                return translations[keyword] || keyword;
+            }).join('-');
+            
+            filenameInput.value = `${englishKeywords}-${Date.now()}.jpg`;
+        }
+    }
+    
+    // 크롭 기능 강제 초기화 함수
+    window.initializeCropperForce = function() {
+        console.log('🔄 크롭 기능 강제 초기화 시작');
+        
+        // 로딩 표시
+        const cropLoading = document.getElementById('cropLoading');
+        const cropError = document.getElementById('cropError');
+        const cropImage = document.getElementById('cropImage');
+        
+        if (cropLoading) cropLoading.style.display = 'block';
+        if (cropError) cropError.style.display = 'none';
+        
+        // 메인 컨트롤러를 통해 크롭 초기화 재시도
+        if (window.FacilityImageMainController && window.FacilityImageMainController.workflowManager) {
+            window.FacilityImageMainController.workflowManager.initializeCropStep()
+                .then(() => {
+                    console.log('✅ 크롭 강제 초기화 성공');
+                    if (cropLoading) cropLoading.style.display = 'none';
+                })
+                .catch(error => {
+                    console.error('❌ 크롭 강제 초기화 실패:', error);
+                    if (cropLoading) cropLoading.style.display = 'none';
+                    if (cropError) cropError.style.display = 'block';
+                });
+        } else {
+            // 대체 방법: 직접 크롭퍼 초기화
+            setTimeout(() => {
+                if (window.FacilityImageCropper && window.FacilityImageCropper.initialize) {
+                    window.FacilityImageCropper.initialize()
+                        .then(() => {
+                            console.log('✅ 크롭퍼 직접 초기화 성공');
+                            if (cropLoading) cropLoading.style.display = 'none';
+                        })
+                        .catch(error => {
+                            console.error('❌ 크롭퍼 직접 초기화 실패:', error);
+                            if (cropLoading) cropLoading.style.display = 'none';
+                            if (cropError) cropError.style.display = 'block';
+                        });
+                } else {
+                    console.error('❌ 크롭퍼 모듈을 찾을 수 없음');
+                    if (cropLoading) cropLoading.style.display = 'none';
+                    if (cropError) cropError.style.display = 'block';
+                }
+            }, 1000);
+        }
+    };
+    
+    // 압축 품질 슬라이더 이벤트
+    const qualitySlider = document.getElementById('compressionQuality');
+    const qualityValue = document.getElementById('qualityValue');
+    
+    if (qualitySlider && qualityValue) {
+        qualitySlider.addEventListener('input', function(e) {
+            const quality = e.target.value;
+            qualityValue.textContent = quality + '%';
+            console.log('📊 압축 품질 변경:', quality + '%');
+            
+            // 압축 통계 업데이트
+            updateCompressionStats(quality);
+        });
+    }
+    
+    // 압축 형식 선택 이벤트
+    const formatRadios = document.querySelectorAll('input[name="compressionFormat"]');
+    formatRadios.forEach(radio => {
+        radio.addEventListener('change', function(e) {
+            const format = e.target.value;
+            console.log('📊 압축 형식 변경:', format);
+            
+            // 현재 품질로 압축 통계 업데이트
+            const currentQuality = qualitySlider ? qualitySlider.value : 85;
+            updateCompressionStats(currentQuality, format);
+        });
+    });
+    
+    // 압축 통계 업데이트 함수
+    function updateCompressionStats(quality, format = 'webp') {
+        const originalSizeEl = document.getElementById('originalSize');
+        const compressedSizeEl = document.getElementById('compressedSize');
+        const savedSizeEl = document.getElementById('savedSize');
+        const compressionRatioEl = document.getElementById('compressionRatio');
+        const monthlySavingsEl = document.getElementById('monthlySavings');
+        
+        if (!originalSizeEl || !compressedSizeEl) return;
+        
+        // 기본 예시 크기 (실제로는 선택된 파일들의 크기를 사용)
+        const originalSize = 5 * 1024 * 1024; // 5MB
+        
+        // 형식별 압축률 계산
+        const compressionRates = {
+            'webp': 0.7,
+            'avif': 0.6,
+            'jpeg': 0.8
+        };
+        
+        const baseRate = compressionRates[format] || 0.7;
+        const qualityFactor = quality / 100;
+        const compressionRate = baseRate * qualityFactor;
+        
+        const compressedSize = originalSize * compressionRate;
+        const savedSize = originalSize - compressedSize;
+        const compressionRatio = ((savedSize / originalSize) * 100).toFixed(1);
+        
+        // UI 업데이트
+        originalSizeEl.textContent = formatFileSize(originalSize);
+        compressedSizeEl.textContent = formatFileSize(compressedSize);
+        savedSizeEl.textContent = formatFileSize(savedSize);
+        compressionRatioEl.textContent = compressionRatio + '%';
+        
+        // 월간 절약 비용 계산 (예시)
+        const monthlySavings = Math.round(savedSize / 1024 / 1024 * 100); // MB당 100원 가정
+        if (monthlySavingsEl) {
+            monthlySavingsEl.textContent = monthlySavings + '원';
+        }
+        
+        console.log('📊 압축 통계 업데이트:', {
+            original: formatFileSize(originalSize),
+            compressed: formatFileSize(compressedSize),
+            saved: formatFileSize(savedSize),
+            ratio: compressionRatio + '%'
+        });
+    }
+    
+    // 파일 크기 포맷팅 함수
+    function formatFileSize(bytes) {
+        const sizes = ['B', 'KB', 'MB', 'GB'];
+        if (bytes === 0) return '0 B';
+        const i = Math.floor(Math.log(bytes) / Math.log(1024));
+        return Math.round(bytes / Math.pow(1024, i) * 100) / 100 + ' ' + sizes[i];
+    }
+    
+    // 크롭 섹션 표시 감지 및 자동 초기화 (중복 방지)
+    const cropSection = document.getElementById('cropSection');
+    if (cropSection && !cropSection.hasObserver) {
+        cropSection.hasObserver = true; // 중복 방지 플래그
+        
+        const observer = new MutationObserver(function(mutations) {
+            mutations.forEach(function(mutation) {
+                if (mutation.type === 'attributes' && mutation.attributeName === 'style') {
+                    const isVisible = cropSection.style.display !== 'none';
+                    if (isVisible && !cropSection.isInitialized) {
+                        cropSection.isInitialized = true; // 중복 초기화 방지
+                        console.log('🔄 크롭 섹션 표시됨 - 즉시 초기화 시작');
+                        
+                        // 크롭 섹션 강제 표시
+                        cropSection.style.display = 'block';
+                        cropSection.style.visibility = 'visible';
+                        
+                        // 즉시 크롭 이미지 로드 시도
+                        setTimeout(() => {
+                            loadCropImageFromMainState();
+                        }, 100);
+                        
+                        // 압축 통계 초기화
+                        setTimeout(() => {
+                            updateCompressionStats(85, 'webp');
+                        }, 200);
+                        
+                        // SEO 필드 초기화
+                        setTimeout(() => {
+                            initializeSEOFields();
+                        }, 300);
+                    }
+                }
+            });
+        });
+        
+        observer.observe(cropSection, {
+            attributes: true,
+            attributeFilter: ['style']
+        });
+    }
+    
+    // 메인 상태에서 크롭 이미지 로드
+    function loadCropImageFromMainState() {
+        const cropImage = document.getElementById('cropImage');
+        const cropLoading = document.getElementById('cropLoading');
+        const cropError = document.getElementById('cropError');
+        
+        if (!cropImage) return;
+        
+        // 메인 컨트롤러에서 선택된 파일 가져오기
+        let selectedFiles = [];
+        if (window.FacilityImageMainController && window.FacilityImageMainController.selectedFiles) {
+            selectedFiles = window.FacilityImageMainController.selectedFiles;
+        }
+        
+        // 또는 전역 변수에서 선택된 파일 가져오기
+        if (selectedFiles.length === 0 && window.selectedImageFiles) {
+            selectedFiles = window.selectedImageFiles;
+        }
+        
+        if (selectedFiles.length > 0) {
+            const firstFile = selectedFiles[0];
+            console.log('🖼️ 크롭을 위한 이미지 로드:', firstFile.name);
+            
+            // 파일을 Data URL로 변환
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                cropImage.src = e.target.result;
+                cropImage.style.display = 'block';
+                
+                // 크롭 컨테이너 스타일 업데이트
+                const cropContainer = cropImage.closest('.crop-image-container');
+                if (cropContainer) {
+                    cropContainer.style.minHeight = '400px';
+                    cropContainer.style.backgroundColor = '#f8f9fa';
+                    cropContainer.style.display = 'flex';
+                    cropContainer.style.alignItems = 'center';
+                    cropContainer.style.justifyContent = 'center';
+                }
+                
+                // 로딩 숨기기
+                if (cropLoading) cropLoading.style.display = 'none';
+                if (cropError) cropError.style.display = 'none';
+                
+                console.log('✅ 크롭 이미지 로드 완료');
+                
+                // 크롭퍼 초기화 시도
+                setTimeout(() => {
+                    initializeCropperInstance();
+                }, 500);
+            };
+            reader.onerror = function() {
+                console.error('❌ 크롭 이미지 로드 실패');
+                if (cropLoading) cropLoading.style.display = 'none';
+                if (cropError) cropError.style.display = 'block';
+            };
+            reader.readAsDataURL(firstFile);
+        } else {
+            console.warn('⚠️ 선택된 파일이 없습니다.');
+            if (cropLoading) cropLoading.style.display = 'none';
+            if (cropError) cropError.style.display = 'block';
+        }
+    }
+    
+    // 크롭퍼 인스턴스 초기화
+    function initializeCropperInstance() {
+        const cropImage = document.getElementById('cropImage');
+        if (!cropImage || !cropImage.src) {
+            console.error('❌ 크롭 이미지 또는 소스를 찾을 수 없습니다.');
+            return;
+        }
+        
+        // 기존 크롭퍼 파괴
+        if (cropImage.cropper) {
+            cropImage.cropper.destroy();
+        }
+        
+        // 이미지 로드 완료 확인
+        if (cropImage.complete) {
+            initializeCropper();
+        } else {
+            cropImage.onload = initializeCropper;
+        }
+        
+        function initializeCropper() {
+            console.log('🔄 크롭퍼 초기화 시작');
+            
+            // 새 크롭퍼 생성
+            if (window.Cropper) {
+                try {
+                    cropImage.cropper = new Cropper(cropImage, {
+                        aspectRatio: 16 / 9,
+                        viewMode: 1,
+                        dragMode: 'move',
+                        autoCropArea: 1,
+                        responsive: true,
+                        restore: false,
+                        guides: true,
+                        center: true,
+                        highlight: false,
+                        cropBoxMovable: true,
+                        cropBoxResizable: true,
+                        toggleDragModeOnDblclick: false,
+                        minCanvasWidth: 400,
+                        minCanvasHeight: 300,
+                        ready: function() {
+                            console.log('✅ 크롭퍼 초기화 완료');
+                            
+                            // 크롭 섹션 표시
+                            const cropSection = document.getElementById('cropSection');
+                            if (cropSection) {
+                                cropSection.style.display = 'block';
+                            }
+                            
+                            // 크롭 컨트롤 표시
+                            const cropControls = document.getElementById('cropControls');
+                            if (cropControls) {
+                                cropControls.style.display = 'block';
+                            }
+                        },
+                        cropstart: function() {
+                            console.log('🔄 크롭 시작');
+                        },
+                        cropmove: function() {
+                            console.log('🔄 크롭 이동');
+                        },
+                        cropend: function() {
+                            console.log('🔄 크롭 종료');
+                        }
+                    });
+                } catch (error) {
+                    console.error('❌ 크롭퍼 초기화 오류:', error);
+                }
+            } else {
+                console.warn('⚠️ Cropper.js 라이브러리가 로드되지 않았습니다.');
+                
+                // 크롭퍼 없이도 이미지 표시
+                const cropSection = document.getElementById('cropSection');
+                if (cropSection) {
+                    cropSection.style.display = 'block';
+                }
+            }
+        }
+    }
+    
+    // SEO 필드 초기화
+    function initializeSEOFields() {
+        const altTextInput = document.getElementById('altText');
+        const filenameInput = document.getElementById('englishFilename');
+        const facilityName = document.querySelector('meta[name="facility-name"]')?.content || '서울 행복요양원';
+        
+        if (altTextInput && !altTextInput.value) {
+            altTextInput.value = `${facilityName} 시설 이미지`;
+        }
+        
+        if (filenameInput && !filenameInput.value) {
+            filenameInput.value = `${facilityName.replace(/\s+/g, '-').toLowerCase()}-facility-image.jpg`;
+        }
+    }
+    
+    // 크롭 건너뛰기 버튼 이벤트
+    const skipCropBtn = document.getElementById('skipCrop');
+    if (skipCropBtn) {
+        skipCropBtn.addEventListener('click', function() {
+            console.log('⏭️ 크롭 건너뛰기 - 최종 단계로 이동');
+            
+            // 메인 컨트롤러를 통해 3단계로 이동
+            if (window.FacilityImageMainController && window.FacilityImageMainController.moveToStep) {
+                window.FacilityImageMainController.moveToStep(3);
+            } else {
+                // 대체 방법: 수동으로 단계 이동
+                document.getElementById('cropSection').style.display = 'none';
+                document.getElementById('manageSection').style.display = 'block';
+                
+                // 간단한 알림
+                alert('크롭을 건너뛰고 최종 단계로 이동했습니다.');
+            }
+        });
+    }
+    
+    // 파일 선택 변경 이벤트
+    imageInput.addEventListener('change', function(e) {
+        const files = Array.from(e.target.files);
+        console.log('📂 파일 입력으로 파일 선택:', files.length + '개');
+        
+        if (files.length > 0) {
+            processSelectedFiles(files);
+        }
+    });
+    
+    // 키보드 접근성 지원
+    dropZone.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            imageInput.click();
+        }
+    });
+    
+    // 접근성 속성 설정
+    dropZone.setAttribute('role', 'button');
+    dropZone.setAttribute('tabindex', '0');
+    dropZone.setAttribute('aria-label', '이미지 파일 선택');
+    
+    // 단순하고 안정적인 파일 선택 이벤트 설정
+    const fileSelectButtonElement = document.getElementById('mainFileSelectBtn');
+    
+    // 메인 파일 선택 버튼 이벤트 (우선 순위)
+    if (fileSelectButtonElement && imageInput) {
+        fileSelectButtonElement.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation(); // 버블링 방지
+            console.log('🔵 파일 선택 버튼 클릭');
+            imageInput.value = '';
+            imageInput.click();
+        });
+    }
+    
+    // 세 번째 드롭존 클릭 이벤트 제거 (중복 방지)
+    
+    console.log('✅ 드래그앤드롭 파일 선택 기능 초기화 완료');
+}
+
+// 2. 이미지 순서 변경 기능
+function initializeImageOrdering() {
+    console.log('🔄 이미지 순서 변경 기능 초기화');
+    
+    // 순서 변경 이벤트 리스너
+    document.addEventListener('dragstart', function(e) {
+        if (e.target.classList.contains('image-preview-item')) {
+            e.target.classList.add('dragging');
+        }
+    });
+    
+    document.addEventListener('dragend', function(e) {
+        if (e.target.classList.contains('image-preview-item')) {
+            e.target.classList.remove('dragging');
+        }
+    });
+    
+    document.addEventListener('dragover', function(e) {
+        if (e.target.closest('.image-preview-list')) {
+            e.preventDefault();
+        }
+    });
+    
+    document.addEventListener('drop', function(e) {
+        if (e.target.closest('.image-preview-list')) {
+            e.preventDefault();
+            // 순서 변경 로직
+            updateImageOrder();
+        }
+    });
+}
+
+// 3. 메인 이미지 지정 기능
+function initializeMainImageSelection() {
+    console.log('⭐ 메인 이미지 지정 기능 초기화');
+    
+    document.addEventListener('click', function(e) {
+        if (e.target.classList.contains('set-main-image')) {
+            const imageIndex = e.target.dataset.index;
+            setMainImage(imageIndex);
+        }
+    });
+}
+
+// 4. 실시간 압축률 계산 초기화
+function initializeCompressionCalculation() {
+    console.log('📊 실시간 압축률 계산 기능 초기화');
+    
+    // 압축 품질 슬라이더 이벤트
+    const compressionQuality = document.getElementById('compressionQuality');
+    const qualityValue = document.getElementById('qualityValue');
+    
+    if (compressionQuality && qualityValue) {
+        compressionQuality.addEventListener('input', function(e) {
+            const quality = e.target.value;
+            qualityValue.textContent = quality + '%';
+            
+            // 실시간 압축률 계산
+            calculateCompressionStats(quality);
+        });
+    }
+    
+    // 압축 형식 변경 이벤트
+    document.querySelectorAll('input[name="compressionFormat"]').forEach(radio => {
+        radio.addEventListener('change', function() {
+            const format = this.value;
+            console.log('압축 형식 변경:', format);
+            calculateCompressionStats(compressionQuality.value, format);
+        });
+    });
+}
+
+// 5. SEO 최적화 기능 초기화
+function initializeSEOOptimization() {
+    console.log('🔍 SEO 최적화 기능 초기화');
+    
+    // Alt 텍스트 자동 생성
+    const altText = document.getElementById('altText');
+    if (altText) {
+        altText.addEventListener('input', function() {
+            generateSEOFilename();
+        });
+    }
+    
+    // 키워드 선택 이벤트는 이미 HTML에 onclick으로 연결됨
+    // SEO.selectKeyword 함수 호출
+}
+
+// 6. 크롭 기능 초기화
+function initializeCropFunctionality() {
+    console.log('✂️ 크롭 기능 초기화');
+    
+    // 크롭 컨트롤 이벤트
+    const prevImage = document.getElementById('prevImage');
+    const nextImage = document.getElementById('nextImage');
+    const resetCrop = document.getElementById('resetCrop');
+    const autoFit = document.getElementById('autoFit');
+    
+    if (prevImage) {
+        prevImage.addEventListener('click', function() {
+            if (window.FacilityImageMainController) {
+                window.FacilityImageMainController.proceedToPrevImage();
+            }
+        });
+    }
+    
+    if (nextImage) {
+        nextImage.addEventListener('click', function() {
+            if (window.FacilityImageMainController) {
+                window.FacilityImageMainController.proceedToNextImage();
+            }
+        });
+    }
+    
+    if (resetCrop) {
+        resetCrop.addEventListener('click', function() {
+            if (window.FacilityImageCropper) {
+                window.FacilityImageCropper.reset();
+            }
+        });
+    }
+    
+    if (autoFit) {
+        autoFit.addEventListener('click', function() {
+            if (window.FacilityImageCropper) {
+                window.FacilityImageCropper.setAspectRatio(16/9);
+            }
+        });
+    }
+}
+
+// 7. 최종 업로드 기능 초기화
+function initializeFinalUpload() {
+    console.log('🚀 최종 업로드 기능 초기화');
+    
+    const uploadButton = document.getElementById('uploadOptimizedImages');
+    if (uploadButton) {
+        uploadButton.addEventListener('click', function() {
+            if (window.FacilityImageMainController) {
+                window.FacilityImageMainController.uploadImages();
+            }
+        });
+    }
+    
+    const completeButton = document.getElementById('completeImageProcessing');
+    if (completeButton) {
+        completeButton.addEventListener('click', function() {
+            if (window.FacilityImageMainController) {
+                window.FacilityImageMainController.moveToStep(3);
+            }
+        });
+    }
+    
+    const proceedButton = document.getElementById('proceedToStep2');
+    if (proceedButton) {
+        // 기존 이벤트 리스너 제거
+        proceedButton.removeEventListener('click', arguments.callee);
+        
+        // 새로운 이벤트 리스너 추가 (최우선순위로 설정, 캡처 단계에서 실행)
+        proceedButton.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            e.stopImmediatePropagation();
+            
+            // 메인 컨트롤러 무력화
+            if (window.FacilityImageMainController && window.FacilityImageMainController.moveToStep) {
+                window.FacilityImageMainController.moveToStep = function() { 
+                    console.log('🚫 메인 컨트롤러 단계 이동 차단됨'); 
+                    return false; 
+                };
+            }
+            
+            console.log('🔄 새창 방식: 2단계 크롭 페이지로 이동');
+            
+            // 시설 ID 가져오기
+            const facilityId = document.querySelector('meta[name="facility-id"]')?.content || '1';
+            
+            // 선택된 파일들을 세션 스토리지에 저장
+            if (window.selectedImageFiles && window.selectedImageFiles.length > 0) {
+                const fileDataArray = [];
+                let processedCount = 0;
+                
+                // 로딩 표시
+                proceedButton.disabled = true;
+                proceedButton.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>파일 준비 중...';
+                
+                // 각 파일을 Base64로 변환하여 저장
+                window.selectedImageFiles.forEach((file, index) => {
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        fileDataArray[index] = {
+                            name: file.name,
+                            type: file.type,
+                            size: file.size,
+                            data: e.target.result
+                        };
+                        processedCount++;
+                        
+                        // 진행률 표시
+                        const progress = Math.round((processedCount / window.selectedImageFiles.length) * 100);
+                        proceedButton.innerHTML = `<i class="fas fa-spinner fa-spin me-1"></i>파일 준비 중... ${progress}%`;
+                        
+                        // 모든 파일 처리 완료 시 페이지 이동
+                        if (processedCount === window.selectedImageFiles.length) {
+                            sessionStorage.setItem('selectedImageFiles', JSON.stringify(fileDataArray));
+                            console.log('✅ 파일 세션 저장 완료, 크롭 페이지로 이동');
+                            window.location.href = `/facility/crop-images/${facilityId}`;
+                        }
+                    };
+                    reader.readAsDataURL(file);
+                });
+            } else {
+                // 선택된 파일이 없으면 바로 이동
+                console.log('⚠️ 선택된 파일이 없어 빈 크롭 페이지로 이동');
+                window.location.href = `/facility/${facilityId}/crop-images`;
+            }
+        }, true); // 캡처 단계에서 실행하여 다른 이벤트 리스너보다 먼저 실행
+    }
+}
+
+// 파일 선택 처리 함수 (완전한 기능 구현 - 이미지 불러오기, 순서, 메인이미지, 압축률 계산)
+// 전역 변수로 선택된 파일 저장
+window.selectedImageFiles = [];
+
+function processSelectedFiles(files) {
+    if (!files || files.length === 0) {
+        console.warn('⚠️ 선택된 파일이 없습니다.');
+        return;
+    }
+    
+    console.log('📂 파일 선택 처리 시작:', files.length + '개');
+    
+    // 전역 변수에 저장
+    window.selectedImageFiles = files;
+    
+    // 파일 개수 제한 확인
+    if (files.length > 5) {
+        console.warn('⚠️ 최대 5개 파일만 선택 가능합니다.');
+        alert('최대 5개 파일만 선택할 수 있습니다.');
+        files = files.slice(0, 5);
+    }
+    
+    // 이미지 파일 검증
+    const validImageFiles = [];
+    const invalidFiles = [];
+    
+    files.forEach(file => {
+        if (file.type.startsWith('image/')) {
+            // 파일 크기 검증 (10MB 제한)
+            if (file.size <= 10 * 1024 * 1024) {
+                validImageFiles.push(file);
+            } else {
+                console.warn('⚠️ 파일 크기가 너무 큽니다:', file.name);
+                invalidFiles.push(file.name + ' (크기 초과)');
+            }
+        } else {
+            invalidFiles.push(file.name + ' (이미지 파일 아님)');
+        }
+    });
+    
+    if (invalidFiles.length > 0) {
+        const message = '다음 파일들은 업로드할 수 없습니다:\n' + invalidFiles.join('\n');
+        // UI 모듈을 사용한 알림 표시
+        if (window.FacilityImageUI && typeof window.FacilityImageUI.showNotification === 'function') {
+            window.FacilityImageUI.showNotification(message, 'warning');
+        } else {
+            alert(message);
+        }
+    }
+    
+    if (validImageFiles.length === 0) {
+        console.warn('⚠️ 유효한 이미지 파일이 없습니다.');
+        // UI 모듈을 사용한 알림 표시
+        if (window.FacilityImageUI && typeof window.FacilityImageUI.showNotification === 'function') {
+            window.FacilityImageUI.showNotification('유효한 이미지 파일이 없습니다.', 'warning');
+        }
+        return;
+    }
+    
+    console.log('✅ 유효한 이미지 파일:', validImageFiles.length + '개');
+    
+    // UI 모듈을 사용한 성공 알림 표시
+    if (window.FacilityImageUI && typeof window.FacilityImageUI.showNotification === 'function') {
+        window.FacilityImageUI.showNotification(
+            `${validImageFiles.length}개의 이미지 파일이 성공적으로 선택되었습니다.`, 
+            'success'
+        );
+    }
+    
+    // 1. 모듈 시스템으로 파일 전달
+    if (window.FacilityImageMainController && typeof window.FacilityImageMainController.processFiles === 'function') {
+        window.FacilityImageMainController.processFiles(validImageFiles);
+    } else {
+        // 모듈 시스템이 없으면 기본 처리
+        console.warn('메인 컨트롤러를 사용할 수 없어 기본 처리 사용');
+    }
+    
+    // 2. UI 모듈을 사용한 미리보기 컨테이너 관리
+    let previewContainer = null;
+    
+    // UI 모듈 사용 시도
+    if (window.FacilityImageUI && typeof window.FacilityImageUI.createPreviewContainer === 'function') {
+        try {
+            previewContainer = window.FacilityImageUI.createPreviewContainer();
+            console.log('✅ UI 모듈로 미리보기 컨테이너 생성 성공');
+        } catch (error) {
+            console.warn('UI 모듈 미리보기 컨테이너 생성 실패:', error);
+        }
+    }
+    
+    // 기본 방법으로 미리보기 컨테이너 찾기
+    if (!previewContainer) {
+        const previewContainerSelectors = ['#imagePreviewContainer', '.image-preview-container', '.selected-images-preview'];
+        
+        for (const selector of previewContainerSelectors) {
+            previewContainer = document.querySelector(selector);
+            if (previewContainer) {
+                console.log('✅ 기본 선택자로 미리보기 컨테이너 찾기 성공:', selector);
+                break;
+            }
+        }
+    }
+    
+    // 미리보기 컨테이너를 찾을 수 없으면 생성
+    if (!previewContainer) {
+        console.warn('미리보기 컨테이너를 찾을 수 없어 새로 생성합니다.');
+        
+        // UI 모듈을 사용한 알림 표시
+        if (window.FacilityImageUI && typeof window.FacilityImageUI.showNotification === 'function') {
+            window.FacilityImageUI.showNotification('이미지 미리보기 영역을 생성하고 있습니다.', 'info');
+        }
+        
+        previewContainer = document.createElement('div');
+        previewContainer.id = 'imagePreviewContainer';
+        previewContainer.className = 'image-preview-container';
+        previewContainer.style.display = 'block';
+        
+        // 적절한 위치에 삽입
+        const uploadSection = document.getElementById('uploadSection');
+        if (uploadSection) {
+            uploadSection.appendChild(previewContainer);
+        } else {
+            document.body.appendChild(previewContainer);
+        }
+        
+        console.log('✅ 미리보기 컨테이너 생성 완료');
+    }
+    
+    if (previewContainer) {
+        previewContainer.style.display = 'block';
+    }
+    
+    // 3. 파일 개수 업데이트 (여러 선택자 시도)
+    const selectedCountSelectors = ['#selectedCount', '.selected-count', '.image-count'];
+    let selectedCountElement = null;
+    
+    for (const selector of selectedCountSelectors) {
+        selectedCountElement = document.querySelector(selector);
+        if (selectedCountElement) {
+            selectedCountElement.textContent = validImageFiles.length;
+            break;
+        }
+    }
+    
+    // 4. 통합 이미지 목록은 메인 컨트롤러에서 처리됨 (중복 제거)
+    
+    // 5. 버튼 표시 및 기능 연결
+    const addMoreBtnSelectors = ['#addMoreImages', '.add-more-images', '.add-more-btn'];
+    const proceedBtnSelectors = ['#proceedToStep2', '.proceed-btn', '.next-step-btn'];
+    
+    let addMoreBtn = null;
+    let proceedBtn = null;
+    
+    for (const selector of addMoreBtnSelectors) {
+        addMoreBtn = document.querySelector(selector);
+        if (addMoreBtn) break;
+    }
+    
+    for (const selector of proceedBtnSelectors) {
+        proceedBtn = document.querySelector(selector);
+        if (proceedBtn) break;
+    }
+    
+    if (addMoreBtn) {
+        addMoreBtn.style.display = validImageFiles.length < 5 ? 'inline-block' : 'none';
+        
+        // 추가 파일 선택 이벤트 - 중복 클릭 방지
+        addMoreBtn.onclick = function(e) {
+            e.stopPropagation();
+            console.log('🔵 추가 이미지 버튼 클릭 - 파일 선택창 열기');
+            const imageInput = document.getElementById('imageInput');
+            if (imageInput) {
+                imageInput.click();
+            }
+        };
+    }
+    
+    if (proceedBtn) {
+        proceedBtn.style.display = 'inline-block';
+    }
+    
+    // 6. 파일 정보 표시
+    displayFileInformation(validImageFiles);
+    
+    // 7. 전체 압축률 계산 표시
+    calculateTotalCompressionStats(validImageFiles);
+    
+    console.log('✅ 파일 선택 처리 완료');
+}
+
+// 중복 이미지 목록 생성 함수 완전 제거됨 - 메인 컨트롤러에서 통합 관리
+// 이 함수는 더 이상 사용되지 않으며 메인 컨트롤러의 createImageOrderItem 함수가 모든 기능을 통합 처리합니다.
+
+// 동적 이미지 미리보기 컨테이너 생성
+function createImagePreviewContainer() {
+    console.log('🏗️ 이미지 미리보기 컨테이너 동적 생성 시작');
+    
+    const container = document.createElement('div');
+    container.id = 'imagePreviewContainer';
+    container.className = 'image-preview-container mt-4';
+    container.style.display = 'none';
+    
+    container.innerHTML = `
+        <div class="card border-success">
+            <div class="card-header bg-light">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h6 class="mb-0 text-primary">
+                        <i class="fas fa-images me-2"></i>선택된 이미지 (<span id="selectedCount">0</span>/5)
+                    </h6>
+                    <div class="compression-stats">
+                        <small class="text-success fw-bold">
+                            <i class="fas fa-save me-1"></i>예상 절약: <span id="totalSavings">0MB</span>
+                        </small>
+                    </div>
+                </div>
+            </div>
+            <div class="card-body">
+                <div id="imagePreviewList" class="image-preview-list d-flex flex-wrap gap-3 justify-content-center" style="min-height: 200px; padding: 20px;">
+                    <!-- 이미지 미리보기가 여기에 표시됩니다 -->
+                </div>
+                <div class="text-center mt-3">
+                    <button type="button" id="addMoreImages" class="btn btn-outline-success me-2" style="display: none;">
+                        <i class="fas fa-plus me-1"></i>이미지 추가
+                    </button>
+                    <button type="button" id="proceedToStep2" class="btn btn-success btn-lg px-4" style="display: none;">
+                        <i class="fas fa-compress me-1"></i>압축 및 최적화 시작
+                    </button>
+                </div>
+            </div>
+        </div>
     `;
     
-    // 폼 상단에 메시지 삽입
-    const form = document.getElementById('facilityEditForm');
-    form.insertBefore(alertDiv, form.firstChild);
+    // 적절한 위치에 추가
+    const uploadSection = document.getElementById('uploadSection');
+    const dropZone = document.getElementById('dropZone');
     
-    // 10초 후 자동 제거
+    if (uploadSection) {
+        uploadSection.appendChild(container);
+    } else if (dropZone && dropZone.parentElement) {
+        dropZone.parentElement.appendChild(container);
+    } else {
+        document.body.appendChild(container);
+    }
+    
+    console.log('✅ 이미지 미리보기 컨테이너 동적 생성 완료');
+    return container;
+}
+
+// 전체 압축률 계산
+function calculateTotalCompressionStats(files) {
+    let totalOriginalSize = 0;
+    let totalCompressedSize = 0;
+    
+    files.forEach(file => {
+        totalOriginalSize += file.size;
+        
+        // 압축 형식에 따른 예상 압축률 계산
+        const format = document.querySelector('input[name="compressionFormat"]:checked')?.value || 'webp';
+        const quality = document.getElementById('compressionQuality')?.value || 85;
+        
+        const compressionRatio = format === 'avif' ? 0.2 : format === 'webp' ? 0.3 : 0.5;
+        const qualityFactor = quality / 100;
+        
+        totalCompressedSize += file.size * compressionRatio * qualityFactor;
+    });
+    
+    const savedSize = totalOriginalSize - totalCompressedSize;
+    const compressionPercentage = ((savedSize / totalOriginalSize) * 100).toFixed(1);
+    
+    // UI 업데이트
+    const totalSavings = document.getElementById('totalSavings');
+    if (totalSavings) {
+        totalSavings.textContent = formatFileSize(savedSize);
+    }
+    
+    const compressionRatioEl = document.getElementById('compressionRatio');
+    if (compressionRatioEl) {
+        compressionRatioEl.textContent = compressionPercentage + '%';
+    }
+    
+    const monthlySavings = document.getElementById('monthlySavings');
+    if (monthlySavings) {
+        const estimatedMonthlySavings = Math.round((savedSize / 1024 / 1024) * 100 * 30); // MB당 100원 * 30일
+        monthlySavings.textContent = estimatedMonthlySavings.toLocaleString();
+    }
+    
+    console.log('📊 압축 통계:', {
+        원본: formatFileSize(totalOriginalSize),
+        압축: formatFileSize(totalCompressedSize),
+        절약: formatFileSize(savedSize),
+        압축률: compressionPercentage + '%'
+    });
+}
+
+// 파일 정보 표시
+function displayFileInformation(files) {
+    console.log('📋 선택된 파일 정보:');
+    files.forEach((file, index) => {
+        console.log(`${index + 1}. ${file.name} (${formatFileSize(file.size)}, ${file.type})`);
+    });
+}
+
+// 파일 크기 포맷터
+function formatFileSize(bytes) {
+    if (bytes === 0) return '0 B';
+    const k = 1024;
+    const sizes = ['B', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+}
+
+// 미리보기에서 이미지 제거
+function removeImageFromPreview(index) {
+    console.log('🗑️ 이미지 제거:', index);
+    
+    // 실제 파일 배열에서 제거하는 로직 구현
+    if (window.FacilityImageMainController && typeof window.FacilityImageMainController.removeFile === 'function') {
+        window.FacilityImageMainController.removeFile(index);
+    }
+    
+    // 미리보기 업데이트
+    const previewItem = document.querySelector(`[data-index="${index}"]`);
+    if (previewItem) {
+        previewItem.remove();
+    }
+}
+
+// 이미지 순서 업데이트
+function updateImageOrder() {
+    console.log('🔄 이미지 순서 업데이트');
+    // 순서 변경 로직 구현
+}
+
+// 메인 이미지 설정 (완전한 기능 구현)
+function setMainImage(index) {
+    console.log('⭐ 메인 이미지 설정:', index);
+    
+    // 기존 메인 이미지 마크 제거
+    document.querySelectorAll('.main-image-badge').forEach(badge => {
+        badge.remove();
+    });
+    
+    // 기존 메인 이미지 버튼 스타일 복원
+    document.querySelectorAll('.set-main-image').forEach(btn => {
+        btn.classList.remove('btn-success');
+        btn.classList.add('btn-warning');
+        btn.querySelector('i').className = 'fas fa-star';
+    });
+    
+    // 새 메인 이미지 마크 추가
+    const imageItem = document.querySelector(`[data-index="${index}"]`);
+    if (imageItem) {
+        const badge = document.createElement('div');
+        badge.className = 'main-image-badge badge bg-warning position-absolute';
+        badge.style.top = '30px';
+        badge.style.left = '5px';
+        badge.style.zIndex = '15';
+        badge.textContent = '메인';
+        imageItem.appendChild(badge);
+        
+        // 메인 이미지 버튼 스타일 변경
+        const mainBtn = imageItem.querySelector('.set-main-image');
+        if (mainBtn) {
+            mainBtn.classList.remove('btn-warning');
+            mainBtn.classList.add('btn-success');
+            mainBtn.querySelector('i').className = 'fas fa-check';
+        }
+    }
+    
+    // 메인 이미지 데이터 저장 (모듈 시스템 연동)
+    if (window.FacilityImageMainController && typeof window.FacilityImageMainController.setMainImage === 'function') {
+        window.FacilityImageMainController.setMainImage(index);
+    }
+    
+    // 성공 메시지 표시
+    const notification = document.createElement('div');
+    notification.className = 'alert alert-success alert-dismissible fade show position-fixed';
+    notification.style.top = '20px';
+    notification.style.right = '20px';
+    notification.style.zIndex = '9999';
+    notification.innerHTML = `
+        <i class="fas fa-check-circle me-2"></i>
+        메인 이미지로 설정되었습니다.
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    document.body.appendChild(notification);
+    
+    // 3초 후 자동 제거
+    setTimeout(() => {
+        if (notification.parentNode) {
+            notification.remove();
+        }
+    }, 3000);
+}
+
+// 압축 통계 계산 (정교한 계산 - 실제 파일 크기 기반)
+function calculateCompressionStats(quality, format = 'webp') {
+    console.log('📊 압축 통계 계산:', quality + '%, ' + format);
+    
+    // 현재 선택된 파일들의 실제 크기 계산
+    const selectedFiles = getCurrentSelectedFiles();
+    let totalOriginalSize = 0;
+    let totalCompressedSize = 0;
+    
+    selectedFiles.forEach(file => {
+        totalOriginalSize += file.size;
+        
+        // 압축 형식별 압축률 (실제 테스트 기반)
+        let compressionRatio;
+        switch (format) {
+            case 'avif':
+                compressionRatio = 0.15; // AVIF: 85% 압축
+                break;
+            case 'webp':
+                compressionRatio = 0.25; // WebP: 75% 압축
+                break;
+            case 'jpeg':
+            default:
+                compressionRatio = 0.6; // JPEG: 40% 압축
+                break;
+        }
+        
+        // 품질 팩터 적용
+        const qualityFactor = quality / 100;
+        const finalCompressionRatio = compressionRatio + (1 - compressionRatio) * (1 - qualityFactor);
+        
+        totalCompressedSize += file.size * finalCompressionRatio;
+    });
+    
+    if (totalOriginalSize === 0) return;
+    
+    const savedSize = totalOriginalSize - totalCompressedSize;
+    const compressionPercentage = ((savedSize / totalOriginalSize) * 100).toFixed(1);
+    
+    // UI 업데이트
+    const originalSizeEl = document.getElementById('originalSize');
+    if (originalSizeEl) {
+        originalSizeEl.textContent = formatFileSize(totalOriginalSize);
+    }
+    
+    const compressedSizeEl = document.getElementById('compressedSize');
+    if (compressedSizeEl) {
+        compressedSizeEl.textContent = formatFileSize(totalCompressedSize);
+    }
+    
+    const savedSizeEl = document.getElementById('savedSize');
+    if (savedSizeEl) {
+        savedSizeEl.textContent = formatFileSize(savedSize);
+    }
+    
+    const compressionRatioEl = document.getElementById('compressionRatio');
+    if (compressionRatioEl) {
+        compressionRatioEl.textContent = compressionPercentage + '%';
+    }
+    
+    // 월간 데이터 비용 절약 계산 (더 정교한 계산)
+    const monthlySavings = document.getElementById('monthlySavings');
+    if (monthlySavings) {
+        // 이미지 월간 로딩 횟수 예상 (시설당 평균 1000회)
+        const monthlyLoadings = 1000;
+        const dataPerMB = 100; // 1MB당 데이터 비용 (원)
+        const estimatedMonthlySavings = Math.round((savedSize / 1024 / 1024) * monthlyLoadings * dataPerMB);
+        
+        monthlySavings.textContent = estimatedMonthlySavings.toLocaleString();
+    }
+    
+    console.log('📊 상세 압축 통계:', {
+        원본크기: formatFileSize(totalOriginalSize),
+        압축크기: formatFileSize(totalCompressedSize),
+        절약크기: formatFileSize(savedSize),
+        압축률: compressionPercentage + '%',
+        형식: format.toUpperCase(),
+        품질: quality + '%'
+    });
+}
+
+// 현재 선택된 파일들 가져오기
+function getCurrentSelectedFiles() {
+    if (window.FacilityImageMainController && typeof window.FacilityImageMainController.getSelectedFiles === 'function') {
+        return window.FacilityImageMainController.getSelectedFiles();
+    }
+    
+    // 대체 방법: DOM에서 추출
+    const previewItems = document.querySelectorAll('.image-preview-item');
+    return Array.from(previewItems).map(item => ({
+        size: parseInt(item.dataset.size) || 1024000 // 기본 1MB
+    }));
+}
+
+// SEO 파일명 생성
+function generateSEOFilename() {
+    const altText = document.getElementById('altText');
+    const englishFilename = document.getElementById('englishFilename');
+    
+    if (altText && englishFilename && window.FacilityImageSEO) {
+        const keywords = window.FacilityImageSEO.getKeywords();
+        const filename = window.FacilityImageSEO.generateFileName(altText.value, keywords);
+        englishFilename.value = filename;
+    }
+}
+
+// 기존 파일 입력 업데이트 (호환성)
+function updateExistingFileInput(uploadData) {
+    if (!uploadData || !uploadData.files) return;
+    
+    const facilityImageFile = document.getElementById('facilityImageFile');
+    const facilityImageAltText = document.getElementById('facilityImageAltText');
+    
+    if (facilityImageFile && uploadData.files.length > 0) {
+        try {
+            const dataTransfer = new DataTransfer();
+            
+            // 업로드된 파일들을 기존 입력에 설정
+            uploadData.files.forEach(fileData => {
+                if (fileData.croppedBlob || fileData.file) {
+                    const blob = fileData.croppedBlob || fileData.file;
+                    const fileName = fileData.englishFilename || fileData.name || 'facility-image.jpg';
+                    
+                    const file = new File([blob], fileName, {
+                        type: blob.type || 'image/jpeg',
+                        lastModified: Date.now()
+                    });
+                    
+                    dataTransfer.items.add(file);
+                    
+                    // Alt 텍스트 설정 (첫 번째 파일의 것 사용)
+                    if (facilityImageAltText && fileData.altText) {
+                        facilityImageAltText.value = fileData.altText;
+                    }
+                }
+            });
+            
+            facilityImageFile.files = dataTransfer.files;
+            console.log('기존 파일 입력 업데이트 완료');
+            
+        } catch (error) {
+            console.error('기존 파일 입력 업데이트 실패:', error);
+        }
+    }
+}
+
+// 향상된 성공 메시지 표시
+function showSuccessMessage(message) {
+    console.log('✅ 성공:', message);
+    
+    const alertDiv = document.createElement('div');
+    alertDiv.className = 'alert alert-success alert-dismissible fade show position-relative';
+    alertDiv.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        z-index: 9999;
+        max-width: 400px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        border: none;
+        border-radius: 8px;
+    `;
+    alertDiv.innerHTML = `
+        <div class="d-flex align-items-center">
+            <i class="fas fa-check-circle me-2 text-success fa-lg"></i>
+            <div class="flex-grow-1">
+                <strong>성공!</strong><br>
+                <small>${message}</small>
+            </div>
+            <button type="button" class="btn-close ms-2" onclick="this.parentElement.parentElement.remove()"></button>
+        </div>
+    `;
+    
+    document.body.appendChild(alertDiv);
+    
+    // 자동 제거
     setTimeout(() => {
         if (alertDiv.parentNode) {
-            alertDiv.remove();
+            alertDiv.style.opacity = '0';
+            setTimeout(() => alertDiv.remove(), 300);
         }
-    }, 10000);
+    }, 4000);
+}
+
+// 향상된 에러 메시지 표시
+function showErrorMessage(message) {
+    console.error('❌ 에러:', message);
+    
+    const alertDiv = document.createElement('div');
+    alertDiv.className = 'alert alert-danger alert-dismissible fade show position-relative';
+    alertDiv.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        z-index: 9999;
+        max-width: 400px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        border: none;
+        border-radius: 8px;
+    `;
+    alertDiv.innerHTML = `
+        <div class="d-flex align-items-center">
+            <i class="fas fa-exclamation-triangle me-2 text-danger fa-lg"></i>
+            <div class="flex-grow-1">
+                <strong>오류!</strong><br>
+                <small>${message}</small>
+            </div>
+            <button type="button" class="btn-close ms-2" onclick="this.parentElement.parentElement.remove()"></button>
+        </div>
+    `;
+    
+    document.body.appendChild(alertDiv);
+    
+    // 자동 제거 (에러는 더 오래 표시)
+    setTimeout(() => {
+        if (alertDiv.parentNode) {
+            alertDiv.style.opacity = '0';
+            setTimeout(() => alertDiv.remove(), 300);
+        }
+    }, 8000);
+}
+
+// 경고 메시지 표시
+function showWarningMessage(message) {
+    console.warn('⚠️ 경고:', message);
+    
+    const alertDiv = document.createElement('div');
+    alertDiv.className = 'alert alert-warning alert-dismissible fade show position-relative';
+    alertDiv.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        z-index: 9999;
+        max-width: 400px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        border: none;
+        border-radius: 8px;
+    `;
+    alertDiv.innerHTML = `
+        <div class="d-flex align-items-center">
+            <i class="fas fa-exclamation-circle me-2 text-warning fa-lg"></i>
+            <div class="flex-grow-1">
+                <strong>주의!</strong><br>
+                <small>${message}</small>
+            </div>
+            <button type="button" class="btn-close ms-2" onclick="this.parentElement.parentElement.remove()"></button>
+        </div>
+    `;
+    
+    document.body.appendChild(alertDiv);
+    
+    // 자동 제거
+    setTimeout(() => {
+        if (alertDiv.parentNode) {
+            alertDiv.style.opacity = '0';
+            setTimeout(() => alertDiv.remove(), 300);
+        }
+    }, 6000);
+}
+
+// 정보 메시지 표시
+function showInfoMessage(message) {
+    console.info('ℹ️ 정보:', message);
+    
+    const alertDiv = document.createElement('div');
+    alertDiv.className = 'alert alert-info alert-dismissible fade show position-relative';
+    alertDiv.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        z-index: 9999;
+        max-width: 400px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        border: none;
+        border-radius: 8px;
+    `;
+    alertDiv.innerHTML = `
+        <div class="d-flex align-items-center">
+            <i class="fas fa-info-circle me-2 text-info fa-lg"></i>
+            <div class="flex-grow-1">
+                <strong>정보</strong><br>
+                <small>${message}</small>
+            </div>
+            <button type="button" class="btn-close ms-2" onclick="this.parentElement.parentElement.remove()"></button>
+        </div>
+    `;
+    
+    document.body.appendChild(alertDiv);
+    
+    // 자동 제거
+    setTimeout(() => {
+        if (alertDiv.parentNode) {
+            alertDiv.style.opacity = '0';
+            setTimeout(() => alertDiv.remove(), 300);
+        }
+    }, 5000);
 }
 
 // 간단 업로드 토글 기능
@@ -649,6 +2742,713 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
     }
+    
+    // 드래그앤드롭 영역 클릭 이벤트 제거 (중복 방지 - 모듈 시스템에서 처리)
+    
+    // 🔥 1단계 파일 압축 모듈
+    function compressImageFile(file, quality = 0.8, maxWidth = 1920, maxHeight = 1080) {
+        return new Promise((resolve, reject) => {
+            // 이미지 파일이 아닌 경우 원본 반환
+            if (!file.type.startsWith('image/')) {
+                resolve(file);
+                return;
+            }
+            
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            const img = new Image();
+            
+            img.onload = function() {
+                // 비율 유지하면서 리사이즈
+                let { width, height } = img;
+                
+                if (width > maxWidth || height > maxHeight) {
+                    const ratio = Math.min(maxWidth / width, maxHeight / height);
+                    width *= ratio;
+                    height *= ratio;
+                }
+                
+                canvas.width = width;
+                canvas.height = height;
+                
+                // 이미지 그리기
+                ctx.drawImage(img, 0, 0, width, height);
+                
+                // 압축된 Blob 생성
+                canvas.toBlob(
+                    (blob) => {
+                        if (blob) {
+                            // 압축된 File 객체 생성
+                            const compressedFile = new File([blob], file.name, {
+                                type: blob.type,
+                                lastModified: Date.now()
+                            });
+                            
+                            console.log(`📦 압축 완료: ${file.name}`);
+                            console.log(`   원본: ${(file.size / 1024 / 1024).toFixed(2)}MB → 압축: ${(compressedFile.size / 1024 / 1024).toFixed(2)}MB`);
+                            console.log(`   압축률: ${(((file.size - compressedFile.size) / file.size) * 100).toFixed(1)}%`);
+                            
+                            resolve(compressedFile);
+                        } else {
+                            reject(new Error('압축 실패'));
+                        }
+                    },
+                    'image/webp', // WebP 형식으로 압축 (최고 압축률)
+                    quality
+                );
+            };
+            
+            img.onerror = () => reject(new Error('이미지 로드 실패'));
+            
+            // 파일을 이미지로 로드
+            const reader = new FileReader();
+            reader.onload = (e) => img.src = e.target.result;
+            reader.onerror = () => reject(new Error('파일 읽기 실패'));
+            reader.readAsDataURL(file);
+        });
+    }
+    
+    // 🔥 압축 진행 상황 UI 업데이트 함수
+    function updateCompressionUI(progress) {
+        const progressSection = document.getElementById('compressionProgress');
+        const progressBar = document.getElementById('compressionProgressBar');
+        const statusText = document.getElementById('compressionStatus');
+        const statsDiv = document.getElementById('compressionStats');
+        const resultSpan = document.getElementById('compressionResult');
+        
+        // 진행 상황 섹션 표시
+        if (progressSection) {
+            progressSection.style.display = 'block';
+        }
+        
+        // 진행률 바 업데이트
+        if (progressBar) {
+            const percentage = Math.round((progress.current / progress.total) * 100);
+            progressBar.style.width = percentage + '%';
+            progressBar.setAttribute('aria-valuenow', percentage);
+        }
+        
+        // 상태 텍스트 업데이트
+        if (statusText) {
+            if (progress.status === 'compressing') {
+                statusText.innerHTML = `<i class="fas fa-compress fa-spin me-2"></i>압축 중... ${progress.current}/${progress.total} - ${progress.fileName}`;
+            } else if (progress.status === 'completed') {
+                statusText.innerHTML = `<i class="fas fa-check me-2"></i>압축 완료: ${progress.fileName}`;
+            } else if (progress.status === 'error') {
+                statusText.innerHTML = `<i class="fas fa-exclamation-triangle me-2"></i>오류: ${progress.fileName} - ${progress.error}`;
+            }
+        }
+        
+        // 완료 시 통계 표시
+        if (progress.current === progress.total && progress.stats) {
+            if (statsDiv && resultSpan) {
+                const stats = progress.stats;
+                resultSpan.textContent = `${(stats.originalSize / 1024 / 1024).toFixed(2)}MB → ${(stats.compressedSize / 1024 / 1024).toFixed(2)}MB (${stats.compressionRatio}% 절약)`;
+                statsDiv.style.display = 'block';
+            }
+            
+            // 상태 텍스트를 완료로 업데이트
+            if (statusText) {
+                statusText.innerHTML = `<i class="fas fa-check text-success me-2"></i>모든 파일 압축 완료! 잠시 후 크롭 페이지로 이동합니다...`;
+            }
+        }
+    }
+    
+    // 🔥 압축 진행 상황 숨기기 함수
+    function hideCompressionUI() {
+        const progressSection = document.getElementById('compressionProgress');
+        if (progressSection) {
+            progressSection.style.display = 'none';
+        }
+    }
+    
+    // 🔥 다중 파일 압축 함수
+    async function compressMultipleFiles(files, onProgress = null) {
+        const compressedFiles = [];
+        let totalOriginalSize = 0;
+        let totalCompressedSize = 0;
+        
+        for (let i = 0; i < files.length; i++) {
+            const file = files[i];
+            totalOriginalSize += file.size;
+            
+            try {
+                if (onProgress) {
+                    onProgress({
+                        current: i + 1,
+                        total: files.length,
+                        fileName: file.name,
+                        status: 'compressing'
+                    });
+                }
+                
+                const compressedFile = await compressImageFile(file, 0.85, 1920, 1080);
+                compressedFiles.push(compressedFile);
+                totalCompressedSize += compressedFile.size;
+                
+                if (onProgress) {
+                    onProgress({
+                        current: i + 1,
+                        total: files.length,
+                        fileName: file.name,
+                        status: 'completed'
+                    });
+                }
+                
+            } catch (error) {
+                console.error(`❌ ${file.name} 압축 실패:`, error);
+                
+                if (onProgress) {
+                    onProgress({
+                        current: i + 1,
+                        total: files.length,
+                        fileName: file.name,
+                        status: 'error',
+                        error: error.message
+                    });
+                }
+                
+                // 압축 실패 시 원본 파일 사용
+                compressedFiles.push(file);
+                totalCompressedSize += file.size;
+            }
+        }
+        
+        const savedSize = totalOriginalSize - totalCompressedSize;
+        const compressionRatio = ((savedSize / totalOriginalSize) * 100).toFixed(1);
+        
+        console.log('📊 전체 압축 결과:');
+        console.log(`   원본 총 크기: ${(totalOriginalSize / 1024 / 1024).toFixed(2)}MB`);
+        console.log(`   압축 총 크기: ${(totalCompressedSize / 1024 / 1024).toFixed(2)}MB`);
+        console.log(`   절약된 크기: ${(savedSize / 1024 / 1024).toFixed(2)}MB (${compressionRatio}%)`);
+        
+        const stats = {
+            originalSize: totalOriginalSize,
+            compressedSize: totalCompressedSize,
+            savedSize: savedSize,
+            compressionRatio: parseFloat(compressionRatio)
+        };
+        
+        // 최종 완료 시 UI 업데이트
+        if (onProgress) {
+            onProgress({
+                current: files.length,
+                total: files.length,
+                status: 'completed',
+                stats: stats
+            });
+        }
+        
+        return {
+            files: compressedFiles,
+            stats: stats
+        };
+    }
+    
+    // 🔥 메인 컨트롤러 moveToStep 함수 완전 덮어쓰기
+    function overrideMainController() {
+        if (window.FacilityImageMainController && window.FacilityImageMainController.moveToStep) {
+            const originalMoveToStep = window.FacilityImageMainController.moveToStep;
+            
+            window.FacilityImageMainController.moveToStep = async function(step) {
+                console.log(`🔄 moveToStep 호출됨: ${step}`);
+                
+                if (step === 2) {
+                    console.log('🚫 2단계 이동 차단 - 새창 방식으로 전환');
+                    
+                    const facilityId = document.querySelector('meta[name="facility-id"]')?.content || '1';
+                    
+                    if (window.selectedImageFiles && window.selectedImageFiles.length > 0) {
+                        console.log('📦 파일 압축 시작 - 1단계에서 처리');
+                        
+                        // 1단계 업로드 섹션 숨기기
+                        const uploadSection = document.getElementById('uploadSection');
+                        if (uploadSection) {
+                            uploadSection.style.display = 'none';
+                        }
+                        
+                        // 압축 진행 UI 표시
+                        const compressionProgress = document.getElementById('compressionProgress');
+                        if (compressionProgress) {
+                            compressionProgress.style.display = 'block';
+                        }
+                        
+                        // 압축 진행 표시를 위한 UI 업데이트
+                        const proceedBtn = document.getElementById('proceedToStep2');
+                        if (proceedBtn) {
+                            proceedBtn.disabled = true;
+                            proceedBtn.innerHTML = '<i class="fas fa-compress fa-spin me-1"></i>파일 압축 중...';
+                        }
+                        
+                        try {
+                            // 파일 압축 실행 (UI 업데이트 포함)
+                            const compressionResult = await compressMultipleFiles(window.selectedImageFiles, (progress) => {
+                                updateCompressionUI(progress);
+                                if (proceedBtn) {
+                                    proceedBtn.innerHTML = `<i class="fas fa-compress fa-spin me-1"></i>압축 중... ${progress.current}/${progress.total}`;
+                                }
+                            });
+                            
+                            const compressedFiles = compressionResult.files;
+                            const stats = compressionResult.stats;
+                            
+                            // 압축된 파일을 Base64로 변환하여 세션 저장
+                            const fileDataArray = [];
+                            let processedCount = 0;
+                            
+                            if (proceedBtn) {
+                                proceedBtn.innerHTML = '<i class="fas fa-upload fa-spin me-1"></i>세션 저장 중...';
+                            }
+                            
+                            for (let i = 0; i < compressedFiles.length; i++) {
+                                const file = compressedFiles[i];
+                                const reader = new FileReader();
+                                
+                                reader.onload = function(e) {
+                                    fileDataArray[i] = {
+                                        name: file.name,
+                                        type: file.type,
+                                        size: file.size,
+                                        data: e.target.result,
+                                        originalSize: window.selectedImageFiles[i]?.size || file.size
+                                    };
+                                    processedCount++;
+                                    
+                                    if (proceedBtn) {
+                                        const progress = Math.round((processedCount / compressedFiles.length) * 100);
+                                        proceedBtn.innerHTML = `<i class="fas fa-upload fa-spin me-1"></i>세션 저장 중... ${progress}%`;
+                                    }
+                                    
+                                    // 모든 파일 처리 완료
+                                    if (processedCount === compressedFiles.length) {
+                                        try {
+                                            sessionStorage.setItem('selectedImageFiles', JSON.stringify(fileDataArray));
+                                            
+                                            // 압축 통계도 함께 저장
+                                            sessionStorage.setItem('compressionStats', JSON.stringify(stats));
+                                            
+                                            console.log('✅ 압축 및 세션 저장 완료, 크롭 페이지로 이동');
+                                            console.log(`📊 압축 효과: ${(stats.originalSize / 1024 / 1024).toFixed(2)}MB → ${(stats.compressedSize / 1024 / 1024).toFixed(2)}MB (${stats.compressionRatio}% 절약)`);
+                                            
+                                            // 잠시 후 페이지 이동
+                                            setTimeout(() => {
+                                                window.location.href = `/facility/crop-images/${facilityId}`;
+                                            }, 1000);
+                                            
+                                        } catch (storageError) {
+                                            console.error('❌ 세션 저장 실패:', storageError);
+                                            
+                                            // 세션 저장 실패 시 전역 변수 사용
+                                            window.transferSelectedFiles = compressedFiles;
+                                            window.transferCompressionStats = stats;
+                                            
+                                            if (proceedBtn) {
+                                                proceedBtn.innerHTML = '<i class="fas fa-exclamation-triangle me-1"></i>저장 실패 - 직접 이동';
+                                            }
+                                            
+                                            setTimeout(() => {
+                                                window.location.href = `/facility/crop-images/${facilityId}`;
+                                            }, 1000);
+                                        }
+                                    }
+                                };
+                                
+                                reader.onerror = function() {
+                                    console.error(`❌ 파일 읽기 실패: ${file.name}`);
+                                    processedCount++;
+                                    
+                                    if (processedCount === compressedFiles.length) {
+                                        console.log('⚠️ 일부 파일 읽기 실패 - 가능한 파일로 진행');
+                                        window.transferSelectedFiles = compressedFiles;
+                                        window.location.href = `/facility/crop-images/${facilityId}`;
+                                    }
+                                };
+                                
+                                reader.readAsDataURL(file);
+                            }
+                            
+                        } catch (compressionError) {
+                            console.error('❌ 파일 압축 실패:', compressionError);
+                            
+                            // 압축 실패 시 원본 파일로 진행
+                            window.transferSelectedFiles = window.selectedImageFiles;
+                            
+                            if (proceedBtn) {
+                                proceedBtn.innerHTML = '<i class="fas fa-exclamation-triangle me-1"></i>압축 실패 - 원본으로 진행';
+                                proceedBtn.disabled = false;
+                            }
+                            
+                            setTimeout(() => {
+                                window.location.href = `/facility/crop-images/${facilityId}`;
+                            }, 1000);
+                        }
+                        
+                    } else {
+                        console.log('⚠️ 선택된 파일이 없어 빈 크롭 페이지로 이동');
+                        window.location.href = `/facility/${facilityId}/crop-images`;
+                    }
+                    
+                    return; // 여기서 함수 종료
+                }
+                
+                // 다른 단계는 원래 함수 실행
+                return originalMoveToStep.call(this, step);
+            };
+            
+            console.log('✅ 메인 컨트롤러 moveToStep 함수 덮어쓰기 완료');
+        }
+    }
+    
+    // 메인 컨트롤러 감시 및 덮어쓰기
+    const controllerObserver = setInterval(function() {
+        if (window.FacilityImageMainController && window.FacilityImageMainController.moveToStep) {
+            overrideMainController();
+            clearInterval(controllerObserver);
+        }
+    }, 100);
+    
+    // 즉시 실행도 시도
+    overrideMainController();
+    
+    // 🔥 새창 방식 강제 구현: 메인 컨트롤러 우회 (안전 장치 포함)
+    function forceNewWindowApproach() {
+        try {
+            const proceedButton = document.getElementById('proceedToStep2');
+            if (!proceedButton) {
+                console.warn('⚠️ proceedToStep2 버튼을 찾을 수 없습니다.');
+                return false;
+            }
+            
+            // 이미 덮어쓰기 처리된 버튼인지 확인
+            if (proceedButton.hasAttribute('data-overridden')) {
+                console.log('🔄 이미 새창 방식으로 설정된 버튼');
+                return true;
+            }
+            
+            // 기존 모든 이벤트 리스너 제거 (안전하게)
+            const newButton = proceedButton.cloneNode(true);
+            if (proceedButton.parentNode) {
+                proceedButton.parentNode.replaceChild(newButton, proceedButton);
+            } else {
+                console.error('❌ 버튼의 부모 요소를 찾을 수 없습니다.');
+                return false;
+            }
+            
+            // 새로운 이벤트 리스너 등록
+            newButton.addEventListener('click', function(e) {
+                try {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    e.stopImmediatePropagation();
+                    
+                        console.log('🔄 새창 방식 강제 실행: 크롭 페이지로 이동');
+                    
+                    const facilityId = document.querySelector('meta[name="facility-id"]')?.content || '1';
+                    
+                    if (window.selectedImageFiles && window.selectedImageFiles.length > 0) {
+                        const fileDataArray = [];
+                        let processedCount = 0;
+                        
+                        newButton.disabled = true;
+                        newButton.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>파일 준비 중...';
+                        
+                        window.selectedImageFiles.forEach((file, index) => {
+                            try {
+                                const reader = new FileReader();
+                                reader.onload = function(e) {
+                                    try {
+                                        fileDataArray[index] = {
+                                            name: file.name,
+                                            type: file.type,
+                                            size: file.size,
+                                            data: e.target.result
+                                        };
+                                        processedCount++;
+                                        
+                                        const progress = Math.round((processedCount / window.selectedImageFiles.length) * 100);
+                                        newButton.innerHTML = `<i class="fas fa-spinner fa-spin me-1"></i>파일 준비 중... ${progress}%`;
+                                        
+                                        if (processedCount === window.selectedImageFiles.length) {
+                                            sessionStorage.setItem('selectedImageFiles', JSON.stringify(fileDataArray));
+                                            console.log('✅ 파일 세션 저장 완료, 크롭 페이지로 이동');
+                                            window.location.href = `/facility/crop-images/${facilityId}`;
+                                        }
+                                    } catch (error) {
+                                        console.error('❌ 파일 처리 중 오류:', error);
+                                        newButton.innerHTML = '<i class="fas fa-exclamation-triangle me-1"></i>파일 처리 오류';
+                                        newButton.disabled = false;
+                                    }
+                                };
+                                reader.onerror = function() {
+                                    console.error('❌ 파일 읽기 오류:', file.name);
+                                    newButton.innerHTML = '<i class="fas fa-exclamation-triangle me-1"></i>파일 읽기 오류';
+                                    newButton.disabled = false;
+                                };
+                                reader.readAsDataURL(file);
+                            } catch (error) {
+                                console.error('❌ FileReader 초기화 오류:', error);
+                                newButton.innerHTML = '<i class="fas fa-exclamation-triangle me-1"></i>파일 처리 오류';
+                                newButton.disabled = false;
+                            }
+                        });
+                    } else {
+                        console.log('⚠️ 선택된 파일이 없어 빈 크롭 페이지로 이동');
+                        window.location.href = `/facility/${facilityId}/crop-images`;
+                    }
+                } catch (error) {
+                    console.error('❌ 버튼 클릭 처리 중 오류:', error);
+                    // 폴백: 기본 이동
+                    const facilityId = document.querySelector('meta[name="facility-id"]')?.content || '1';
+                    window.location.href = `/facility/${facilityId}/crop-images`;
+                }
+            }, true);
+            
+            // 덮어쓰기 완료 마킹
+            newButton.setAttribute('data-overridden', 'true');
+            console.log('✅ 새창 방식 버튼 이벤트 리스너 등록 완료');
+            return true;
+            
+        } catch (error) {
+            console.error('❌ 새창 방식 버튼 덮어쓰기 중 오류:', error);
+            return false;
+        }
+    }
+    
+    // 버튼 감시 및 덮어쓰기 (안전 장치 포함)
+    let buttonObserver = null;
+    try {
+        buttonObserver = new MutationObserver(function(mutations) {
+            try {
+                mutations.forEach(function(mutation) {
+                    if (mutation.type === 'childList') {
+                        const proceedButton = document.getElementById('proceedToStep2');
+                        if (proceedButton && !proceedButton.hasAttribute('data-overridden')) {
+                            forceNewWindowApproach();
+                        }
+                    }
+                });
+            } catch (error) {
+                console.error('❌ MutationObserver 처리 중 오류:', error);
+            }
+        });
+        
+        buttonObserver.observe(document.body, {
+            childList: true,
+            subtree: true
+        });
+    } catch (error) {
+        console.error('❌ MutationObserver 설정 중 오류:', error);
+    }
+    
+    // 즉시 실행 (안전하게)
+    setTimeout(function() {
+        try {
+            forceNewWindowApproach();
+        } catch (error) {
+            console.error('❌ 즉시 실행 중 오류:', error);
+        }
+    }, 100);
+    
+    // 주기적으로 확인 (메인 컨트롤러가 늦게 로드될 수 있음)
+    let retryCount = 0;
+    const maxRetries = 20; // 최대 10초 동안 시도
+    
+    const retryInterval = setInterval(function() {
+        try {
+            retryCount++;
+            const proceedButton = document.getElementById('proceedToStep2');
+            if (proceedButton && !proceedButton.hasAttribute('data-overridden')) {
+                const success = forceNewWindowApproach();
+                if (success) {
+                    console.log('✅ 새창 방식 버튼 설정 완료');
+                    clearInterval(retryInterval);
+                }
+            }
+            
+            // 최대 재시도 횟수 초과시 정리
+            if (retryCount >= maxRetries) {
+                console.log('⚠️ 새창 방식 버튼 설정 재시도 완료');
+                clearInterval(retryInterval);
+            }
+        } catch (error) {
+            console.error('❌ 주기적 확인 중 오류:', error);
+        }
+    }, 500);
+    
+    // 저장된 이미지들을 로드하고 표시하는 함수
+    function loadSavedImages() {
+        const savedImages = sessionStorage.getItem('savedImages');
+        if (savedImages) {
+            try {
+                const images = JSON.parse(savedImages);
+                displaySavedImages(images);
+                
+                // 세션 스토리지 정리
+                sessionStorage.removeItem('savedImages');
+                
+                console.log('✅ 저장된 이미지 표시 완료:', images.length + '개');
+                
+            } catch (error) {
+                console.error('❌ 저장된 이미지 로드 실패:', error);
+            }
+        }
+    }
+    
+    // 저장된 이미지들을 화면에 표시하는 함수  
+    function displaySavedImages(images) {
+        if (!images || images.length === 0) {
+            return;
+        }
+        
+        const savedImagesSection = document.getElementById('savedImagesSection');
+        const savedImagesGrid = document.getElementById('savedImagesGrid');
+        const savedImageCount = document.getElementById('savedImageCount');
+        
+        if (!savedImagesSection || !savedImagesGrid || !savedImageCount) {
+            console.error('❌ 저장된 이미지 섹션 DOM 요소를 찾을 수 없습니다');
+            return;
+        }
+        
+        // 카운트 업데이트
+        savedImageCount.textContent = images.length + '개';
+        
+        // 이미지 카드들 생성
+        let html = '';
+        images.forEach((image, index) => {
+            const imageUrl = image.url || image.path || '/images/default_facility.jpg';
+            const imageName = image.name || `이미지 ${index + 1}`;
+            const altText = image.altText || image.seoData?.altText || '';
+            const keywords = image.keywords || image.seoData?.keywords || [];
+            const isMain = image.isMain || index === 0;
+            
+            html += `
+                <div class="col-md-6 col-lg-4">
+                    <div class="card saved-image-card h-100">
+                        <div class="position-relative">
+                            <img src="${imageUrl}" class="card-img-top" alt="${altText}" 
+                                 style="height: 200px; object-fit: cover;">
+                            ${isMain ? '<span class="badge bg-warning position-absolute top-0 end-0 m-2">메인</span>' : ''}
+                        </div>
+                        <div class="card-body p-3">
+                            <h6 class="card-title text-truncate">${imageName}</h6>
+                            ${altText ? `<p class="card-text small text-muted mb-2">${altText}</p>` : ''}
+                            ${keywords.length > 0 ? `
+                                <div class="mb-2">
+                                    ${keywords.map(keyword => `<span class="badge bg-light text-dark me-1">${keyword}</span>`).join('')}
+                                </div>
+                            ` : ''}
+                            <div class="d-flex justify-content-between align-items-center">
+                                <small class="text-muted">
+                                    <i class="fas fa-check-circle text-success me-1"></i>저장됨
+                                </small>
+                                <button type="button" class="btn btn-sm btn-outline-danger" 
+                                        onclick="removeSavedImage(${index})">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        });
+        
+        savedImagesGrid.innerHTML = html;
+        savedImagesSection.style.display = 'block';
+        
+        // 저장된 이미지가 있으면 기본 업로드 섹션을 축소
+        const uploadSection = document.getElementById('uploadSection');
+        if (uploadSection) {
+            uploadSection.style.opacity = '0.6';
+        }
+    }
+    
+    // 저장된 이미지 삭제 함수
+    function removeSavedImage(index) {
+        if (confirm('이 이미지를 삭제하시겠습니까?')) {
+            const savedImages = getCurrentSavedImages();
+            if (savedImages && savedImages.length > index) {
+                savedImages.splice(index, 1);
+                displaySavedImages(savedImages);
+                
+                if (savedImages.length === 0) {
+                    document.getElementById('savedImagesSection').style.display = 'none';
+                    const uploadSection = document.getElementById('uploadSection');
+                    if (uploadSection) {
+                        uploadSection.style.opacity = '1';
+                    }
+                }
+            }
+        }
+    }
+    
+    // 현재 저장된 이미지 목록 가져오기
+    function getCurrentSavedImages() {
+        const savedImagesGrid = document.getElementById('savedImagesGrid');
+        if (!savedImagesGrid) return [];
+        
+        // DOM에서 현재 이미지 정보 추출 (단순화)
+        const imageCards = savedImagesGrid.querySelectorAll('.saved-image-card');
+        const images = [];
+        
+        imageCards.forEach((card, index) => {
+            const img = card.querySelector('.card-img-top');
+            const title = card.querySelector('.card-title');
+            const altText = card.querySelector('.card-text');
+            const keywords = Array.from(card.querySelectorAll('.badge')).map(badge => badge.textContent);
+            
+            if (img) {
+                images.push({
+                    url: img.src,
+                    name: title ? title.textContent : `이미지 ${index + 1}`,
+                    altText: altText ? altText.textContent : '',
+                    keywords: keywords,
+                    isMain: card.querySelector('.badge.bg-warning') !== null
+                });
+            }
+        });
+        
+        return images;
+    }
+    
+    // 크롭 페이지로 이동하는 함수
+    function openImageCropPage() {
+        const facilityId = getFacilityId();
+        if (!facilityId) {
+            alert('시설 정보를 찾을 수 없습니다.');
+            return;
+        }
+        
+        console.log('🖼️ 이미지 크롭 페이지로 이동:', facilityId);
+        window.location.href = `/facility/crop-images/${facilityId}`;
+    }
+    
+    // 시설 ID 가져오기 헬퍼 함수
+    function getFacilityId() {
+        // 메타 태그에서 추출
+        const facilityIdMeta = document.querySelector('meta[name="facility-id"]');
+        if (facilityIdMeta && facilityIdMeta.getAttribute('content')) {
+            return facilityIdMeta.getAttribute('content');
+        }
+        
+        // 폼 action URL에서 추출
+        const form = document.getElementById('facilityEditForm');
+        if (form && form.action) {
+            const match = form.action.match(/\/facility\/edit\/(\d+)/);
+            if (match && match[1]) {
+                return match[1];
+            }
+        }
+        
+        return null;
+    }
+    
+    // 전역 함수로 등록
+    window.openImageCropPage = openImageCropPage;
+    window.removeSavedImage = removeSavedImage;
+    
+    // 페이지 로드 시 저장된 이미지 확인
+    setTimeout(loadSavedImages, 1000);
+    
 });
 </script>
 

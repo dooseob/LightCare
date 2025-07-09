@@ -34,32 +34,25 @@
                             <p class="text-muted">시설 사진을 16:9 비율로 조정하여 등록하세요 (최대 5장)</p>
                         </div>
 
-                        <!-- 단계 표시기 (3단계로 간소화) -->
+                        <!-- 단계 표시기 (2단계로 간소화) -->
                         <div class="steps-indicator mb-4">
-                            <div class="step-item active" id="step1">
+                            <div class="step-item completed" id="step1">
                                 <div class="step-circle">
-                                    <i class="fas fa-upload"></i>
+                                    <i class="fas fa-check"></i>
                                 </div>
-                                <div class="step-label">이미지 선택</div>
+                                <div class="step-label">이미지 선택 완료</div>
                             </div>
                             <div class="step-connector"></div>
-                            <div class="step-item" id="step2">
+                            <div class="step-item active" id="step2">
                                 <div class="step-circle">
                                     <i class="fas fa-crop-alt"></i>
                                 </div>
-                                <div class="step-label">편집 & 설정</div>
-                            </div>
-                            <div class="step-connector"></div>
-                            <div class="step-item" id="step3">
-                                <div class="step-circle">
-                                    <i class="fas fa-cogs"></i>
-                                </div>
-                                <div class="step-label">이미지 관리</div>
+                                <div class="step-label">편집 & 최적화</div>
                             </div>
                         </div>
 
-                        <!-- 1단계: 파일 업로드 -->
-                        <div id="uploadSection" class="upload-section">
+                        <!-- 1단계: 파일 업로드 (숨김 - 이미 1단계에서 완료됨) -->
+                        <div id="uploadSection" class="upload-section" style="display: none;">
                             <div class="upload-area" id="uploadArea">
                                 <div class="upload-content">
                                     <div class="upload-icon">
@@ -122,14 +115,25 @@
                                                 </div>
                                                 <div class="card-body">
                                                     <div id="imageOrderList" class="row g-3"></div>
-                                                    <div class="text-center mt-3">
-                                                        <div class="btn-group">
-                                                            <button type="button" class="btn btn-outline-primary" id="addMoreImagesBtn" style="display: none;">
-                                                                <i class="fas fa-plus me-2"></i>이미지 더 추가
-                                                            </button>
-                                                            <button type="button" class="btn btn-success" id="proceedToCropBtn" style="display: none;">
-                                                                <i class="fas fa-crop-alt me-2"></i>크롭 시작
-                                                            </button>
+                                                    <div class="mt-3">
+                                                        <!-- 메인 이미지 선택 -->
+                                                        <div class="alert alert-info" id="mainImageInfo" style="display: none;">
+                                                            <div class="d-flex align-items-center">
+                                                                <i class="fas fa-star text-warning me-2"></i>
+                                                                <span id="mainImageText">메인 이미지: 없음</span>
+                                                                <small class="text-muted ms-2">(이미지를 클릭하여 메인 이미지로 설정)</small>
+                                                            </div>
+                                                        </div>
+                                                        <!-- 버튼 그룹 -->
+                                                        <div class="text-center">
+                                                            <div class="btn-group">
+                                                                <button type="button" class="btn btn-outline-primary" id="addMoreImagesBtn" style="display: none;">
+                                                                    <i class="fas fa-plus me-2"></i>이미지 더 추가
+                                                                </button>
+                                                                <button type="button" class="btn btn-success" id="proceedToCropBtn" style="display: none;">
+                                                                    <i class="fas fa-crop-alt me-2"></i>크롭 시작
+                                                                </button>
+                                                            </div>
                                                         </div>
                                                     </div>
                                                 </div>
@@ -143,8 +147,8 @@
                         </div>
 
 
-                        <!-- 2단계: 크롭 및 조정 (2줄 레이아웃) -->
-                        <div id="cropSection" class="crop-section" style="display: none;">
+                        <!-- 2단계: 크롭 및 조정 (2줄 레이아웃) - 기본 표시 -->
+                        <div id="cropSection" class="crop-section" style="display: block;">
                             <!-- 첫째줄: 이미지 크롭과 미리보기 좌우 배치 (6:4 비율) -->
                             <div class="row mb-4">
                                 <div class="col-lg-7 col-md-6">
@@ -159,10 +163,10 @@
                                         </div>
                                         <div class="crop-controls mt-3 text-center">
                                             <div class="btn-group me-3" role="group">
-                                                <button type="button" class="btn btn-outline-primary btn-sm" id="zoomInBtn">
+                                                <button type="button" class="btn btn-outline-primary btn-sm" id="zoomInBtn" onclick="zoomIn()">
                                                     <i class="fas fa-search-plus"></i> 확대
                                                 </button>
-                                                <button type="button" class="btn btn-outline-primary btn-sm" id="zoomOutBtn">
+                                                <button type="button" class="btn btn-outline-primary btn-sm" id="zoomOutBtn" onclick="zoomOut()">
                                                     <i class="fas fa-search-minus"></i> 축소
                                                 </button>
                                             </div>
@@ -174,7 +178,7 @@
                                                     <i class="fas fa-redo"></i> 우회전
                                                 </button>
                                             </div>
-                                            <button type="button" class="btn btn-outline-danger btn-sm" id="resetBtn">
+                                            <button type="button" class="btn btn-outline-danger btn-sm" id="resetZoomBtn" onclick="resetCrop()">
                                                 <i class="fas fa-sync-alt"></i> 리셋
                                             </button>
                                         </div>
@@ -218,6 +222,7 @@
                                                     <div class="card-img-container">
                                                         <canvas id="previewCanvas" width="192" height="108" 
                                                                 style="width: 100%; height: auto; border-radius: 8px;"></canvas>
+                                                        <img id="cropPreviewImage" style="width: 100%; height: auto; border-radius: 8px; display: none;" />
                                                     </div>
                                                     <div class="card-body p-3">
                                                         <h6 class="card-title text-truncate mb-1">시설명</h6>
@@ -274,16 +279,19 @@
                                                 <input type="radio" class="btn-check" name="imageFormat" id="formatJPEG" value="jpeg">
                                                 <label class="btn btn-outline-secondary btn-sm" for="formatJPEG">JPEG</label>
                                             </div>
-                                            <div>
+                                            <div id="compressionSettings">
                                                 <label class="form-label small text-center d-block">
-                                                    품질: <span id="qualityPercent">80%</span>
+                                                    품질: <span id="qualityValue">85%</span>
                                                 </label>
-                                                <input type="range" class="form-range" id="qualitySlider" 
-                                                       min="0.3" max="1.0" step="0.1" value="0.8">
+                                                <input type="range" class="form-range" id="compressionQuality" 
+                                                       min="30" max="100" step="5" value="85">
                                                 <div class="d-flex justify-content-between small text-muted">
                                                     <span>압축</span>
                                                     <span>품질</span>
                                                 </div>
+                                                <button type="button" class="btn btn-outline-primary btn-sm mt-2 w-100" onclick="applyCompression()">
+                                                    <i class="fas fa-compress me-1"></i>압축 적용
+                                                </button>
                                             </div>
                                         </div>
                                     </div>
@@ -297,24 +305,26 @@
                                                 <i class="fas fa-search me-2"></i>SEO 최적화
                                             </h6>
                                             
-                                            <!-- Alt 텍스트 -->
-                                            <div class="mb-3">
-                                                <label for="altText" class="form-label small">
-                                                    <i class="fas fa-font me-1"></i>Alt 텍스트
-                                                </label>
-                                                <input type="text" class="form-control form-control-sm" id="altText" 
-                                                       placeholder="이미지 설명을 입력하세요">
-                                                <small class="text-muted">검색엔진 최적화용</small>
-                                            </div>
-                                            
-                                            <!-- 파일명 -->
-                                            <div class="mb-2">
-                                                <label for="seoFileName" class="form-label small">
-                                                    <i class="fas fa-file-signature me-1"></i>파일명
-                                                </label>
-                                                <input type="text" class="form-control form-control-sm" id="seoFileName" 
-                                                       placeholder="예: 시설-로비">
-                                                <small class="text-muted">한글→영문 자동변환</small>
+                                            <div id="seoSettings">
+                                                <!-- Alt 텍스트 -->
+                                                <div class="mb-3">
+                                                    <label for="altText" class="form-label small">
+                                                        <i class="fas fa-font me-1"></i>Alt 텍스트
+                                                    </label>
+                                                    <input type="text" class="form-control form-control-sm" id="altText" 
+                                                           placeholder="이미지 설명을 입력하세요">
+                                                    <small class="text-muted">검색엔진 최적화용</small>
+                                                </div>
+                                                
+                                                <!-- 파일명 -->
+                                                <div class="mb-2">
+                                                    <label for="englishFilename" class="form-label small">
+                                                        <i class="fas fa-file-signature me-1"></i>파일명
+                                                    </label>
+                                                    <input type="text" class="form-control form-control-sm" id="englishFilename" 
+                                                           placeholder="예: facility-lobby">
+                                                    <small class="text-muted">한글→영문 자동변환</small>
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
@@ -328,27 +338,28 @@
                                                 <i class="fas fa-tags me-2"></i>키워드 선택
                                             </h6>
                                             
-                                            <!-- 기본 키워드 (1줄) -->
-                                            <div class="mb-2">
-                                                <small class="text-muted d-block mb-1">기본</small>
-                                                <div class="keyword-row">
-                                                    <button type="button" class="btn btn-outline-primary btn-sm keyword-btn me-1 mb-1" data-keyword="외관" onclick="handleKeywordClick('exterior')">외관</button>
-                                                    <button type="button" class="btn btn-outline-primary btn-sm keyword-btn me-1 mb-1" data-keyword="내부" onclick="handleKeywordClick('interior')">내부</button>
-                                                    <button type="button" class="btn btn-outline-primary btn-sm keyword-btn me-1 mb-1" data-keyword="로비" onclick="handleKeywordClick('lobby')">로비</button>
-                                                    <button type="button" class="btn btn-outline-primary btn-sm keyword-btn me-1 mb-1" data-keyword="복도" onclick="handleKeywordClick('corridor')">복도</button>
-                                                    <button type="button" class="btn btn-outline-primary btn-sm keyword-btn me-1 mb-1" data-keyword="입구" onclick="handleKeywordClick('entrance')">입구</button>
+                                            <div id="keywordList">
+                                                <!-- 기본 키워드 (1줄) -->
+                                                <div class="mb-2">
+                                                    <small class="text-muted d-block mb-1">기본</small>
+                                                    <div class="keyword-row">
+                                                        <button type="button" class="btn btn-outline-primary btn-sm keyword-btn me-1 mb-1" data-keyword="외관" onclick="handleKeywordClick('외관')">외관</button>
+                                                        <button type="button" class="btn btn-outline-primary btn-sm keyword-btn me-1 mb-1" data-keyword="내부" onclick="handleKeywordClick('내부')">내부</button>
+                                                        <button type="button" class="btn btn-outline-primary btn-sm keyword-btn me-1 mb-1" data-keyword="로비" onclick="handleKeywordClick('로비')">로비</button>
+                                                        <button type="button" class="btn btn-outline-primary btn-sm keyword-btn me-1 mb-1" data-keyword="복도" onclick="handleKeywordClick('복도')">복도</button>
+                                                        <button type="button" class="btn btn-outline-primary btn-sm keyword-btn me-1 mb-1" data-keyword="입구" onclick="handleKeywordClick('입구')">입구</button>
+                                                    </div>
                                                 </div>
-                                            </div>
                                             
                                             <!-- 공간 키워드 (2줄) -->
                                             <div class="mb-2">
                                                 <small class="text-muted d-block mb-1">공간</small>
                                                 <div class="keyword-row">
-                                                    <button type="button" class="btn btn-outline-info btn-sm keyword-btn me-1 mb-1" data-keyword="거실" onclick="handleKeywordClick('living-room')">거실</button>
-                                                    <button type="button" class="btn btn-outline-info btn-sm keyword-btn me-1 mb-1" data-keyword="침실" onclick="handleKeywordClick('bedroom')">침실</button>
-                                                    <button type="button" class="btn btn-outline-info btn-sm keyword-btn me-1 mb-1" data-keyword="식당" onclick="handleKeywordClick('dining-room')">식당</button>
-                                                    <button type="button" class="btn btn-outline-info btn-sm keyword-btn me-1 mb-1" data-keyword="화장실" onclick="handleKeywordClick('restroom')">화장실</button>
-                                                    <button type="button" class="btn btn-outline-info btn-sm keyword-btn me-1 mb-1" data-keyword="의무실" onclick="handleKeywordClick('medical-room')">의무실</button>
+                                                    <button type="button" class="btn btn-outline-info btn-sm keyword-btn me-1 mb-1" data-keyword="거실" onclick="handleKeywordClick('거실')">거실</button>
+                                                    <button type="button" class="btn btn-outline-info btn-sm keyword-btn me-1 mb-1" data-keyword="침실" onclick="handleKeywordClick('침실')">침실</button>
+                                                    <button type="button" class="btn btn-outline-info btn-sm keyword-btn me-1 mb-1" data-keyword="식당" onclick="handleKeywordClick('식당')">식당</button>
+                                                    <button type="button" class="btn btn-outline-info btn-sm keyword-btn me-1 mb-1" data-keyword="화장실" onclick="handleKeywordClick('화장실')">화장실</button>
+                                                    <button type="button" class="btn btn-outline-info btn-sm keyword-btn me-1 mb-1" data-keyword="의무실" onclick="handleKeywordClick('의무실')">의무실</button>
                                                 </div>
                                             </div>
                                             
@@ -356,12 +367,13 @@
                                             <div class="mb-2">
                                                 <small class="text-muted d-block mb-1">시설</small>
                                                 <div class="keyword-row">
-                                                    <button type="button" class="btn btn-outline-success btn-sm keyword-btn me-1 mb-1" data-keyword="재활실" onclick="handleKeywordClick('rehabilitation-room')">재활실</button>
-                                                    <button type="button" class="btn btn-outline-success btn-sm keyword-btn me-1 mb-1" data-keyword="휴게실" onclick="handleKeywordClick('rest-room')">휴게실</button>
-                                                    <button type="button" class="btn btn-outline-success btn-sm keyword-btn me-1 mb-1" data-keyword="진료실" onclick="handleKeywordClick('treatment-room')">진료실</button>
-                                                    <button type="button" class="btn btn-outline-success btn-sm keyword-btn me-1 mb-1" data-keyword="프로그램실" onclick="handleKeywordClick('program-room')">프로그램실</button>
-                                                    <button type="button" class="btn btn-outline-success btn-sm keyword-btn me-1 mb-1" data-keyword="정원" onclick="handleKeywordClick('garden')">정원</button>
+                                                    <button type="button" class="btn btn-outline-success btn-sm keyword-btn me-1 mb-1" data-keyword="재활실" onclick="handleKeywordClick('재활실')">재활실</button>
+                                                    <button type="button" class="btn btn-outline-success btn-sm keyword-btn me-1 mb-1" data-keyword="휴게실" onclick="handleKeywordClick('휴게실')">휴게실</button>
+                                                    <button type="button" class="btn btn-outline-success btn-sm keyword-btn me-1 mb-1" data-keyword="진료실" onclick="handleKeywordClick('진료실')">진료실</button>
+                                                    <button type="button" class="btn btn-outline-success btn-sm keyword-btn me-1 mb-1" data-keyword="프로그램실" onclick="handleKeywordClick('프로그램실')">프로그램실</button>
+                                                    <button type="button" class="btn btn-outline-success btn-sm keyword-btn me-1 mb-1" data-keyword="정원" onclick="handleKeywordClick('정원')">정원</button>
                                                 </div>
+                                            </div>
                                             </div>
                                         </div>
                                     </div>
@@ -370,31 +382,31 @@
                             
                             <div class="crop-actions mt-4 text-center">
                                 <div class="d-flex justify-content-between align-items-center">
-                                    <button type="button" class="btn btn-outline-secondary" id="backToUploadBtn">
-                                        <i class="fas fa-arrow-left me-2"></i>다시 선택
+                                    <button type="button" class="btn btn-outline-secondary" id="backToEditBtn" onclick="goBackToEdit()">
+                                        <i class="fas fa-arrow-left me-2"></i>수정 페이지로 돌아가기
                                     </button>
                                     
                                     <!-- 이미지 번호 표시 -->
                                     <div class="image-counter text-muted">
-                                        <small id="navigationImageNumber">1 / 1</small>
+                                        <small class="crop-navigation-info">1 / 1</small>
                                     </div>
                                     
                                     <div class="crop-navigation d-flex gap-2">
-                                        <button type="button" class="btn btn-outline-primary" id="prevImageBtn" style="display: none;">
+                                        <button type="button" class="btn btn-outline-primary" id="prevImageBtn" onclick="proceedToPrevImage()">
                                             <i class="fas fa-chevron-left me-1"></i>이전
                                         </button>
-                                        <button type="button" class="btn btn-primary" id="nextAndSaveBtn" style="display: none;">
-                                            저장 후 다음<i class="fas fa-chevron-right ms-1"></i>
+                                        <button type="button" class="btn btn-primary" id="nextImageBtn" onclick="proceedToNextImage()">
+                                            다음<i class="fas fa-chevron-right ms-1"></i>
                                         </button>
-                                        <button type="button" class="btn btn-success" id="saveAndCompleteBtn">
-                                            <i class="fas fa-check me-2"></i>저장 후 완료
+                                        <button type="button" class="btn btn-success" id="saveCurrentAndGoNext" onclick="saveCropAndNext()">
+                                            <i class="fas fa-save me-2"></i>저장 후 수정페이지로
                                         </button>
                                     </div>
                                 </div>
                             </div>
                         </div>
 
-                        <!-- 3단계: 이미지 관리 -->
+                        <!-- 3단계: 이미지 관리 (숨김 - 2단계에 통합) -->
                         <div id="manageSection" class="manage-section" style="display: none;">
                             <div class="text-center mb-4">
                                 <h4 class="text-primary mb-3">
@@ -444,7 +456,6 @@
                         </div>
 
                         <!-- 줌 표시기 -->
-                        <div id="zoomIndicator" class="zoom-indicator" style="display: none;">
                             <i class="fas fa-search-plus me-2"></i>
                             <span id="zoomLevel">100%</span>
                         </div>
@@ -816,6 +827,103 @@
     // 기존 이미지 정보 (서버에서 전달)
     window.existingImages = /*[[${existingImages}]]*/ [];
     
+    // 🔥 새로운 방식: 전역 변수와 메타데이터에서 파일 불러오기
+    function loadSelectedFilesFromSession() {
+        // 1. 먼저 전역 변수에서 파일 확인 (페이지 간 이동 시)
+        if (window.transferSelectedFiles && window.transferSelectedFiles.length > 0) {
+            console.log('📂 전역 변수에서 파일 불러오기:', window.transferSelectedFiles.length + '개');
+            
+            // 전역 변수에 저장
+            window.selectedImageFiles = window.transferSelectedFiles;
+            
+            // 메인 컨트롤러에 파일 전달
+            if (window.FacilityImageMainController && window.FacilityImageMainController.processFiles) {
+                window.FacilityImageMainController.processFiles(window.transferSelectedFiles);
+            }
+            
+            console.log('✅ 전역 변수에서 파일 불러오기 완료');
+            return;
+        }
+        
+        // 2. 압축 통계 불러오기
+        const storedStats = sessionStorage.getItem('compressionStats');
+        if (storedStats) {
+            try {
+                const stats = JSON.parse(storedStats);
+                console.log('📊 압축 통계 불러오기:');
+                console.log(`   원본: ${(stats.originalSize / 1024 / 1024).toFixed(2)}MB`);
+                console.log(`   압축: ${(stats.compressedSize / 1024 / 1024).toFixed(2)}MB`);
+                console.log(`   절약: ${(stats.savedSize / 1024 / 1024).toFixed(2)}MB (${stats.compressionRatio}%)`);
+                
+                // 전역 변수에 저장하여 UI에서 표시
+                window.compressionStats = stats;
+                
+                // 세션 스토리지 정리
+                sessionStorage.removeItem('compressionStats');
+                
+            } catch (error) {
+                console.error('❌ 압축 통계 불러오기 실패:', error);
+            }
+        }
+        
+        // 3. 기존 방식 (Base64 데이터) - 호환성 유지
+        const storedFiles = sessionStorage.getItem('selectedImageFiles');
+        if (storedFiles) {
+            try {
+                const fileDataArray = JSON.parse(storedFiles);
+                console.log('📂 세션에서 파일 불러오기 (기존 방식):', fileDataArray.length + '개');
+                
+                // File 객체로 변환
+                const fileObjects = fileDataArray.map(fileData => {
+                    // Base64를 Blob으로 변환
+                    const byteCharacters = atob(fileData.data.split(',')[1]);
+                    const byteNumbers = new Array(byteCharacters.length);
+                    for (let i = 0; i < byteCharacters.length; i++) {
+                        byteNumbers[i] = byteCharacters.charCodeAt(i);
+                    }
+                    const byteArray = new Uint8Array(byteNumbers);
+                    const blob = new Blob([byteArray], {type: fileData.type});
+                    
+                    // File 객체 생성
+                    return new File([blob], fileData.name, {
+                        type: fileData.type,
+                        lastModified: Date.now()
+                    });
+                });
+                
+                // 전역 변수에 저장
+                window.selectedImageFiles = fileObjects;
+                
+                // 메인 컨트롤러에 파일 전달
+                if (window.FacilityImageMainController && window.FacilityImageMainController.processFiles) {
+                    window.FacilityImageMainController.processFiles(fileObjects);
+                }
+                
+                console.log('✅ 세션에서 파일 불러오기 완료');
+                
+                // 세션 스토리지 정리
+                sessionStorage.removeItem('selectedImageFiles');
+                
+            } catch (error) {
+                console.error('❌ 세션에서 파일 불러오기 실패:', error);
+            }
+        }
+    }
+    
+    // 메타데이터 표시 함수
+    function displayFileMetadata(metadata) {
+        console.log('📋 파일 메타데이터:');
+        metadata.forEach((file, index) => {
+            console.log(`${index + 1}. ${file.name} (${(file.size / 1024 / 1024).toFixed(2)} MB, ${file.type})`);
+        });
+    }
+    
+    // 페이지 로드 시 세션 파일 불러오기
+    document.addEventListener('DOMContentLoaded', function() {
+        // 약간의 지연을 두어 모든 모듈이 로드된 후 실행
+        setTimeout(loadSelectedFilesFromSession, 1000);
+    });
+    
     // 메인 컨트롤러가 자동으로 초기화를 수행하므로 별도의 초기화 코드 불필요
     // DOMContentLoaded 이벤트에서 자동으로 초기화됨
     
@@ -843,6 +951,141 @@
             };
         }
     };
+    
+    // 2단계 워크플로우 네비게이션 함수들
+    
+    // 수정 페이지로 돌아가기 (저장하지 않고)
+    function goBackToEdit() {
+        const facilityId = window.facilityInfo?.facilityId || '';
+        if (!facilityId) {
+            console.error('❌ 시설 ID가 없습니다');
+            alert('시설 정보를 찾을 수 없습니다.');
+            return;
+        }
+        
+        console.log('🔙 수정 페이지로 돌아가기 (저장하지 않음)');
+        
+        // 세션 스토리지 정리
+        sessionStorage.removeItem('selectedImageFiles');
+        sessionStorage.removeItem('compressionStats');
+        
+        // 수정 페이지로 이동
+        window.location.href = `/facility/edit/${facilityId}`;
+    }
+    
+    // 크롭된 이미지 저장하고 수정 페이지로 돌아가기
+    async function saveCropAndNext() {
+        try {
+            const facilityId = window.facilityInfo?.facilityId || '';
+            if (!facilityId) {
+                console.error('❌ 시설 ID가 없습니다');
+                alert('시설 정보를 찾을 수 없습니다.');
+                return;
+            }
+            
+            console.log('💾 이미지 저장 시작...');
+            
+            // 로딩 상태 표시
+            const saveBtn = document.getElementById('saveCurrentAndGoNext');
+            const originalText = saveBtn.innerHTML;
+            saveBtn.disabled = true;
+            saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>저장 중...';
+            
+            // 메인 컨트롤러에서 현재 크롭된 이미지들 가져오기
+            let croppedImages = [];
+            if (window.FacilityImageMainController && window.FacilityImageMainController.getCroppedImages) {
+                croppedImages = window.FacilityImageMainController.getCroppedImages();
+            }
+            
+            if (croppedImages.length === 0) {
+                // 크롭된 이미지가 없으면 원본 파일들로 대체
+                console.log('⚠️ 크롭된 이미지가 없음, 원본 파일 사용');
+                if (window.selectedImageFiles && window.selectedImageFiles.length > 0) {
+                    croppedImages = window.selectedImageFiles;
+                }
+            }
+            
+            if (croppedImages.length === 0) {
+                console.error('❌ 저장할 이미지가 없습니다');
+                alert('저장할 이미지가 없습니다. 이미지를 선택하고 크롭해주세요.');
+                saveBtn.disabled = false;
+                saveBtn.innerHTML = originalText;
+                return;
+            }
+            
+            console.log(`📁 저장할 이미지 ${croppedImages.length}개`);
+            
+            // FormData 생성
+            const formData = new FormData();
+            formData.append('facilityId', facilityId);
+            
+            // 이미지 파일들 추가
+            croppedImages.forEach((imageData, index) => {
+                if (imageData instanceof File) {
+                    formData.append('images', imageData);
+                } else if (imageData.file) {
+                    formData.append('images', imageData.file);
+                } else if (imageData.blob) {
+                    // Blob을 File로 변환
+                    const file = new File([imageData.blob], `image_${index + 1}.webp`, { type: 'image/webp' });
+                    formData.append('images', file);
+                }
+                
+                // SEO 정보 추가
+                if (imageData.seoData) {
+                    formData.append(`seoData[${index}]`, JSON.stringify(imageData.seoData));
+                }
+            });
+            
+            // 서버로 이미지 저장 요청
+            const response = await fetch(`/api/facility/${facilityId}/images`, {
+                method: 'POST',
+                body: formData
+            });
+            
+            if (response.ok) {
+                const result = await response.json();
+                console.log('✅ 이미지 저장 성공:', result);
+                
+                // 성공 메시지 표시
+                if (result.message) {
+                    alert(result.message);
+                }
+                
+                // 세션 스토리지 정리
+                sessionStorage.removeItem('selectedImageFiles');
+                sessionStorage.removeItem('compressionStats');
+                
+                // 저장된 이미지 정보를 세션에 저장 (수정 페이지에서 표시용)
+                if (result.savedImages) {
+                    sessionStorage.setItem('savedImages', JSON.stringify(result.savedImages));
+                }
+                
+                // 수정 페이지로 이동
+                window.location.href = `/facility/edit/${facilityId}`;
+                
+            } else {
+                const errorData = await response.json();
+                console.error('❌ 이미지 저장 실패:', errorData);
+                alert(errorData.message || '이미지 저장에 실패했습니다.');
+                
+                saveBtn.disabled = false;
+                saveBtn.innerHTML = originalText;
+            }
+            
+        } catch (error) {
+            console.error('❌ 저장 중 오류 발생:', error);
+            alert('저장 중 오류가 발생했습니다. 다시 시도해주세요.');
+            
+            const saveBtn = document.getElementById('saveCurrentAndGoNext');
+            saveBtn.disabled = false;
+            saveBtn.innerHTML = '<i class="fas fa-save me-2"></i>저장 후 수정페이지로';
+        }
+    }
+    
+    // 전역 함수로 등록
+    window.goBackToEdit = goBackToEdit;
+    window.saveCropAndNext = saveCropAndNext;
     
     // 개발 모드에서만 디버깅 정보 출력
     if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {

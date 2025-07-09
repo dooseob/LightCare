@@ -1,0 +1,61 @@
+version: '3.8'
+
+services:
+  # Spring Boot 애플리케이션 (AWS EC2/RDS 연결)
+  app:
+    build: 
+      context: .
+      dockerfile: Dockerfile
+    container_name: carelink-app
+    ports:
+      - "8080:8080"
+    environment:
+      # Spring Boot 프로필
+      - SPRING_PROFILES_ACTIVE=prod
+      
+      # 데이터베이스 설정 (AWS RDS)
+      - DB_URL=${DB_URL:-jdbc:mysql://localhost:3306/carelink?useSSL=false&serverTimezone=Asia/Seoul&allowPublicKeyRetrieval=true&useUnicode=true&characterEncoding=UTF-8}
+      - DB_USERNAME=${DB_USERNAME:-root}
+      - DB_PASSWORD=${DB_PASSWORD:-mysql}
+      
+      # 카카오 API 키
+      - KAKAO_APP_KEY=${KAKAO_APP_KEY:-your_kakao_app_key}
+      - KAKAO_REST_API_KEY=${KAKAO_REST_API_KEY:-your_kakao_rest_api_key}
+      
+      # 파일 업로드 경로
+      - UPLOAD_BASE_PATH=${UPLOAD_BASE_PATH:-/carelink-uploads/}
+      
+      # 로그 설정
+      - LOGGING_LEVEL_ROOT=INFO
+      - LOGGING_LEVEL_COM_EXAMPLE_CARELINK=DEBUG
+      
+      # JVM 메모리 설정
+      - JAVA_OPTS=-Xms512m -Xmx1024m -XX:+UseContainerSupport -XX:MaxRAMPercentage=75.0
+      
+    volumes:
+      - carelink-uploads:/carelink-uploads
+      - ./logs:/app/logs
+    restart: unless-stopped
+    networks:
+      - carelink-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+volumes:
+  carelink-uploads:
+    name: carelink-uploads
+    driver: local
+
+networks:
+  carelink-network:
+    name: carelink-network
+    driver: bridge
