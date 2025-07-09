@@ -5,7 +5,7 @@ FROM gradle:7.6.1-jdk11 AS builder
 WORKDIR /app
 
 # Gradle 파일 복사 (레이어 캐싱을 위해)
-COPY build.gradle settings.gradle ./
+COPY build.gradle ./
 COPY gradle ./gradle
 
 # 의존성 다운로드

@@ -148,10 +148,10 @@
                                                 ">
                                                     <div class="drop-zone-content">
                                                         <i class="fas fa-cloud-upload-alt fa-2x text-muted mb-3"></i>
-                                                        <button type="button" id="mainFileSelectBtn" class="btn btn-primary btn-lg px-4 py-2 mb-3">
+                                                        <button type="button" id="mainFileSelectBtn" class="btn btn-primary btn-lg px-4 py-2 mb-3" style="display: none;">
                                                             <i class="fas fa-folder-open me-2"></i>파일 선택
                                                         </button>
-                                                        <p class="text-muted mb-2">또는 여기에 파일을 드래그하세요</p>
+                                                        <p class="text-muted mb-2">여기에 파일을 드래그하세요</p>
                                                         <small class="text-muted">JPG, PNG, WebP 지원 (최대 10MB, 5개 파일)</small>
                                                         <div class="mt-3">
                                                             <div class="d-flex justify-content-center align-items-center gap-3 flex-wrap">
@@ -1657,8 +1657,10 @@ function processSelectedFiles(files) {
     if (addMoreBtn) {
         addMoreBtn.style.display = validImageFiles.length < 5 ? 'inline-block' : 'none';
         
-        // 추가 파일 선택 이벤트
-        addMoreBtn.onclick = function() {
+        // 추가 파일 선택 이벤트 - 중복 클릭 방지
+        addMoreBtn.onclick = function(e) {
+            e.stopPropagation();
+            console.log('🔵 추가 이미지 버튼 클릭 - 파일 선택창 열기');
             const imageInput = document.getElementById('imageInput');
             if (imageInput) {
                 imageInput.click();
@@ -2197,6 +2199,20 @@ document.addEventListener('DOMContentLoaded', function() {
                 const fileInput = document.getElementById('facilityImageFile');
                 if (fileInput) fileInput.value = '';
             }
+        });
+    }
+    
+    // 드래그앤드롭 영역 클릭 시 파일 선택
+    const dropZone = document.getElementById('dropZone');
+    const imageInput = document.getElementById('imageInput');
+    
+    if (dropZone && imageInput) {
+        dropZone.addEventListener('click', function(e) {
+            // 버튼 클릭은 제외
+            if (e.target.closest('button')) return;
+            
+            console.log('🔵 드래그앤드롭 영역 클릭 - 파일 선택창 열기');
+            imageInput.click();
         });
     }
 });
