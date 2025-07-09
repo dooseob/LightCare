@@ -34,7 +34,12 @@
       "Bash(sudo:*)",
       "Bash(git rm:*)",
       "Bash(git add:*)",
-      "Bash(git config:*)"
+      "Bash(git config:*)",
+      "Bash(git filter-branch:*)",
+      "Bash(docker build:*)",
+      "Bash(docker:*)",
+      "Bash(\"/mnt/c/Program Files/Docker/Docker/resources/bin/docker\" --version)",
+      "Bash(git push:*)"
     ],
     "deny": []
   }
