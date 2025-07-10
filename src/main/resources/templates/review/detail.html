@@ -118,7 +118,7 @@
 
                             <!-- 리뷰 내용 -->
                             <div class="content-area" style="min-height: 200px; line-height: 1.8;">
-                                <div th:text="${review.content}" style="white-space: pre-line;">
+                                <div class="rich-text-content" th:utext="${review.content}" style="white-space: pre-line;">
                                     리뷰 내용이 여기에 표시됩니다.
                                 </div>
                             </div>

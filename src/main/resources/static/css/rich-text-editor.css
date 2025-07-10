@@ -139,6 +139,38 @@
     outline: none;
 }
 
+/* 링크 스타일 (에디터 내부) */
+.rte-content a {
+    color: #0066cc !important;
+    text-decoration: underline !important;
+    cursor: pointer;
+}
+
+.rte-content a:hover {
+    color: #004499 !important;
+    text-decoration: underline !important;
+}
+
+.rte-content a:visited {
+    color: #663399 !important;
+}
+
+/* 링크 스타일 (상세보기 페이지) */
+.rich-text-content a {
+    color: #0066cc !important;
+    text-decoration: underline !important;
+    cursor: pointer;
+}
+
+.rich-text-content a:hover {
+    color: #004499 !important;
+    text-decoration: underline !important;
+}
+
+.rich-text-content a:visited {
+    color: #663399 !important;
+}
+
 /* 플레이스홀더 */
 .rte-placeholder {
     color: #6c757d;

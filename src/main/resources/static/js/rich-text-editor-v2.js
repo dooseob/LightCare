@@ -250,10 +250,10 @@ class RichTextEditorV2 {
         
         const linkText = selectedText || prompt('링크 텍스트를 입력하세요:', url);
         if (linkText) {
-            // XSS 방지를 위한 HTML 인코딩
-            const safeUrl = this.escapeHtml(url);
-            const safeLinkText = this.escapeHtml(linkText);
-            const link = `<a href="${safeUrl}" target="_blank" rel="noopener noreferrer">${safeLinkText}</a>`;
+            // XSS 방지를 위한 속성값 정리 (HTML 인코딩하지 않고 직접 생성)
+            const cleanUrl = url.replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+            const cleanText = linkText.replace(/</g, '&lt;').replace(/>/g, '&gt;');
+            const link = `<a href="${cleanUrl}" target="_blank" rel="noopener noreferrer" style="color: #0066cc; text-decoration: underline;">${cleanText}</a>`;
             this.insertHTML(link);
         }
     }
@@ -489,6 +489,16 @@ class RichTextEditorV2 {
         allElements.forEach(el => {
             if (!allowedTags.includes(el.tagName.toLowerCase())) {
                 el.remove();
+            } else if (el.tagName.toLowerCase() === 'a') {
+                // 링크 태그의 보안 속성 확인
+                const href = el.getAttribute('href');
+                if (href && !this.isValidUrl(href)) {
+                    el.remove();
+                    return;
+                }
+                // 안전한 링크 속성 설정
+                el.setAttribute('target', '_blank');
+                el.setAttribute('rel', 'noopener noreferrer');
             }
         });
         
