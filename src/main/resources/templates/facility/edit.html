@@ -606,7 +606,7 @@
                             </label>
                             <textarea class="form-control" id="description" th:field="*{description}" rows="4"
                                       placeholder="시설에 대한 설명을 입력하세요"
-                                      data-rich-editor='{"height": "250px", "enableImage": true, "enableTable": false, "enableLink": true}'></textarea>
+                                      data-rich-editor='{"height": "250px", "enableTable": false, "enableLink": true}'></textarea>
                         </div>
 
                         <!-- 시설 특징 -->
@@ -668,9 +668,7 @@
 <script th:src="@{/js/facility-image-seo-module.js}"></script>
 <script th:src="@{/js/facility-image-main-controller.js}"></script>
 
-<!-- 리치 텍스트 에디터 -->
-<link rel="stylesheet" href="/css/rich-text-editor.css">
-<script src="/js/rich-text-editor.js"></script>
+<!-- 리치 텍스트 에디터는 header.html에서 전역으로 로드됨 -->
 
 <script>
 $(document).ready(function() {
