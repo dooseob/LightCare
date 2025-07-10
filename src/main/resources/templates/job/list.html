@@ -265,7 +265,7 @@
                                                     <i class="fas fa-user-graduate me-1"></i><span th:text="${job.experience}">경력</span>
                                                 </span>
                                             </div>
-                                            <p class="card-text mb-2" th:text="${#strings.abbreviate(job.content, 120)}">구인 내용...</p>
+                                            <p class="card-text mb-2 rich-text-content" th:utext="${#strings.abbreviate(job.content, 120)}">구인 내용...</p>
                                             <div class="d-flex flex-wrap gap-1">
                                                 <span class="badge bg-light text-dark" th:if="${job.position}" th:text="${job.position}">직종</span>
                                                 <span class="badge bg-light text-dark" th:if="${job.education}" th:text="${job.education}">학력</span>

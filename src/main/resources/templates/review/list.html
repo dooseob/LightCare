@@ -85,7 +85,7 @@
                                         </div>
                                         <small class="text-muted" th:text="${#temporals.format(review.createdAt, 'yyyy-MM-dd')}">2024-01-15</small>
                                     </div>
-                                    <p class="card-text" th:text="${#strings.abbreviate(review.content, 100)}">
+                                    <p class="card-text rich-text-content" th:utext="${#strings.abbreviate(review.content, 100)}">
                                         시설이 깨끗하고 직원분들이 매우 친절합니다...
                                     </p>
                                     <div class="d-flex justify-content-between align-items-center">
