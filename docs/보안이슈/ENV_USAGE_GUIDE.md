@@ -14,8 +14,8 @@
   spring:
     datasource:
       url: ${DB_URL:기본값}
-      username: ${DB_USERNAME:root}
-      password: ${DB_PASSWORD:mysql}
+      username: ${DB_USERNAME:}
+      password: ${DB_PASSWORD:}
   ```
 
 ### 2. 도커 컨테이너 ✅
@@ -44,8 +44,8 @@ DB_URL=jdbc:mysql://localhost:3306/carelink?useSSL=false&serverTimezone=Asia/Seo
 DB_USERNAME=root
 DB_PASSWORD=본인의_MySQL_패스워드  # 여기만 수정!
 
-KAKAO_APP_KEY=0948e3e4faa4
-KAKAO_REST_API_KEY=0948e
+KAKAO_APP_KEY=
+KAKAO_REST_API_KEY=
 
 UPLOAD_BASE_PATH=C:/carelink-uploads/
 ```
@@ -71,7 +71,7 @@ spring:
   datasource:
     # 1. .env 파일에서 DB_PASSWORD 읽기
     # 2. 없으면 기본값 'mysql' 사용
-    password: ${DB_PASSWORD:mysql}
+    password: ${DB_PASSWORD:}
 ```
 
 ### Docker 환경변수 전달
@@ -82,7 +82,7 @@ services:
     environment:
       # 1. 호스트의 .env 파일에서 읽기
       # 2. 컨테이너 내부로 전달
-      - DB_PASSWORD=${DB_PASSWORD:-mysql}
+      - DB_PASSWORD=${DB_PASSWORD:}
 ```
 
 ## 📊 환경변수 우선순위
