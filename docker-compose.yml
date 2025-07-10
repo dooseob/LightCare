@@ -9,9 +9,12 @@ services:
       - "8080:8080"
     environment:
       - SPRING_PROFILES_ACTIVE=prod
-      - SPRING_DATASOURCE_URL=jdbc:mysql://db:3306/carelink?useSSL=false&serverTimezone=Asia/Seoul&allowPublicKeyRetrieval=true&useUnicode=true&characterEncoding=UTF-8
-      - SPRING_DATASOURCE_USERNAME=root
-      - SPRING_DATASOURCE_PASSWORD=mysql
+      - DB_URL=${DB_URL:-jdbc:mysql://db:3306/carelink?useSSL=false&serverTimezone=Asia/Seoul&allowPublicKeyRetrieval=true&useUnicode=true&characterEncoding=UTF-8}
+      - DB_USERNAME=${DB_USERNAME:-root}
+      - DB_PASSWORD=${DB_PASSWORD:-mysql}
+      - KAKAO_APP_KEY=${KAKAO_APP_KEY:-0948e3e4faa457fb6083f68e1ce10458}
+      - KAKAO_REST_API_KEY=${KAKAO_REST_API_KEY:-0948e3e4faa457fb6083f68e1ce10458}
+      - UPLOAD_BASE_PATH=${UPLOAD_BASE_PATH:-/carelink-uploads/}
     volumes:
       - carelink-uploads:/carelink-uploads
     depends_on:
@@ -27,8 +30,8 @@ services:
     ports:
       - "3306:3306"
     environment:
-      - MYSQL_DATABASE=carelink
-      - MYSQL_ROOT_PASSWORD=mysql
+      - MYSQL_DATABASE=${MYSQL_DATABASE:-carelink}
+      - MYSQL_ROOT_PASSWORD=${DB_PASSWORD:-mysql}
       - TZ=Asia/Seoul
     volumes:
       - carelink-db-data:/var/lib/mysql

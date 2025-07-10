@@ -286,7 +286,7 @@
 <!-- 카카오 주소 검색 API -->
 <script src="//t1.daumcdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js"></script>
 <!-- 카카오맵 API (좌표 변환용) -->
-<script type="text/javascript" th:src="@{//dapi.kakao.com/v2/maps/sdk.js(appkey=${@environment.getProperty('KAKAO_APP_KEY')}, libraries='services')}"></script>
+<script type="text/javascript" th:src="@{//dapi.kakao.com/v2/maps/sdk.js(appkey=${@environment.getProperty('api.kakao.app-key')}, libraries='services')}"></script>
 <!-- 카카오맵 유틸리티 -->
 <script src="/js/kakaomap.js"></script>
 <script src="/js/facility-edit.js"></script>

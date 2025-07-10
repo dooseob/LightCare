@@ -89,3 +89,8 @@ springdoc:
     - /api/**
   packages-to-scan:
     - com.lightcare.controller
+
+# 외부 API 키 설정
+api:
+  kakao:
+    app-key: ${KAKAO_APP_KEY:0948e3e4faa457fb6083f68e1ce10458}

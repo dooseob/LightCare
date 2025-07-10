@@ -357,7 +357,7 @@
 <div th:replace="~{layout/footer :: scripts}"></div>
 
 <!-- 카카오맵 API -->
-<script type="text/javascript" src="//dapi.kakao.com/v2/maps/sdk.js?appkey=3c4987cb946a721903add5fc474941a3&libraries=services,clusterer,drawing"></script>
+<script type="text/javascript" src="//dapi.kakao.com/v2/maps/sdk.js?appkey=YOUR_KAKAO_APP_KEY&libraries=services,clusterer,drawing"></script>
 
 <!-- 시설 상세보기 전용 JavaScript -->
 <script src="/js/facility-detail.js"></script>
@@ -797,7 +797,7 @@ document.addEventListener('keydown', function(e) {
 <script src="//developers.kakao.com/sdk/js/kakao.min.js"></script>
 <script>
     // 새로운 App Key로 카카오톡 SDK 초기화
-    Kakao.init('3c4987cb946a721903add5fc474941a3');
+    Kakao.init('YOUR_KAKAO_APP_KEY');
 </script>
 </body>
 </html>
