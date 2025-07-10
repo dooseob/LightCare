@@ -158,8 +158,21 @@
 <!-- 공통 JavaScript -->
 <div th:replace="~{layout/footer :: scripts}"></div>
 
-<!-- 카카오맵 API -->
-<script type="text/javascript" th:src="@{//dapi.kakao.com/v2/maps/sdk.js(appkey=${@environment.getProperty('KAKAO_APP_KEY')}, libraries='services,clusterer,drawing')}"></script>
+<!-- 카카오맵 Javascript SDK -->
+<script src="/js/kakaomap.js"></script>
+
+<!-- 디버깅용 API 키 확인 -->
+<script th:inline="javascript">
+    /*<![CDATA[*/
+    const API_KEY = /*[[${KAKAO_APP_KEY}]]*/ '';
+    console.log('전달받은 API 키:', API_KEY);
+    if (!API_KEY || API_KEY === '') {
+        console.error('API 키가 전달되지 않았습니다!');
+    }
+    /*]]>*/
+</script>
+
+<script type="text/javascript" th:src="@{//dapi.kakao.com/v2/maps/sdk.js(appkey=${KAKAO_APP_KEY}, libraries='services,clusterer,drawing')}"></script>
 
 <script th:inline="javascript">
     /*<![CDATA[*/
@@ -167,6 +180,18 @@
     const facilities = /*[[${facilityList}]]*/ '[]';
 
     $(document).ready(function() {
+        // 카카오맵 SDK 로드 대기
+        setTimeout(function() {
+            if (typeof kakao === 'undefined' || !kakao.maps) {
+                console.error('카카오맵 SDK를 로드할 수 없습니다.');
+                return;
+            }
+            
+            initializeMap();
+        }, 100);
+    });
+
+    function initializeMap() {
         const mapContainer = document.getElementById('map');
         let mapCenter = new kakao.maps.LatLng(37.566826, 126.9786567); // 기본값: 서울 시청
         
@@ -293,7 +318,7 @@
                 currentInfoWindow.open(map, currentMarker);
             });
         }
-    });
+    }
     /*]]>*/
 </script>
 
