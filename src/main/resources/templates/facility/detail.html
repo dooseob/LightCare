@@ -152,7 +152,7 @@
                         </div>
                     </div>
                     <div th:if="${facility.description}" class="mt-3 pt-2 border-top">
-                        <p class="small mb-0" style="line-height: 1.4;" th:text="${facility.description}">시설 소개</p>
+                        <div class="small mb-0 rich-text-content" style="line-height: 1.4;" th:utext="${facility.description}">시설 소개</div>
                     </div>
                     <div th:if="${facility.features}" class="mt-2">
                         <div class="features-list">
