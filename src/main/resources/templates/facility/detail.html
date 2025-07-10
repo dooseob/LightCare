@@ -313,15 +313,14 @@
 <div th:replace="~{layout/footer :: footer}"></div>
 <div th:replace="~{layout/footer :: scripts}"></div>
 
+<!-- 카카오맵 JavaScript 파일 -->
+<script src="/js/kakaomap.js"></script>
+
 <!-- 카카오맵 API -->
-<script type="text/javascript" th:src="@{//dapi.kakao.com/v2/maps/sdk.js(appkey=${@environment.getProperty('KAKAO_APP_KEY')}, libraries='services,clusterer,drawing')}"></script>
+<script type="text/javascript" th:src="@{//dapi.kakao.com/v2/maps/sdk.js(appkey=${KAKAO_APP_KEY}, libraries='services,clusterer,drawing')}"></script>
 
 <script th:inline="javascript">
     /*<![CDATA[*/
-    let map;
-    let marker;
-    let infowindow;
-
     // 시설 정보를 JavaScript 변수로 선언
     const facilityData = {
         name: /*[[${facility.facilityName}]]*/ '',
@@ -379,54 +378,34 @@
             }
         });
         
-        // 지도 초기화
-        const mapContainer = document.getElementById('facilityMap');
-        let mapCenter = new kakao.maps.LatLng(37.566826, 126.9786567); // 기본값: 서울 시청
-        
-        // 시설 위치가 있다면 해당 위치를 중심으로 설정
-        if (facilityData.latitude && facilityData.longitude) {
-            mapCenter = new kakao.maps.LatLng(facilityData.latitude, facilityData.longitude);
-        }
-        
-        const mapOption = {
-            center: mapCenter,
-            level: 3 // 상세 페이지이므로 더 확대해서 보여준
-        };
-        map = new kakao.maps.Map(mapContainer, mapOption);
-        
-        // 시설 위치에 마커 추가
-        if (facilityData.latitude && facilityData.longitude) {
-            const position = new kakao.maps.LatLng(facilityData.latitude, facilityData.longitude);
-            
-            // 마커 생성
-            marker = new kakao.maps.Marker({
-                position: position,
-                map: map
-            });
-            
-            // 인포윈도우 생성
-            const infoWindowContent = `
-                <div class="p-2" style="width:250px;">
-                    <h6 class="mb-1">${facilityData.name}</h6>
-                    <p class="mb-1 small">${facilityData.address}</p>
-                    <p class="mb-0 small">
-                        <i class="fas fa-phone me-1"></i>${facilityData.phone}
-                    </p>
-                </div>
-            `;
-            
-            infowindow = new kakao.maps.InfoWindow({
-                content: infoWindowContent
-            });
-            
-            // 마커 클릭 이벤트
-            kakao.maps.event.addListener(marker, 'click', function() {
-                infowindow.open(map, marker);
-            });
-            
-            // 초기에 인포윈도우 열기
-            infowindow.open(map, marker);
-        }
+        // 카카오맵 초기화 대기
+        setTimeout(function() {
+            if (typeof kakao !== 'undefined') {
+                initKakaoMap('facilityMap');
+                
+                // 시설 위치에 마커 추가
+                if (facilityData.latitude && facilityData.longitude) {
+                    const infoContent = `
+                        <div class="p-2" style="width:250px;">
+                            <h6 class="mb-1">${facilityData.name}</h6>
+                            <p class="mb-1 small">${facilityData.address}</p>
+                            <p class="mb-0 small">
+                                <i class="fas fa-phone me-1"></i>${facilityData.phone}
+                            </p>
+                        </div>
+                    `;
+                    
+                    addMarker(
+                        facilityData.latitude,
+                        facilityData.longitude,
+                        facilityData.name,
+                        infoContent
+                    );
+                }
+            } else {
+                console.error('카카오맵 SDK 로드 실패');
+            }
+        }, 100); // 100ms 후 실행
     });
 
     // 시설 이미지 에러 처리 함수
@@ -547,7 +526,7 @@
 <script src="//developers.kakao.com/sdk/js/kakao.min.js"></script>
 <script>
     // 새로운 App Key로 카카오톡 SDK 초기화
-    Kakao.init(/*[[${@environment.getProperty('KAKAO_APP_KEY')}]]*/);;
+    Kakao.init(/*[[${KAKAO_APP_KEY}]]*/);
 </script>
 </body>
 </html>
