@@ -63,8 +63,8 @@ public class ImageOptimizationService {
                     originalImage.getWidth(), originalImage.getHeight());
             
             // 1. 원본 크기 조정 및 WebP 변환
-            String originalWebPPath = convertToWebP(originalImage, uploadDir, baseFileName + "_original");
-            result.setOriginalWebPPath(originalWebPPath);
+            String webpPath = convertToWebP(originalImage, uploadDir, baseFileName + "_original");
+            result.setOriginalWebPPath(webpPath);
             
             // 2. 썸네일 생성
             Map<String, String> thumbnails = generateThumbnails(originalImage, uploadDir, baseFileName);
@@ -99,20 +99,45 @@ public class ImageOptimizationService {
         String webpFileName = fileName + ".webp";
         String fullPath = uploadDir + webpFileName;
         
-        // WebP로 저장
-        Thumbnails.of(optimizedImage)
-                .size(optimizedImage.getWidth(), optimizedImage.getHeight())
-                .outputQuality(WEBP_QUALITY)
-                .outputFormat("webp")
-                .toFile(fullPath);
-        
-        log.info("WebP 변환 완료: {} ({}KB)", webpFileName, getFileSize(fullPath) / 1024);
-        
-        return webpFileName;
+        try {
+            // WebP로 저장
+            Thumbnails.of(optimizedImage)
+                    .size(optimizedImage.getWidth(), optimizedImage.getHeight())
+                    .outputQuality(WEBP_QUALITY)
+                    .outputFormat("webp")
+                    .toFile(fullPath);
+            
+            log.info("WebP 변환 완료: {} ({}KB)", webpFileName, getFileSize(fullPath) / 1024);
+            return webpFileName;
+            
+        } catch (Exception e) {
+            // WebP 변환 실패 시 JPG로 대체
+            log.warn("WebP 변환 실패, JPG로 대체: {}", fileName, e);
+            return convertToJPG(optimizedImage, uploadDir, fileName);
+        }
     }
     
     /**
-     * 여러 사이즈의 썸네일 생성
+     * 이미지를 JPG로 변환 (WebP 실패 시 fallback)
+     */
+    private String convertToJPG(BufferedImage image, String uploadDir, String fileName) throws IOException {
+        String jpgFileName = fileName + ".jpg";
+        String fullPath = uploadDir + jpgFileName;
+        
+        // JPG로 저장
+        Thumbnails.of(image)
+                .size(image.getWidth(), image.getHeight())
+                .outputQuality(0.9f)
+                .outputFormat("jpg")
+                .toFile(fullPath);
+        
+        log.info("JPG 변환 완료: {} ({}KB)", jpgFileName, getFileSize(fullPath) / 1024);
+        
+        return jpgFileName;
+    }
+    
+    /**
+     * 여러 사이즈의 썸네일 생성 (WebP 지원)
      */
     private Map<String, String> generateThumbnails(BufferedImage originalImage, String uploadDir, String baseFileName) throws IOException {
         Map<String, String> thumbnails = new HashMap<>();
@@ -121,19 +146,36 @@ public class ImageOptimizationService {
             String sizeName = entry.getKey();
             int[] dimensions = entry.getValue();
             
-            String thumbnailFileName = baseFileName + "_" + sizeName + ".webp";
-            String fullPath = uploadDir + thumbnailFileName;
-            
-            // 썸네일 생성 및 WebP 저장
-            Thumbnails.of(originalImage)
-                    .size(dimensions[0], dimensions[1])
-                    .outputQuality(WEBP_QUALITY)
-                    .outputFormat("webp")
-                    .toFile(fullPath);
-            
-            thumbnails.put(sizeName, thumbnailFileName);
-            
-            log.info("썸네일 생성 완료: {} ({}x{})", thumbnailFileName, dimensions[0], dimensions[1]);
+            try {
+                // WebP 썸네일 생성
+                String thumbnailFileName = baseFileName + "_" + sizeName + ".webp";
+                String fullPath = uploadDir + thumbnailFileName;
+                
+                Thumbnails.of(originalImage)
+                        .size(dimensions[0], dimensions[1])
+                        .outputQuality(WEBP_QUALITY)
+                        .outputFormat("webp")
+                        .toFile(fullPath);
+                
+                thumbnails.put(sizeName, thumbnailFileName);
+                log.info("WebP 썸네일 생성 완료: {} ({}x{})", thumbnailFileName, dimensions[0], dimensions[1]);
+                
+            } catch (Exception e) {
+                // WebP 실패 시 JPG로 대체
+                log.warn("WebP 썸네일 생성 실패, JPG로 대체: {} - {}", sizeName, e.getMessage());
+                
+                String thumbnailFileName = baseFileName + "_" + sizeName + ".jpg";
+                String fullPath = uploadDir + thumbnailFileName;
+                
+                Thumbnails.of(originalImage)
+                        .size(dimensions[0], dimensions[1])
+                        .outputQuality(0.9f)
+                        .outputFormat("jpg")
+                        .toFile(fullPath);
+                
+                thumbnails.put(sizeName, thumbnailFileName);
+                log.info("JPG 썸네일 생성 완료: {} ({}x{})", thumbnailFileName, dimensions[0], dimensions[1]);
+            }
         }
         
         return thumbnails;

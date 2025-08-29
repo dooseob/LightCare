@@ -58,9 +58,10 @@ dependencies {
     // implementation 'org.springdoc:springdoc-openapi-ui:1.7.0'
     // implementation 'org.springdoc:springdoc-openapi-security:1.7.0'
 
-    // 이미지 처리 및 WebP 변환
+    // 이미지 처리
     implementation 'net.coobird:thumbnailator:0.4.19'
-    implementation 'org.sejda.imageio:imageio-webp:0.1.6'
+    // WebP 지원을 위한 ImageIO 확장
+    implementation 'com.github.gotson:nightmonkeys:0.6.1'
 
 }
 
