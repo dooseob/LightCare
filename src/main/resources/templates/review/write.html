@@ -32,7 +32,7 @@
                             </h4>
                         </div>
                         <div class="card-body">
-                            <form th:action="@{/review/write}" method="post" th:object="${reviewDTO}" id="reviewForm">
+                            <form th:action="@{/review/write}" method="post" th:object="${reviewDTO}" id="reviewForm" enctype="multipart/form-data">
                                 <!-- 시설 ID (hidden) -->
                                 <input type="hidden" th:field="*{facilityId}" id="facilityId">
                                 
@@ -205,6 +205,33 @@
                                     </div>
                                 </div>
 
+                                <!-- 이미지 업로드 -->
+                                <div class="mb-4">
+                                    <label class="form-label fw-bold">리뷰 이미지</label>
+                                    <div class="image-upload-container">
+                                        <div class="image-upload-area" id="imageUploadArea">
+                                            <div class="upload-placeholder">
+                                                <i class="fas fa-camera fa-3x text-muted mb-3"></i>
+                                                <p class="text-muted mb-2">시설 리뷰 이미지를 드래그하여 업로드하거나 클릭하여 파일을 선택하세요</p>
+                                                <p class="text-muted small">최대 5개, 각 파일당 5MB 이하 (JPG, PNG, GIF, WebP 지원)</p>
+                                            </div>
+                                            <input type="file" id="imageFiles" name="imageFiles" multiple 
+                                                   accept="image/*" style="display: none;">
+                                        </div>
+                                        
+                                        <!-- 업로드된 이미지 미리보기 -->
+                                        <div id="imagePreviewContainer" class="mt-3" style="display: none;">
+                                            <div class="row" id="imagePreviewList"></div>
+                                        </div>
+                                    </div>
+                                    <div class="form-text">
+                                        시설의 모습을 담은 사진을 업로드하면 다른 이용자들에게 도움이 됩니다.
+                                        <span class="float-end">
+                                            <span id="imageCount">0</span>/5개
+                                        </span>
+                                    </div>
+                                </div>
+
                                 <!-- 추천 여부 -->
                                 <div class="mb-4">
                                     <div class="form-check">
@@ -276,6 +303,128 @@
     
     <!-- 리뷰 작성 전용 JavaScript -->
     <script src="/js/review-write.js"></script>
+    
+    <script>
+        let uploadedImages = [];
+        
+        document.addEventListener('DOMContentLoaded', function() {
+            // 이미지 업로드 초기화
+            initImageUpload();
+        });
+        
+        // 이미지 업로드 기능 초기화
+        function initImageUpload() {
+            const uploadArea = document.getElementById('imageUploadArea');
+            const fileInput = document.getElementById('imageFiles');
+            const previewContainer = document.getElementById('imagePreviewContainer');
+            const previewList = document.getElementById('imagePreviewList');
+            const imageCount = document.getElementById('imageCount');
+            
+            // 드래그 앤 드롭 이벤트
+            uploadArea.addEventListener('click', () => fileInput.click());
+            uploadArea.addEventListener('dragover', handleDragOver);
+            uploadArea.addEventListener('dragleave', handleDragLeave);
+            uploadArea.addEventListener('drop', handleDrop);
+            fileInput.addEventListener('change', handleFileSelect);
+            
+            function handleDragOver(e) {
+                e.preventDefault();
+                uploadArea.classList.add('dragover');
+            }
+            
+            function handleDragLeave(e) {
+                e.preventDefault();
+                uploadArea.classList.remove('dragover');
+            }
+            
+            function handleDrop(e) {
+                e.preventDefault();
+                uploadArea.classList.remove('dragover');
+                const files = Array.from(e.dataTransfer.files).filter(file => file.type.startsWith('image/'));
+                processFiles(files);
+            }
+            
+            function handleFileSelect(e) {
+                const files = Array.from(e.target.files);
+                processFiles(files);
+            }
+            
+            function processFiles(files) {
+                if (uploadedImages.length + files.length > 5) {
+                    alert('최대 5개의 이미지만 업로드할 수 있습니다.');
+                    return;
+                }
+                
+                files.forEach((file, index) => {
+                    if (file.size > 5 * 1024 * 1024) {
+                        alert(`${file.name} 파일이 5MB를 초과합니다.`);
+                        return;
+                    }
+                    
+                    const imageData = {
+                        file: file,
+                        id: Date.now() + index,
+                        altText: ''
+                    };
+                    
+                    uploadedImages.push(imageData);
+                    createImagePreview(imageData);
+                });
+                
+                updateImageCount();
+                updatePreviewVisibility();
+            }
+            
+            function createImagePreview(imageData) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const col = document.createElement('div');
+                    col.className = 'col-md-4 col-sm-6 col-6';
+                    col.innerHTML = `
+                        <div class="image-preview-item" data-id="${imageData.id}">
+                            <img src="${e.target.result}" class="img-fluid" alt="리뷰 이미지">
+                            <button type="button" class="remove-image" onclick="removeImage(${imageData.id})">
+                                <i class="fas fa-times"></i>
+                            </button>
+                            <div class="image-info">
+                                <div>${imageData.file.name}</div>
+                                <div>${(imageData.file.size / 1024).toFixed(1)} KB</div>
+                            </div>
+                            <input type="text" class="form-control form-control-sm alt-text-input mt-2" 
+                                   placeholder="이미지 설명 (선택사항)" 
+                                   onchange="updateAltText(${imageData.id}, this.value)">
+                        </div>
+                    `;
+                    previewList.appendChild(col);
+                };
+                reader.readAsDataURL(imageData.file);
+            }
+        }
+        
+        function removeImage(imageId) {
+            uploadedImages = uploadedImages.filter(img => img.id !== imageId);
+            const previewItem = document.querySelector(`[data-id="${imageId}"]`).closest('.col-md-4');
+            previewItem.remove();
+            updateImageCount();
+            updatePreviewVisibility();
+        }
+        
+        function updateAltText(imageId, altText) {
+            const image = uploadedImages.find(img => img.id === imageId);
+            if (image) {
+                image.altText = altText;
+            }
+        }
+        
+        function updateImageCount() {
+            document.getElementById('imageCount').textContent = uploadedImages.length;
+        }
+        
+        function updatePreviewVisibility() {
+            const previewContainer = document.getElementById('imagePreviewContainer');
+            previewContainer.style.display = uploadedImages.length > 0 ? 'block' : 'none';
+        }
+    </script>
 
     <style>
         /* 전체 평점 스타일 */
@@ -365,6 +514,82 @@
             border: 1px solid #007bff;
             border-radius: 4px;
             padding: 2px;
+        }
+        
+        /* 이미지 업로드 스타일 */
+        .image-upload-area {
+            border: 2px dashed #dee2e6;
+            border-radius: 8px;
+            padding: 40px 20px;
+            text-align: center;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            background-color: #f8f9fa;
+        }
+        
+        .image-upload-area:hover {
+            border-color: #0d6efd;
+            background-color: #e7f3ff;
+        }
+        
+        .image-upload-area.dragover {
+            border-color: #0d6efd;
+            background-color: #e7f3ff;
+            transform: scale(1.02);
+        }
+        
+        .image-preview-item {
+            position: relative;
+            margin-bottom: 15px;
+        }
+        
+        .image-preview-item img {
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            transition: transform 0.2s ease;
+        }
+        
+        .image-preview-item:hover img {
+            transform: scale(1.05);
+        }
+        
+        .image-preview-item .remove-image {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            background: #dc3545;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 14px;
+            opacity: 0.9;
+            transition: opacity 0.2s ease;
+        }
+        
+        .image-preview-item .remove-image:hover {
+            opacity: 1;
+        }
+        
+        .image-preview-item .image-info {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: linear-gradient(transparent, rgba(0,0,0,0.7));
+            color: white;
+            padding: 10px 8px 5px;
+            border-radius: 0 0 8px 8px;
+            font-size: 12px;
+        }
+        
+        .alt-text-input {
+            margin-top: 5px;
         }
     </style>
     

@@ -18,6 +18,7 @@ import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import com.example.carelink.dto.MemberDTO;
 import com.example.carelink.common.Constants;
+import org.springframework.beans.factory.annotation.Value;
 import javax.servlet.http.HttpSession;
 
 import java.util.List;
@@ -34,6 +35,9 @@ public class FacilityController {
     private final FacilityService facilityService;
     private final ReviewService reviewService;
     private final FacilityImageService facilityImageService;
+    
+    @Value("${api.kakao.app-key}")
+    private String kakaoAppKey;
 
     /**
      * Jackson ObjectMapper에 Java 8 날짜/시간 모듈을 등록합니다.
@@ -116,30 +120,29 @@ public class FacilityController {
         log.info("시설 검색 페이지 접속 - facilityName: {}, region: {}, facilityType: {}, gradeRating: {}",
                 facilityName, region, facilityType, gradeRating);
 
-        // 빈 문자열을 null로 변환
-        facilityName = (facilityName != null && facilityName.trim().isEmpty()) ? null : facilityName;
-        region = (region != null && region.trim().isEmpty()) ? null : region;
-        facilityType = (facilityType != null && facilityType.trim().isEmpty()) ? null : facilityType;
+        List<FacilityDTO> facilityList = new ArrayList<>();
+        
+        try {
+            // 빈 문자열을 null로 변환
+            facilityName = (facilityName != null && facilityName.trim().isEmpty()) ? null : facilityName;
+            region = (region != null && region.trim().isEmpty()) ? null : region;
+            facilityType = (facilityType != null && facilityType.trim().isEmpty()) ? null : facilityType;
 
-        FacilityDTO searchCondition = new FacilityDTO();
-        searchCondition.setFacilityName(facilityName != null ? facilityName.trim() : null);
-        searchCondition.setFacilityType(facilityType);
-        searchCondition.setAddress(region); // 지역 검색용
+            FacilityDTO searchCondition = new FacilityDTO();
+            searchCondition.setFacilityName(facilityName != null ? facilityName.trim() : null);
+            searchCondition.setFacilityType(facilityType);
+            searchCondition.setAddress(region); // 지역 검색용
 
-        // gradeRating 기능은 현재 데이터베이스 스키마에 없으므로 비활성화
-        // try {
-        //     if (gradeRating != null && !gradeRating.isEmpty()) {
-        //         searchCondition.setGradeRating(Integer.parseInt(gradeRating));
-        //     }
-        // } catch (NumberFormatException e) {
-        //     log.warn("Invalid gradeRating format: {}", gradeRating);
-        // }
+            // DTO 객체를 서비스 메서드로 전달하여 검색을 수행합니다.
+            facilityList = facilityService.searchFacilities(searchCondition);
 
-        // DTO 객체를 서비스 메서드로 전달하여 검색을 수행합니다.
-        List<FacilityDTO> facilityList = facilityService.searchFacilities(searchCondition);
-
-        // 검색 결과가 null일 경우 빈 리스트로 초기화하여 Thymeleaf 오류를 방지합니다.
-        if (facilityList == null) {
+            // 검색 결과가 null일 경우 빈 리스트로 초기화하여 Thymeleaf 오류를 방지합니다.
+            if (facilityList == null) {
+                facilityList = new ArrayList<>();
+            }
+            
+        } catch (Exception e) {
+            log.error("시설 검색 중 오류 발생", e);
             facilityList = new ArrayList<>();
         }
 
@@ -149,6 +152,9 @@ public class FacilityController {
         model.addAttribute("region", region);
         model.addAttribute("facilityType", facilityType);
         model.addAttribute("gradeRating", gradeRating);
+        
+        // 카카오맵 API 키를 모델에 추가
+        model.addAttribute("KAKAO_APP_KEY", kakaoAppKey);
 
         log.info("검색된 시설 수: {}", facilityList.size());
 

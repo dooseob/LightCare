@@ -23,6 +23,9 @@ public class FacilityImageService {
     private final FacilityImageMapper facilityImageMapper;
     private final FacilityMapper facilityMapper;
     private static final Logger log = LoggerFactory.getLogger(FacilityImageService.class);
+    
+    @Autowired
+    private ImageOptimizationService imageOptimizationService; // WebP 변환 서비스
 
     @Autowired
     public FacilityImageService(FacilityImageMapper facilityImageMapper, FacilityMapper facilityMapper) {

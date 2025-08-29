@@ -1,0 +1,60 @@
+# Build outputs
+build/
+target/
+*.jar
+*.war
+
+# IDE files
+.idea/
+*.iml
+.vscode/
+.gradle/
+
+# Dependencies
+node_modules/
+
+# Logs
+*.log
+logs/
+
+# Database
+*.db
+*.sqlite
+
+# Images and media
+*.png
+*.jpg
+*.jpeg
+*.gif
+*.svg
+*.ico
+
+# Documents
+docs/
+*.pdf
+*.doc
+*.docx
+
+# Test files
+src/test/
+
+# Config files with secrets
+*.env
+.env.*
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Git
+.git/
+.gitignore
+
+# Other
+*.zip
+*.tar.gz
+images/
+static/images/
+static/css/
+static/js/bootstrap*
+static/js/jquery*

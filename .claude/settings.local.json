@@ -39,7 +39,15 @@
       "Bash(docker build:*)",
       "Bash(docker:*)",
       "Bash(\"/mnt/c/Program Files/Docker/Docker/resources/bin/docker\" --version)",
-      "Bash(git push:*)"
+      "Bash(git push:*)",
+      "Bash(dos2unix:*)",
+      "Bash(chmod:*)",
+      "Bash(KAKAO_APP_KEY=b97b58672807a40c122a5deed8a98ea4 DB_USERNAME=root DB_PASSWORD=mysql ./gradlew bootRun)",
+      "Bash(heroku:*)",
+      "Bash(npx repomix:*)",
+      "Bash(npm install:*)",
+      "Bash(repomix:*)",
+      "Bash(git log:*)"
     ],
     "deny": []
   }

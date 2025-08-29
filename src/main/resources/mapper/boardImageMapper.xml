@@ -1,0 +1,154 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.example.carelink.dao.BoardImageMapper">
+
+    <!-- ResultMap 정의 -->
+    <resultMap id="boardImageResultMap" type="com.example.carelink.dto.BoardImageDTO">
+        <id property="imageId" column="image_id"/>
+        <result property="boardId" column="board_id"/>
+        <result property="imagePath" column="image_path"/>
+        <result property="webpPath" column="webp_path"/>
+        <result property="thumbnailSmall" column="thumbnail_small"/>
+        <result property="thumbnailMedium" column="thumbnail_medium"/>
+        <result property="thumbnailLarge" column="thumbnail_large"/>
+        <result property="fallbackJpgPath" column="fallback_jpg_path"/>
+        <result property="originalFilename" column="original_filename"/>
+        <result property="fileSize" column="file_size"/>
+        <result property="fileSizeWebp" column="file_size_webp"/>
+        <result property="width" column="width"/>
+        <result property="height" column="height"/>
+        <result property="altText" column="alt_text"/>
+        <result property="caption" column="caption"/>
+        <result property="imageOrder" column="image_order"/>
+        <result property="isActive" column="is_active"/>
+        <result property="uploadDate" column="upload_date"/>
+        <result property="updatedAt" column="updated_at"/>
+    </resultMap>
+
+    <!-- 게시글의 모든 이미지 조회 -->
+    <select id="getImagesByBoardId" resultMap="boardImageResultMap">
+        SELECT *
+        FROM board_images
+        WHERE board_id = #{boardId}
+          AND is_active = TRUE
+        ORDER BY image_order ASC
+    </select>
+
+    <!-- 특정 이미지 조회 -->
+    <select id="getImageById" resultMap="boardImageResultMap">
+        SELECT *
+        FROM board_images
+        WHERE image_id = #{imageId}
+    </select>
+
+    <!-- 게시글의 활성 이미지 개수 조회 -->
+    <select id="countActiveImagesByBoardId" resultType="int">
+        SELECT COUNT(*)
+        FROM board_images
+        WHERE board_id = #{boardId}
+          AND is_active = TRUE
+    </select>
+
+    <!-- 이미지 등록 -->
+    <insert id="insertImage" parameterType="com.example.carelink.dto.BoardImageDTO" 
+            useGeneratedKeys="true" keyProperty="imageId">
+        INSERT INTO board_images (
+            board_id, image_path, webp_path,
+            thumbnail_small, thumbnail_medium, thumbnail_large,
+            fallback_jpg_path, original_filename,
+            file_size, file_size_webp, width, height,
+            alt_text, caption, image_order, is_active
+        ) VALUES (
+            #{boardId}, #{imagePath}, #{webpPath},
+            #{thumbnailSmall}, #{thumbnailMedium}, #{thumbnailLarge},
+            #{fallbackJpgPath}, #{originalFilename},
+            #{fileSize}, #{fileSizeWebp}, #{width}, #{height},
+            #{altText}, #{caption}, #{imageOrder}, #{isActive}
+        )
+    </insert>
+
+    <!-- 다중 이미지 일괄 등록 -->
+    <insert id="insertImages" parameterType="list">
+        INSERT INTO board_images (
+            board_id, image_path, webp_path,
+            thumbnail_small, thumbnail_medium, thumbnail_large,
+            fallback_jpg_path, original_filename,
+            file_size, file_size_webp, width, height,
+            alt_text, caption, image_order, is_active
+        ) VALUES
+        <foreach collection="images" item="image" separator=",">
+        (
+            #{image.boardId}, #{image.imagePath}, #{image.webpPath},
+            #{image.thumbnailSmall}, #{image.thumbnailMedium}, #{image.thumbnailLarge},
+            #{image.fallbackJpgPath}, #{image.originalFilename},
+            #{image.fileSize}, #{image.fileSizeWebp}, #{image.width}, #{image.height},
+            #{image.altText}, #{image.caption}, #{image.imageOrder}, #{image.isActive}
+        )
+        </foreach>
+    </insert>
+
+    <!-- 이미지 정보 수정 -->
+    <update id="updateImage" parameterType="com.example.carelink.dto.BoardImageDTO">
+        UPDATE board_images
+        SET alt_text = #{altText},
+            caption = #{caption},
+            image_order = #{imageOrder},
+            updated_at = CURRENT_TIMESTAMP
+        WHERE image_id = #{imageId}
+    </update>
+
+    <!-- 이미지 순서 변경 -->
+    <update id="updateImageOrder">
+        UPDATE board_images
+        SET image_order = #{imageOrder},
+            updated_at = CURRENT_TIMESTAMP
+        WHERE image_id = #{imageId}
+    </update>
+
+    <!-- 이미지 대체 텍스트 수정 -->
+    <update id="updateImageAltText">
+        UPDATE board_images
+        SET alt_text = #{altText},
+            updated_at = CURRENT_TIMESTAMP
+        WHERE image_id = #{imageId}
+    </update>
+
+    <!-- 이미지 삭제 (물리적) -->
+    <delete id="deleteImage">
+        DELETE FROM board_images
+        WHERE image_id = #{imageId}
+    </delete>
+
+    <!-- 이미지 비활성화 (논리적) -->
+    <update id="deactivateImage">
+        UPDATE board_images
+        SET is_active = FALSE,
+            updated_at = CURRENT_TIMESTAMP
+        WHERE image_id = #{imageId}
+    </update>
+
+    <!-- 게시글의 모든 이미지 삭제 -->
+    <delete id="deleteImagesByBoardId">
+        DELETE FROM board_images
+        WHERE board_id = #{boardId}
+    </delete>
+
+    <!-- 게시판별 이미지 통계 -->
+    <select id="getTotalImageCountByBoardType" resultType="int">
+        SELECT COUNT(bi.image_id)
+        FROM board_images bi
+        INNER JOIN board b ON bi.board_id = b.board_id
+        WHERE b.board_type = #{boardType}
+          AND bi.is_active = TRUE
+    </select>
+
+    <!-- 전체 이미지 용량 합계 -->
+    <select id="getTotalImageSize" resultType="long">
+        SELECT COALESCE(SUM(file_size), 0)
+        FROM board_images
+        WHERE is_active = TRUE
+    </select>
+
+</mapper>

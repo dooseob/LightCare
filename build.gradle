@@ -25,8 +25,11 @@ dependencies {
     // Thymeleaf 템플릿 엔진
     implementation 'org.springframework.boot:spring-boot-starter-thymeleaf'
 
-    // MySQL 데이터베이스 연결
+    // MySQL 데이터베이스 연결 (로컬 개발용)
     runtimeOnly 'com.mysql:mysql-connector-j'
+    
+    // PostgreSQL 데이터베이스 연결 (Heroku용)
+    runtimeOnly 'org.postgresql:postgresql'
 
     // MyBatis 연동
     implementation 'org.mybatis.spring.boot:mybatis-spring-boot-starter:2.3.1'
@@ -54,6 +57,10 @@ dependencies {
     // SpringDoc OpenAPI 의존성 추가 (임시 비활성화 - 기능 구현 완료 후 활성화 예정)
     // implementation 'org.springdoc:springdoc-openapi-ui:1.7.0'
     // implementation 'org.springdoc:springdoc-openapi-security:1.7.0'
+
+    // 이미지 처리 및 WebP 변환
+    implementation 'net.coobird:thumbnailator:0.4.19'
+    implementation 'org.sejda.imageio:imageio-webp:0.1.6'
 
 }
 

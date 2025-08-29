@@ -1,0 +1,5 @@
+[phases.setup]
+nixPkgs = ["...", "jdk11"]
+
+[start]
+cmd = "java -jar -Dserver.port=$PORT build/libs/carelink-0.0.1-SNAPSHOT.jar"

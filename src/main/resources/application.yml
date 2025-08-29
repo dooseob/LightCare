@@ -93,4 +93,4 @@ springdoc:
 # 외부 API 키 설정
 api:
   kakao:
-    app-key: ${KAKAO_APP_KEY:0000b95e8f5b5ee0b27606c8d9019ef8}
+    app-key: ${KAKAO_APP_KEY:b97b58672807a40c122a5deed8a98ea4}

@@ -20,6 +20,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
 import java.util.List; // List 유지 (페이징, 역할별 조회)
 import java.util.Map; // Map 인터페이스
@@ -42,6 +43,9 @@ public class MemberService {
     private final ReviewMapper reviewMapper;
     private final JobMapper jobMapper;
     private final PasswordEncoder passwordEncoder; // 비밀번호 암호화를 위해 주입
+    
+    @Autowired
+    private ImageOptimizationService imageOptimizationService; // WebP 변환 서비스
 
 
     /**
@@ -637,70 +641,70 @@ public class MemberService {
     }
 
     /**
-     * 프로필 이미지 저장 메서드
+     * 프로필 이미지 저장 메서드 (WebP 변환 적용)
      */
     private String saveProfileImage(MultipartFile file, String userId) {
         try {
+            // 이미지 형식 검증
+            if (!imageOptimizationService.isSupportedImageFormat(file.getOriginalFilename())) {
+                throw new IllegalArgumentException("지원하지 않는 이미지 형식입니다. JPG, PNG, GIF만 지원됩니다.");
+            }
+            
             // 로컬 업로드 디렉토리 사용
             String uploadDir = Constants.PROFILE_UPLOAD_PATH;
-            File uploadDirFile = new File(uploadDir);
-            if (!uploadDirFile.exists()) {
-                boolean created = uploadDirFile.mkdirs();
-                log.info("프로필 이미지 업로드 디렉토리 생성: {} - {}", uploadDir, created ? "성공" : "실패");
-            }
             
-            // 파일명 생성 (userId + UUID + 원본 확장자)
-            String originalFilename = file.getOriginalFilename();
-            String extension = "";
-            if (originalFilename != null && originalFilename.contains(".")) {
-                extension = originalFilename.substring(originalFilename.lastIndexOf("."));
-            }
-            String savedFilename = "profile_" + userId + "_" + UUID.randomUUID().toString() + extension;
+            // 파일명 생성 (userId + UUID)
+            String baseFileName = "profile_" + userId + "_" + UUID.randomUUID().toString();
             
-            // 파일 저장
-            File savedFile = new File(uploadDir + savedFilename);
-            file.transferTo(savedFile);
-            log.info("프로필 이미지 저장 완료: {}", savedFile.getAbsolutePath());
+            log.info("프로필 이미지 WebP 변환 시작: userId={}, originalFile={}", 
+                    userId, file.getOriginalFilename());
             
-            // 웹 경로 반환
-            return "/uploads/profile/" + savedFilename;
+            // WebP 변환 및 최적화 처리
+            ImageOptimizationService.ImageConversionResult result = 
+                imageOptimizationService.processImage(file, baseFileName, uploadDir);
             
-        } catch (IOException e) {
+            log.info("프로필 이미지 WebP 변환 완료: userId={}, webpPath={}", 
+                    userId, result.getOriginalWebPPath());
+            
+            // WebP 경로 반환 (우선)
+            return "/uploads/profile/" + result.getOriginalWebPPath();
+            
+        } catch (Exception e) {
             log.error("프로필 이미지 저장 중 오류 발생: userId={}", userId, e);
             throw new RuntimeException("프로필 이미지 저장에 실패했습니다.", e);
         }
     }
 
     /**
-     * 시설 이미지 저장 메서드
+     * 시설 이미지 저장 메서드 (WebP 변환 적용)
      */
     private String saveFacilityImage(MultipartFile file, String userId) {
         try {
+            // 이미지 형식 검증
+            if (!imageOptimizationService.isSupportedImageFormat(file.getOriginalFilename())) {
+                throw new IllegalArgumentException("지원하지 않는 이미지 형식입니다. JPG, PNG, GIF만 지원됩니다.");
+            }
+            
             // 로컬 업로드 디렉토리 사용
             String uploadDir = Constants.FACILITY_UPLOAD_PATH;
-            File uploadDirFile = new File(uploadDir);
-            if (!uploadDirFile.exists()) {
-                boolean created = uploadDirFile.mkdirs();
-                log.info("시설 이미지 업로드 디렉토리 생성: {} - {}", uploadDir, created ? "성공" : "실패");
-            }
             
-            // 파일명 생성 (userId + UUID + 원본 확장자)
-            String originalFilename = file.getOriginalFilename();
-            String extension = "";
-            if (originalFilename != null && originalFilename.contains(".")) {
-                extension = originalFilename.substring(originalFilename.lastIndexOf("."));
-            }
-            String savedFilename = "facility_" + userId + "_" + UUID.randomUUID().toString() + extension;
+            // 파일명 생성 (userId + UUID)
+            String baseFileName = "facility_" + userId + "_" + UUID.randomUUID().toString();
             
-            // 파일 저장
-            File savedFile = new File(uploadDir + savedFilename);
-            file.transferTo(savedFile);
-            log.info("시설 이미지 저장 완료: {}", savedFile.getAbsolutePath());
+            log.info("시설 이미지 WebP 변환 시작: userId={}, originalFile={}", 
+                    userId, file.getOriginalFilename());
             
-            // 웹 경로 반환
-            return "/uploads/facility/" + savedFilename;
+            // WebP 변환 및 최적화 처리
+            ImageOptimizationService.ImageConversionResult result = 
+                imageOptimizationService.processImage(file, baseFileName, uploadDir);
             
-        } catch (IOException e) {
+            log.info("시설 이미지 WebP 변환 완료: userId={}, webpPath={}", 
+                    userId, result.getOriginalWebPPath());
+            
+            // WebP 경로 반환 (우선)
+            return "/uploads/facility/" + result.getOriginalWebPPath();
+            
+        } catch (Exception e) {
             log.error("시설 이미지 저장 중 오류 발생: userId={}", userId, e);
             throw new RuntimeException("시설 이미지 저장에 실패했습니다.", e);
         }
