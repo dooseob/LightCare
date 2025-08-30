@@ -118,13 +118,25 @@ public class ImageOptimizationService {
             // 원본 이미지를 메모리에서만 읽기 (파일로 저장하지 않음)
             BufferedImage originalImage = null;
             try {
+                log.info("🔍 ImageIO로 이미지 읽기 시작: {}, MIME: {}", 
+                        originalFile.getOriginalFilename(), originalFile.getContentType());
+                
                 originalImage = ImageIO.read(originalFile.getInputStream());
+                
+                if (originalImage != null) {
+                    log.info("✅ ImageIO 읽기 성공: {}x{}", originalImage.getWidth(), originalImage.getHeight());
+                } else {
+                    log.error("❌ ImageIO 읽기 결과 null - WebP 지원 확인 필요");
+                }
+                
             } catch (Exception e) {
-                log.error("이미지 읽기 실패: {}", originalFile.getOriginalFilename(), e);
+                log.error("❌ 이미지 읽기 중 예외 발생: {}", originalFile.getOriginalFilename(), e);
                 throw new IllegalArgumentException("손상된 이미지 파일이거나 읽을 수 없는 형식입니다.");
             }
             
             if (originalImage == null) {
+                log.error("💥 BufferedImage가 null입니다. 지원되지 않는 형식일 가능성: {}", 
+                         originalFile.getContentType());
                 throw new IllegalArgumentException("이미지를 처리할 수 없습니다. 다른 파일을 선택해주세요.");
             }
             
