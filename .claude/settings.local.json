@@ -39,7 +39,9 @@
       "Bash(docker build:*)",
       "Bash(docker:*)",
       "Bash(\"/mnt/c/Program Files/Docker/Docker/resources/bin/docker\" --version)",
-      "Bash(git push:*)"
+      "Bash(git push:*)",
+      "Bash(git pull:*)",
+      "Bash(git merge:*)"
     ],
     "deny": []
   }
