@@ -688,6 +688,51 @@ public class MemberService {
     }
 
     /**
+     * 회원의 프로필 이미지만 업데이트하는 메서드 (크롭 이미지 전용)
+     */
+    public String updateMemberProfileImage(Long memberId, MultipartFile profileImageFile) {
+        try {
+            log.info("프로필 이미지 단독 업데이트 요청: memberId={}", memberId);
+            
+            MemberDTO existingMember = memberMapper.findById(memberId);
+            if (existingMember == null) {
+                throw new IllegalArgumentException("존재하지 않는 회원입니다.");
+            }
+            
+            // 새 프로필 이미지 저장
+            String profileImagePath = saveProfileImage(profileImageFile, existingMember.getUserId());
+            
+            // 기존 프로필 이미지 삭제 (기존 이미지가 있는 경우)
+            if (existingMember.getProfileImage() != null && !existingMember.getProfileImage().isEmpty()) {
+                try {
+                    String projectRoot = System.getProperty("user.dir");
+                    String oldImagePath = existingMember.getProfileImage();
+                    if (oldImagePath.startsWith("/uploads/profile/")) {
+                        String oldFileName = oldImagePath.substring("/uploads/profile/".length());
+                        File oldFile = new File(projectRoot + "/src/main/resources/static" + oldImagePath);
+                        if (oldFile.exists() && oldFile.delete()) {
+                            log.info("기존 프로필 이미지 삭제 성공: {}", oldFile.getAbsolutePath());
+                        }
+                    }
+                } catch (Exception e) {
+                    log.warn("기존 프로필 이미지 삭제 실패: {}", e.getMessage());
+                }
+            }
+            
+            // 데이터베이스에서 프로필 이미지만 업데이트
+            memberMapper.updateProfileImage(memberId, profileImagePath);
+            
+            log.info("프로필 이미지 단독 업데이트 완료: memberId={}, newPath={}", memberId, profileImagePath);
+            
+            return profileImagePath;
+            
+        } catch (Exception e) {
+            log.error("프로필 이미지 업데이트 중 오류 발생: memberId={}", memberId, e);
+            throw new RuntimeException("프로필 이미지 업데이트에 실패했습니다.", e);
+        }
+    }
+
+    /**
      * 시설 이미지 저장 메서드 (WebP 변환 적용)
      */
     private String saveFacilityImage(MultipartFile file, String userId) {

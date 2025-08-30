@@ -54,6 +54,11 @@ public interface MemberMapper {
     int updatePassword(MemberDTO memberDTO); // 새로 추가
 
     /**
+     * 프로필 이미지만 업데이트
+     */
+    int updateProfileImage(@Param("memberId") Long memberId, @Param("profileImage") String profileImage);
+
+    /**
      * 로그인 성공 시 정보 업데이트 (실패 횟수 초기화, 마지막 로그인 시간 업데이트)
      */
     int updateLoginSuccess(@Param("memberId") Long memberId); // update는 보통 int(영향받은 행 수) 반환
