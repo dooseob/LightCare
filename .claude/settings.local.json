@@ -60,7 +60,14 @@
       "Bash(JAVA_HOME=\"/mnt/c/Program Files/Java/jdk-11.0.12\" PATH=\"$JAVA_HOME/bin:$PATH\" ./gradlew clean)",
       "WebFetch(domain:railway.app)",
       "WebFetch(domain:railway.com)",
-      "Bash(git checkout:*)"
+      "Bash(git checkout:*)",
+      "Bash(gh:*)",
+      "Read(/home/dooseob/.ssh/**)",
+      "Bash(SSH_AUTH_SOCK=/tmp/ssh-agent.sock ssh-add ~/.ssh/lightcare_rsa)",
+      "Bash(git remote set-url:*)",
+      "Read(/home/dooseob/.ssh/**)",
+      "Read(/home/dooseob/.ssh/**)",
+      "Bash(git remote:*)"
     ],
     "deny": []
   }
