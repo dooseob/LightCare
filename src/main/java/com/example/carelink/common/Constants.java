@@ -17,11 +17,31 @@ public class Constants {
     public static final int DEFAULT_PAGE_SIZE = 10;
     public static final int DEFAULT_PAGE_BLOCK = 5;
     
-    // 파일 업로드 관련 상수
-    public static final String UPLOAD_BASE_PATH = "C:/carelink-uploads/";
+    // 파일 업로드 관련 상수 - 환경별 경로 설정
+    public static final String UPLOAD_BASE_PATH = getUploadBasePath();
     public static final String FACILITY_UPLOAD_PATH = UPLOAD_BASE_PATH + "facility/";
     public static final String PROFILE_UPLOAD_PATH = UPLOAD_BASE_PATH + "profile/";
     public static final String TEMP_UPLOAD_PATH = UPLOAD_BASE_PATH + "temp/";
+    
+    /**
+     * 환경별 업로드 기본 경로 반환
+     * Windows: C:/carelink-uploads/
+     * Linux/Railway: /app/uploads/
+     */
+    private static String getUploadBasePath() {
+        String os = System.getProperty("os.name", "").toLowerCase();
+        // Railway 환경 감지 (RAILWAY_ENVIRONMENT 환경변수 또는 /app 경로)
+        String railwayEnv = System.getenv("RAILWAY_ENVIRONMENT");
+        String userDir = System.getProperty("user.dir", "");
+        
+        if (railwayEnv != null || userDir.startsWith("/app") || !os.contains("win")) {
+            // Linux/Unix/Railway 환경
+            return "/app/uploads/";
+        } else {
+            // Windows 환경 (로컬 개발)
+            return "C:/carelink-uploads/";
+        }
+    }
     public static final String TEST_IMAGES_PATH = "/test-images/";
     public static final long MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
     

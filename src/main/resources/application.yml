@@ -67,13 +67,13 @@ logging:
     jdbc.sqltiming: INFO # 실제 쿼리 실행 시간 등을 보려면 INFO (혹은 DEBUG)
     com.zaxxer.hikari: DEBUG # DB 커넥션 풀 관련
 
-# 파일 업로드 경로 설정 (로컬 디렉토리 - 프로젝트와 분리)
+# 파일 업로드 경로 설정 (환경별 자동 설정)
 file:
   upload-dir:
-    facility: C:/carelink-uploads/facility/
-    profile: C:/carelink-uploads/profile/
-    board: C:/carelink-uploads/board/
-    temp: C:/carelink-uploads/temp/
+    facility: ${UPLOAD_DIR:/app/uploads/}facility/
+    profile: ${UPLOAD_DIR:/app/uploads/}profile/
+    board: ${UPLOAD_DIR:/app/uploads/}board/
+    temp: ${UPLOAD_DIR:/app/uploads/}temp/
 
 # SpringDoc OpenAPI 설정
 springdoc:

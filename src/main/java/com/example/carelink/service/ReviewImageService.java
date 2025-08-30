@@ -31,8 +31,23 @@ public class ReviewImageService {
     // 리뷰 이미지 최대 개수
     private static final int MAX_REVIEW_IMAGES = 5;
     
-    // 리뷰 이미지 업로드 경로
-    private static final String REVIEW_UPLOAD_PATH = "C:/carelink-uploads/review/";
+    // 리뷰 이미지 업로드 경로 (환경별 자동 설정) 
+    private static final String REVIEW_UPLOAD_PATH = getUploadPath();
+    
+    /**
+     * 환경별 업로드 경로 반환
+     */
+    private static String getUploadPath() {
+        String os = System.getProperty("os.name", "").toLowerCase();
+        String railwayEnv = System.getenv("RAILWAY_ENVIRONMENT");
+        String userDir = System.getProperty("user.dir", "");
+        
+        if (railwayEnv != null || userDir.startsWith("/app") || !os.contains("win")) {
+            return "/app/uploads/review/";
+        } else {
+            return "C:/carelink-uploads/review/";
+        }
+    }
     
     /**
      * 리뷰의 모든 이미지 조회
