@@ -47,7 +47,14 @@
       "Bash(npx repomix:*)",
       "Bash(npm install:*)",
       "Bash(repomix:*)",
-      "Bash(git log:*)"
+      "Bash(git log:*)",
+      "Bash(git commit:*)",
+      "Bash(export:*)",
+      "Bash(export PATH=\"$JAVA_HOME/bin:$PATH\")",
+      "Bash(JAVA_HOME=\"/mnt/c/Program Files/Java/jdk-11.0.12\")",
+      "Bash(\"/mnt/c/Program Files/Java/jdk-11.0.12/bin/java\" -version)",
+      "Bash(\"/mnt/c/Program Files/Java/jdk-11.0.12/bin/java.exe\" -version)",
+      "Bash(cmd.exe:*)"
     ],
     "deny": []
   }
