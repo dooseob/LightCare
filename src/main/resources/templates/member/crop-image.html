@@ -1270,11 +1270,22 @@ function saveCompressedImageToServer() {
     }
     
     // Base64 데이터를 Blob으로 변환
-    const blob = dataURLtoBlob(window.compressedImageData);
-    console.log('📦 Blob 생성 완료 - 크기:', formatFileSize(blob.size), '타입:', blob.type);
+    let blob = dataURLtoBlob(window.compressedImageData);
+    console.log('📦 초기 Blob 생성 - 크기:', formatFileSize(blob.size), '타입:', blob.type);
+    
+    // Blob의 MIME 타입 확인 및 파일명 설정
+    let fileName = `profile.${selectedFormat}`;
+    
+    // WebP의 경우 백엔드 호환성을 위해 MIME 타입 보장
+    if (selectedFormat === 'webp') {
+        // WebP Blob을 명시적 MIME 타입으로 재생성
+        blob = new Blob([blob], { type: 'image/webp' });
+        fileName = 'profile.webp';
+        console.log('📝 WebP Blob 재생성 완료 - type:', blob.type, 'fileName:', fileName);
+    }
     
     const formData = new FormData();
-    formData.append('croppedImage', blob, `profile.${selectedFormat}`);
+    formData.append('croppedImage', blob, fileName);
     formData.append('altText', altText);
     formData.append('format', selectedFormat);
     formData.append('quality', quality.toString());

@@ -645,11 +645,20 @@ public class MemberService {
      */
     private String saveProfileImage(MultipartFile file, String userId) {
         try {
+            // 파일 정보 상세 로깅
+            log.info("프로필 이미지 검증 시작 - 파일명: {}, MIME타입: {}, 크기: {}KB", 
+                    file.getOriginalFilename(), file.getContentType(), file.getSize() / 1024);
+            
+            // 검증 결과 개별 로깅
+            boolean formatSupported = imageOptimizationService.isSupportedImageFormat(file.getOriginalFilename());
+            boolean mimeTypeValid = imageOptimizationService.isValidImageMimeType(file.getContentType());
+            
+            log.info("검증 결과 - 파일명 지원여부: {}, MIME타입 지원여부: {}", formatSupported, mimeTypeValid);
+            
             // 이미지 형식 검증 (확장자 및 MIME 타입 모두 확인)
-            if (!imageOptimizationService.isSupportedImageFormat(file.getOriginalFilename()) ||
-                !imageOptimizationService.isValidImageMimeType(file.getContentType())) {
-                log.warn("지원하지 않는 이미지 형식: 파일명={}, MIME타입={}", 
-                        file.getOriginalFilename(), file.getContentType());
+            if (!formatSupported || !mimeTypeValid) {
+                log.error("이미지 형식 검증 실패 - 파일명: {}, MIME타입: {}, 파일명지원: {}, MIME지원: {}", 
+                        file.getOriginalFilename(), file.getContentType(), formatSupported, mimeTypeValid);
                 throw new IllegalArgumentException("지원하지 않는 이미지 형식입니다. JPG, PNG, GIF, WebP, BMP, TIFF 형식만 지원됩니다.");
             }
             
