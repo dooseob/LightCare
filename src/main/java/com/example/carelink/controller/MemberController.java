@@ -507,6 +507,13 @@ public class MemberController {
                                                 HttpSession session) {
         Map<String, Object> result = new HashMap<>();
         
+        // 파일 정보 로깅 추가
+        log.info("크롭 이미지 업로드 요청 - 파일명: {}, MIME타입: {}, 크기: {}KB, format파라미터: {}", 
+                croppedImageFile.getOriginalFilename(), 
+                croppedImageFile.getContentType(), 
+                croppedImageFile.getSize() / 1024,
+                format);
+        
         try {
             MemberDTO loginMember = (MemberDTO) session.getAttribute(Constants.SESSION_MEMBER);
             if (loginMember == null) {

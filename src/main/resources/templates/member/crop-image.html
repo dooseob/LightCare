@@ -996,6 +996,14 @@ function updateCompression() {
         
         // 단계별 형식 지원 확인 및 압축
         if (selectedFormat === 'avif') {
+            // Railway 환경 호환성을 위해 AVIF도 JPEG로 변환
+            console.log('⚠️ Railway 환경 호환성 문제로 AVIF 대신 JPEG 사용');
+            compressedImageData = window.croppedCanvas.toDataURL('image/jpeg', quality);
+            actualFormat = 'jpeg';
+            console.log('✅ JPEG 형식으로 압축 성공 (Railway 호환)');
+            showFormatFallbackMessage('AVIF', 'JPEG (Railway 호환)');
+            
+            /* 백엔드 WebP/AVIF 지원 완료 후 활성화
             console.log('🔍 AVIF 지원 확인 중...');
             formatSupported = isFormatSupported('image/avif');
             if (formatSupported) {
@@ -1017,7 +1025,16 @@ function updateCompression() {
                     showFormatFallbackMessage('AVIF', 'JPEG');
                 }
             }
+            */
         } else if (selectedFormat === 'webp') {
+            // Railway 환경 WebP 지원 문제로 인해 임시로 JPEG 사용
+            console.log('⚠️ Railway 환경 호환성 문제로 WebP 대신 JPEG 사용');
+            compressedImageData = window.croppedCanvas.toDataURL('image/jpeg', quality);
+            actualFormat = 'jpeg';
+            console.log('✅ JPEG 형식으로 압축 성공 (Railway 호환)');
+            showFormatFallbackMessage('WebP', 'JPEG (Railway 호환)');
+            
+            /* 백엔드 WebP 지원 완료 후 활성화
             console.log('🔍 WebP 지원 확인 중...');
             formatSupported = isFormatSupported('image/webp');
             if (formatSupported) {
@@ -1030,6 +1047,7 @@ function updateCompression() {
                 console.log('✅ JPEG 형식으로 압축 성공 (WebP 대체)');
                 showFormatFallbackMessage('WebP', 'JPEG');
             }
+            */
         } else {
             // JPEG는 모든 브라우저에서 지원
             compressedImageData = window.croppedCanvas.toDataURL('image/jpeg', quality);
@@ -1274,9 +1292,11 @@ function saveCompressedImageToServer() {
     console.log('📦 Blob 생성 완료 - 크기:', formatFileSize(blob.size), '타입:', blob.type);
     
     const formData = new FormData();
-    formData.append('croppedImage', blob, `profile.${selectedFormat}`);
+    // Railway 환경에서는 항상 JPEG로 저장
+    const finalFormat = 'jpeg'; // 임시로 JPEG 강제 사용
+    formData.append('croppedImage', blob, `profile.${finalFormat}`);
     formData.append('altText', altText);
-    formData.append('format', selectedFormat);
+    formData.append('format', finalFormat);
     formData.append('quality', quality.toString());
     
     console.log('📤 FormData 전송 시작...');
