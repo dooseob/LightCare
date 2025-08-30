@@ -1276,12 +1276,19 @@ function saveCompressedImageToServer() {
     // Blob의 MIME 타입 확인 및 파일명 설정
     let fileName = `profile.${selectedFormat}`;
     
-    // WebP의 경우 백엔드 호환성을 위해 MIME 타입 보장
+    // WebP의 경우 데이터 무결성 확인 (재생성하지 않음)
     if (selectedFormat === 'webp') {
-        // WebP Blob을 명시적 MIME 타입으로 재생성
-        blob = new Blob([blob], { type: 'image/webp' });
         fileName = 'profile.webp';
-        console.log('📝 WebP Blob 재생성 완료 - type:', blob.type, 'fileName:', fileName);
+        console.log('📝 WebP Blob 원본 사용 - type:', blob.type, 'fileName:', fileName, 'size:', blob.size);
+        
+        // WebP 데이터 무결성 간단 검증
+        if (blob.type !== 'image/webp') {
+            console.warn('⚠️ WebP Blob 타입 불일치:', blob.type);
+        }
+        
+        if (blob.size < 100) {
+            console.error('❌ WebP Blob 크기 너무 작음:', blob.size);
+        }
     }
     
     const formData = new FormData();

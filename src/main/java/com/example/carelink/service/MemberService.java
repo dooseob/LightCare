@@ -645,9 +645,15 @@ public class MemberService {
      */
     private String saveProfileImage(MultipartFile file, String userId) {
         try {
-            // 파일 정보 상세 로깅
+            // 파일 정보 상세 로깅 (빈 파일 검사 먼저)
             log.info("프로필 이미지 검증 시작 - 파일명: {}, MIME타입: {}, 크기: {}KB", 
                     file.getOriginalFilename(), file.getContentType(), file.getSize() / 1024);
+            
+            // 빈 파일 검사 (InputStream 사용 전 체크)
+            if (file.isEmpty() || file.getSize() == 0) {
+                log.error("빈 파일 업로드 시도 - 크기: {}", file.getSize());
+                throw new IllegalArgumentException("비어있는 파일은 업로드할 수 없습니다.");
+            }
             
             // 검증 결과 개별 로깅
             boolean formatSupported = imageOptimizationService.isSupportedImageFormat(file.getOriginalFilename());
@@ -660,6 +666,11 @@ public class MemberService {
                 log.error("이미지 형식 검증 실패 - 파일명: {}, MIME타입: {}, 파일명지원: {}, MIME지원: {}", 
                         file.getOriginalFilename(), file.getContentType(), formatSupported, mimeTypeValid);
                 throw new IllegalArgumentException("지원하지 않는 이미지 형식입니다. JPG, PNG, GIF, WebP, BMP, TIFF 형식만 지원됩니다.");
+            }
+            
+            // WebP 파일인 경우 추가 검증
+            if ("image/webp".equals(file.getContentType())) {
+                log.info("🔍 WebP 파일 처리 시작 - 실제 파일 크기: {}바이트", file.getSize());
             }
             
             // 로컬 업로드 디렉토리 사용
