@@ -645,9 +645,12 @@ public class MemberService {
      */
     private String saveProfileImage(MultipartFile file, String userId) {
         try {
-            // 이미지 형식 검증
-            if (!imageOptimizationService.isSupportedImageFormat(file.getOriginalFilename())) {
-                throw new IllegalArgumentException("지원하지 않는 이미지 형식입니다. JPG, PNG, GIF만 지원됩니다.");
+            // 이미지 형식 검증 (확장자 및 MIME 타입 모두 확인)
+            if (!imageOptimizationService.isSupportedImageFormat(file.getOriginalFilename()) ||
+                !imageOptimizationService.isValidImageMimeType(file.getContentType())) {
+                log.warn("지원하지 않는 이미지 형식: 파일명={}, MIME타입={}", 
+                        file.getOriginalFilename(), file.getContentType());
+                throw new IllegalArgumentException("지원하지 않는 이미지 형식입니다. JPG, PNG, GIF, WebP, BMP, TIFF 형식만 지원됩니다.");
             }
             
             // 로컬 업로드 디렉토리 사용
@@ -680,9 +683,12 @@ public class MemberService {
      */
     private String saveFacilityImage(MultipartFile file, String userId) {
         try {
-            // 이미지 형식 검증
-            if (!imageOptimizationService.isSupportedImageFormat(file.getOriginalFilename())) {
-                throw new IllegalArgumentException("지원하지 않는 이미지 형식입니다. JPG, PNG, GIF만 지원됩니다.");
+            // 이미지 형식 검증 (확장자 및 MIME 타입 모두 확인)
+            if (!imageOptimizationService.isSupportedImageFormat(file.getOriginalFilename()) ||
+                !imageOptimizationService.isValidImageMimeType(file.getContentType())) {
+                log.warn("지원하지 않는 이미지 형식: 파일명={}, MIME타입={}", 
+                        file.getOriginalFilename(), file.getContentType());
+                throw new IllegalArgumentException("지원하지 않는 이미지 형식입니다. JPG, PNG, GIF, WebP, BMP, TIFF 형식만 지원됩니다.");
             }
             
             // 로컬 업로드 디렉토리 사용

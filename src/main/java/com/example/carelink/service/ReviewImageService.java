@@ -126,9 +126,12 @@ public class ReviewImageService {
     private ReviewImageDTO processAndSaveImage(Long reviewId, MultipartFile file, 
                                               int imageOrder, String altText) {
         
-        // 파일 검증
-        if (!imageOptimizationService.isSupportedImageFormat(file.getOriginalFilename())) {
-            throw new IllegalArgumentException("지원하지 않는 이미지 형식입니다.");
+        // 파일 검증 (확장자 및 MIME 타입 모두 확인)
+        if (!imageOptimizationService.isSupportedImageFormat(file.getOriginalFilename()) ||
+            !imageOptimizationService.isValidImageMimeType(file.getContentType())) {
+            log.warn("지원하지 않는 이미지 형식: 파일명={}, MIME타입={}", 
+                    file.getOriginalFilename(), file.getContentType());
+            throw new IllegalArgumentException("지원하지 않는 이미지 형식입니다. JPG, PNG, GIF, WebP, BMP, TIFF 형식만 지원됩니다.");
         }
         
         // 파일명 생성
