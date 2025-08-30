@@ -16,7 +16,7 @@ import org.springframework.web.servlet.ModelAndView;
 @Configuration
 public class KakaoApiConfig implements WebMvcConfigurer {
 
-    @Value("${api.kakao.app-key}")
+    @Value("${api.kakao.app-key:#{null}}")
     private String kakaoAppKey;
     
     // 환경변수를 직접 읽는 방법도 추가

@@ -41,7 +41,26 @@
       "Bash(\"/mnt/c/Program Files/Docker/Docker/resources/bin/docker\" --version)",
       "Bash(git push:*)",
       "Bash(git pull:*)",
-      "Bash(git merge:*)"
+      "Bash(git merge:*)",
+      "Bash(dos2unix:*)",
+      "Bash(chmod:*)",
+      "Bash(KAKAO_APP_KEY=b97b58672807a40c122a5deed8a98ea4 DB_USERNAME=root DB_PASSWORD=mysql ./gradlew bootRun)",
+      "Bash(heroku:*)",
+      "Bash(npx repomix:*)",
+      "Bash(npm install:*)",
+      "Bash(repomix:*)",
+      "Bash(git log:*)",
+      "Bash(git commit:*)",
+      "Bash(export:*)",
+      "Bash(export PATH=\"$JAVA_HOME/bin:$PATH\")",
+      "Bash(JAVA_HOME=\"/mnt/c/Program Files/Java/jdk-11.0.12\")",
+      "Bash(\"/mnt/c/Program Files/Java/jdk-11.0.12/bin/java\" -version)",
+      "Bash(\"/mnt/c/Program Files/Java/jdk-11.0.12/bin/java.exe\" -version)",
+      "Bash(cmd.exe:*)",
+      "Bash(JAVA_HOME=\"/mnt/c/Program Files/Java/jdk-11.0.12\" PATH=\"$JAVA_HOME/bin:$PATH\" ./gradlew clean)",
+      "WebFetch(domain:railway.app)",
+      "WebFetch(domain:railway.com)",
+      "Bash(git checkout:*)"
     ],
     "deny": []
   }

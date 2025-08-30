@@ -1,0 +1,174 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.example.carelink.dao.ReviewImageMapper">
+
+    <!-- ResultMap 정의 -->
+    <resultMap id="reviewImageResultMap" type="com.example.carelink.dto.ReviewImageDTO">
+        <id property="imageId" column="image_id"/>
+        <result property="reviewId" column="review_id"/>
+        <result property="imagePath" column="image_path"/>
+        <result property="webpPath" column="webp_path"/>
+        <result property="thumbnailSmall" column="thumbnail_small"/>
+        <result property="thumbnailMedium" column="thumbnail_medium"/>
+        <result property="thumbnailLarge" column="thumbnail_large"/>
+        <result property="fallbackJpgPath" column="fallback_jpg_path"/>
+        <result property="originalFilename" column="original_filename"/>
+        <result property="fileSize" column="file_size"/>
+        <result property="fileSizeWebp" column="file_size_webp"/>
+        <result property="width" column="width"/>
+        <result property="height" column="height"/>
+        <result property="altText" column="alt_text"/>
+        <result property="caption" column="caption"/>
+        <result property="imageOrder" column="image_order"/>
+        <result property="isActive" column="is_active"/>
+        <result property="uploadDate" column="upload_date"/>
+        <result property="updatedAt" column="updated_at"/>
+    </resultMap>
+
+    <!-- 리뷰의 모든 이미지 조회 -->
+    <select id="getImagesByReviewId" resultMap="reviewImageResultMap">
+        SELECT *
+        FROM review_images
+        WHERE review_id = #{reviewId}
+          AND is_active = TRUE
+        ORDER BY image_order ASC
+    </select>
+
+    <!-- 특정 이미지 조회 -->
+    <select id="getImageById" resultMap="reviewImageResultMap">
+        SELECT *
+        FROM review_images
+        WHERE image_id = #{imageId}
+    </select>
+
+    <!-- 리뷰의 활성 이미지 개수 조회 -->
+    <select id="countActiveImagesByReviewId" resultType="int">
+        SELECT COUNT(*)
+        FROM review_images
+        WHERE review_id = #{reviewId}
+          AND is_active = TRUE
+    </select>
+
+    <!-- 시설의 모든 리뷰 이미지 조회 -->
+    <select id="getImagesByFacilityId" resultMap="reviewImageResultMap">
+        SELECT ri.*
+        FROM review_images ri
+        INNER JOIN review r ON ri.review_id = r.review_id
+        WHERE r.facility_id = #{facilityId}
+          AND ri.is_active = TRUE
+          AND r.is_visible = TRUE
+        ORDER BY ri.upload_date DESC
+    </select>
+
+    <!-- 이미지 등록 -->
+    <insert id="insertImage" parameterType="com.example.carelink.dto.ReviewImageDTO" 
+            useGeneratedKeys="true" keyProperty="imageId">
+        INSERT INTO review_images (
+            review_id, image_path, webp_path,
+            thumbnail_small, thumbnail_medium, thumbnail_large,
+            fallback_jpg_path, original_filename,
+            file_size, file_size_webp, width, height,
+            alt_text, caption, image_order, is_active
+        ) VALUES (
+            #{reviewId}, #{imagePath}, #{webpPath},
+            #{thumbnailSmall}, #{thumbnailMedium}, #{thumbnailLarge},
+            #{fallbackJpgPath}, #{originalFilename},
+            #{fileSize}, #{fileSizeWebp}, #{width}, #{height},
+            #{altText}, #{caption}, #{imageOrder}, #{isActive}
+        )
+    </insert>
+
+    <!-- 다중 이미지 일괄 등록 -->
+    <insert id="insertImages" parameterType="list">
+        INSERT INTO review_images (
+            review_id, image_path, webp_path,
+            thumbnail_small, thumbnail_medium, thumbnail_large,
+            fallback_jpg_path, original_filename,
+            file_size, file_size_webp, width, height,
+            alt_text, caption, image_order, is_active
+        ) VALUES
+        <foreach collection="images" item="image" separator=",">
+        (
+            #{image.reviewId}, #{image.imagePath}, #{image.webpPath},
+            #{image.thumbnailSmall}, #{image.thumbnailMedium}, #{image.thumbnailLarge},
+            #{image.fallbackJpgPath}, #{image.originalFilename},
+            #{image.fileSize}, #{image.fileSizeWebp}, #{image.width}, #{image.height},
+            #{image.altText}, #{image.caption}, #{image.imageOrder}, #{image.isActive}
+        )
+        </foreach>
+    </insert>
+
+    <!-- 이미지 정보 수정 -->
+    <update id="updateImage" parameterType="com.example.carelink.dto.ReviewImageDTO">
+        UPDATE review_images
+        SET alt_text = #{altText},
+            caption = #{caption},
+            image_order = #{imageOrder},
+            updated_at = CURRENT_TIMESTAMP
+        WHERE image_id = #{imageId}
+    </update>
+
+    <!-- 이미지 순서 변경 -->
+    <update id="updateImageOrder">
+        UPDATE review_images
+        SET image_order = #{imageOrder},
+            updated_at = CURRENT_TIMESTAMP
+        WHERE image_id = #{imageId}
+    </update>
+
+    <!-- 이미지 대체 텍스트 수정 -->
+    <update id="updateImageAltText">
+        UPDATE review_images
+        SET alt_text = #{altText},
+            updated_at = CURRENT_TIMESTAMP
+        WHERE image_id = #{imageId}
+    </update>
+
+    <!-- 이미지 삭제 (물리적) -->
+    <delete id="deleteImage">
+        DELETE FROM review_images
+        WHERE image_id = #{imageId}
+    </delete>
+
+    <!-- 이미지 비활성화 (논리적) -->
+    <update id="deactivateImage">
+        UPDATE review_images
+        SET is_active = FALSE,
+            updated_at = CURRENT_TIMESTAMP
+        WHERE image_id = #{imageId}
+    </update>
+
+    <!-- 리뷰의 모든 이미지 삭제 -->
+    <delete id="deleteImagesByReviewId">
+        DELETE FROM review_images
+        WHERE review_id = #{reviewId}
+    </delete>
+
+    <!-- 시설별 리뷰 이미지 통계 -->
+    <select id="getTotalImageCountByFacilityId" resultType="int">
+        SELECT COUNT(ri.image_id)
+        FROM review_images ri
+        INNER JOIN review r ON ri.review_id = r.review_id
+        WHERE r.facility_id = #{facilityId}
+          AND ri.is_active = TRUE
+    </select>
+
+    <!-- 전체 리뷰 이미지 용량 합계 -->
+    <select id="getTotalImageSize" resultType="long">
+        SELECT COALESCE(SUM(file_size), 0)
+        FROM review_images
+        WHERE is_active = TRUE
+    </select>
+
+    <!-- 회원별 업로드한 리뷰 이미지 개수 -->
+    <select id="getImageCountByMemberId" resultType="int">
+        SELECT COUNT(ri.image_id)
+        FROM review_images ri
+        INNER JOIN review r ON ri.review_id = r.review_id
+        WHERE r.member_id = #{memberId}
+          AND ri.is_active = TRUE
+    </select>
+
+</mapper>

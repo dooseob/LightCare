@@ -17,6 +17,12 @@ public class WebConfig implements WebMvcConfigurer {
     
     @Value("${file.upload-dir.profile}")
     private String profileUploadDir;
+    
+    @Value("${file.upload-dir.board:C:/carelink-uploads/board/}")
+    private String boardUploadDir;
+    
+    @Value("${file.upload-dir.review:C:/carelink-uploads/review/}")
+    private String reviewUploadDir;
 
     /**
      * 정적 리소스 핸들러 추가
@@ -31,12 +37,23 @@ public class WebConfig implements WebMvcConfigurer {
         registry.addResourceHandler("/uploads/profile/**")
                 .addResourceLocations("file:" + profileUploadDir);
         
-        // 테스트 이미지 매핑 (Git 공유용)
-        String projectRoot = System.getProperty("user.dir");
-        registry.addResourceHandler("/test-images/facilities/**")
-                .addResourceLocations("file:" + projectRoot + "/images/facilities/");
+        // 게시판 이미지 매핑 추가
+        registry.addResourceHandler("/uploads/board/**")
+                .addResourceLocations("file:" + boardUploadDir);
         
-        registry.addResourceHandler("/test-images/profiles/**")
-                .addResourceLocations("file:" + projectRoot + "/images/profiles/");
+        // 리뷰 이미지 매핑 추가
+        registry.addResourceHandler("/uploads/review/**")
+                .addResourceLocations("file:" + reviewUploadDir);
+        
+        // 테스트 이미지 매핑 (Git 공유용) - Railway 환경에서는 제외
+        String activeProfile = System.getProperty("spring.profiles.active", "");
+        if (!"railway".equals(activeProfile)) {
+            String projectRoot = System.getProperty("user.dir");
+            registry.addResourceHandler("/test-images/facilities/**")
+                    .addResourceLocations("file:" + projectRoot + "/images/facilities/");
+            
+            registry.addResourceHandler("/test-images/profiles/**")
+                    .addResourceLocations("file:" + projectRoot + "/images/profiles/");
+        }
     }
 }

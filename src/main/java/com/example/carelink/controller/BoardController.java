@@ -3,18 +3,25 @@ package com.example.carelink.controller;
 import com.example.carelink.common.PageInfo;
 import com.example.carelink.common.Constants;
 import com.example.carelink.dto.BoardDTO;
+import com.example.carelink.dto.BoardImageDTO;
 import com.example.carelink.dto.MemberDTO;
 import com.example.carelink.service.BoardService;
+import com.example.carelink.service.BoardImageService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.ArrayList;
+
+import org.springframework.http.ResponseEntity;
+import org.springframework.http.HttpStatus;
 
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
@@ -30,6 +37,7 @@ import javax.servlet.http.HttpSession;
 public class BoardController {
     
     private final BoardService boardService;
+    private final BoardImageService boardImageService;
     
     // 게시판 타입별 정보 매핑
     private final Map<String, Map<String, String>> boardTypeInfo = Map.of(
@@ -196,6 +204,8 @@ public class BoardController {
     public String writeBoard(@ModelAttribute BoardDTO boardDTO, 
                            @RequestParam(defaultValue = "all") String type,
                            @RequestParam(required = false) String qaType,
+                           @RequestParam(required = false) List<MultipartFile> imageFiles,
+                           @RequestParam(required = false) List<String> imageAltTexts,
                            HttpSession session,
                            RedirectAttributes redirectAttributes) {
         try {
@@ -254,6 +264,24 @@ public class BoardController {
             
             boardService.insertBoard(boardDTO);
             
+            // 이미지 업로드 처리
+            if (imageFiles != null && !imageFiles.isEmpty()) {
+                // 빈 파일 제거
+                imageFiles.removeIf(file -> file.isEmpty());
+                
+                if (!imageFiles.isEmpty()) {
+                    try {
+                        List<BoardImageDTO> uploadedImages = boardImageService.uploadImages(
+                            boardDTO.getBoardId(), imageFiles, imageAltTexts);
+                        log.info("게시글 이미지 업로드 성공: boardId={}, imageCount={}", 
+                                boardDTO.getBoardId(), uploadedImages.size());
+                    } catch (Exception e) {
+                        log.error("게시글 이미지 업로드 실패: boardId={}", boardDTO.getBoardId(), e);
+                        // 이미지 업로드 실패해도 게시글은 등록됨 (비즈니스 로직상 문제없음)
+                    }
+                }
+            }
+            
             // 성공 메시지 설정
             String successMessage = "게시글이 성공적으로 등록되었습니다.";
             if ("qna".equals(type) && qaType != null) {
@@ -295,7 +323,11 @@ public class BoardController {
             BoardDTO prevBoard = boardService.getPreviousBoard(id);
             BoardDTO nextBoard = boardService.getNextBoard(id);
             
+            // 게시글 이미지 조회
+            List<BoardImageDTO> boardImages = boardImageService.getImagesByBoardId(id);
+            
             model.addAttribute("board", board);
+            model.addAttribute("boardImages", boardImages);
             model.addAttribute("prevBoard", prevBoard);
             model.addAttribute("nextBoard", nextBoard);
             model.addAttribute("type", type);
@@ -644,6 +676,128 @@ public class BoardController {
     private boolean hasEditPermission(HttpSession session, Long authorMemberId) {
         Long currentMemberId = getCurrentMemberId(session);
         return (currentMemberId != null && currentMemberId.equals(authorMemberId)) || isAdmin(session);
+    }
+    
+    // ===== 이미지 관련 API =====
+    
+    /**
+     * AJAX 이미지 업로드 API
+     */
+    @PostMapping("/api/upload-images/{boardId}")
+    @ResponseBody
+    public ResponseEntity<?> uploadImages(@PathVariable Long boardId,
+                                         @RequestParam("images") List<MultipartFile> imageFiles,
+                                         @RequestParam(required = false) List<String> imageAltTexts,
+                                         HttpSession session) {
+        try {
+            // 로그인 체크
+            Long memberId = getCurrentMemberId(session);
+            if (memberId == null) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of("error", "로그인이 필요합니다."));
+            }
+            
+            // 게시글 존재 및 권한 확인
+            BoardDTO board = boardService.getBoardById(boardId);
+            if (board == null) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(Map.of("error", "게시글을 찾을 수 없습니다."));
+            }
+            
+            if (!hasEditPermission(session, board.getMemberId())) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body(Map.of("error", "해당 게시글의 이미지를 업로드할 권한이 없습니다."));
+            }
+            
+            // 빈 파일 제거
+            imageFiles.removeIf(MultipartFile::isEmpty);
+            
+            if (imageFiles.isEmpty()) {
+                return ResponseEntity.badRequest()
+                    .body(Map.of("error", "업로드할 이미지가 없습니다."));
+            }
+            
+            // 이미지 업로드 처리
+            List<BoardImageDTO> uploadedImages = boardImageService.uploadImages(
+                boardId, imageFiles, imageAltTexts);
+            
+            // 응답 데이터 구성
+            List<Map<String, Object>> imageData = new ArrayList<>();
+            for (BoardImageDTO image : uploadedImages) {
+                Map<String, Object> data = new HashMap<>();
+                data.put("imageId", image.getImageId());
+                data.put("webpPath", image.getWebpPath());
+                data.put("fallbackPath", image.getFallbackJpgPath());
+                data.put("thumbnailSmall", image.getThumbnailSmall());
+                data.put("thumbnailMedium", image.getThumbnailMedium());
+                data.put("altText", image.getAltText());
+                data.put("fileSize", image.getReadableFileSize());
+                data.put("compressionRate", String.format("%.1f%%", image.getCompressionRate()));
+                imageData.add(data);
+            }
+            
+            return ResponseEntity.ok(Map.of(
+                "success", true,
+                "message", uploadedImages.size() + "개 이미지가 업로드되었습니다.",
+                "images", imageData
+            ));
+            
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest()
+                .body(Map.of("error", e.getMessage()));
+        } catch (Exception e) {
+            log.error("이미지 업로드 API 오류: boardId={}", boardId, e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(Map.of("error", "이미지 업로드 중 오류가 발생했습니다."));
+        }
+    }
+    
+    /**
+     * 이미지 삭제 API
+     */
+    @DeleteMapping("/api/delete-image/{imageId}")
+    @ResponseBody
+    public ResponseEntity<?> deleteImage(@PathVariable Long imageId,
+                                        HttpSession session) {
+        try {
+            // 로그인 체크
+            Long memberId = getCurrentMemberId(session);
+            if (memberId == null) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of("error", "로그인이 필요합니다."));
+            }
+            
+            // 이미지 정보 조회
+            BoardImageDTO image = boardImageService.getImagesByBoardId(null).stream()
+                .filter(img -> img.getImageId().equals(imageId))
+                .findFirst()
+                .orElse(null);
+                
+            if (image == null) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(Map.of("error", "이미지를 찾을 수 없습니다."));
+            }
+            
+            // 게시글 권한 확인
+            BoardDTO board = boardService.getBoardById(image.getBoardId());
+            if (!hasEditPermission(session, board.getMemberId())) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body(Map.of("error", "해당 이미지를 삭제할 권한이 없습니다."));
+            }
+            
+            // 이미지 삭제
+            boardImageService.deleteImage(imageId);
+            
+            return ResponseEntity.ok(Map.of(
+                "success", true,
+                "message", "이미지가 삭제되었습니다."
+            ));
+            
+        } catch (Exception e) {
+            log.error("이미지 삭제 API 오류: imageId={}", imageId, e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(Map.of("error", "이미지 삭제 중 오류가 발생했습니다."));
+        }
     }
 
 

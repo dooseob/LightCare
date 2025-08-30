@@ -45,4 +45,22 @@ src/test/
 !README.md
 
 # 업로드 디렉토리 (로컬 개발용)
-/carelink-uploads/ 
+/carelink-uploads/
+uploads/
+
+# 정적 이미지 파일 (배포 시 제외)
+src/main/resources/static/images/
+*.png
+*.jpg
+*.jpeg
+*.gif
+*.webp
+
+# Railway 관련 제외
+project-summary.md
+lightcare-*.md
+
+# 개발용 스크립트
+*.bat
+setup-directories.*
+quick-test.* 
