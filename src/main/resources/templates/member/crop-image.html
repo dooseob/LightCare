@@ -1088,12 +1088,22 @@ function updateCompression() {
     }
 }
 
-// 선택된 이미지 형식 가져오기
+// 선택된 이미지 형식 가져오기 (Wave 1: 서버 호환성을 위해 JPEG 우선)
 function getSelectedImageFormat() {
-    if (elements.formatAVIF && elements.formatAVIF.checked) return 'avif';
-    if (elements.formatWEBP && elements.formatWEBP.checked) return 'webp';
+    // 서버 WebP 지원 문제로 임시로 JPEG를 우선 사용
     if (elements.formatJPEG && elements.formatJPEG.checked) return 'jpeg';
-    return 'avif'; // 기본값
+    
+    // 다른 형식 선택 시에도 JPEG로 강제 변환 (임시 조치)
+    if (elements.formatAVIF && elements.formatAVIF.checked) {
+        console.warn('⚠️ AVIF → JPEG 임시 변환 (서버 호환성)');
+        return 'jpeg';
+    }
+    if (elements.formatWEBP && elements.formatWEBP.checked) {
+        console.warn('⚠️ WebP → JPEG 임시 변환 (서버 호환성)');
+        return 'jpeg';
+    }
+    
+    return 'jpeg'; // 기본값을 JPEG로 변경
 }
 
 // 브라우저 형식 지원 여부 확인 (개선된 버전)
