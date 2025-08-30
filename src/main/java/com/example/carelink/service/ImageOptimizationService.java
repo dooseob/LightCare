@@ -7,6 +7,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import javax.imageio.ImageIO;
+import javax.imageio.ImageReader;
+import javax.imageio.ImageWriter;
+import javax.imageio.stream.ImageInputStream;
+import javax.imageio.stream.ImageOutputStream;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
@@ -14,7 +18,10 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
+
+import javax.annotation.PostConstruct;
 
 /**
  * 이미지 최적화 및 WebP 변환 서비스
@@ -37,6 +44,48 @@ public class ImageOptimizationService {
         THUMBNAIL_SIZES.put("small", new int[]{300, 200});
         THUMBNAIL_SIZES.put("medium", new int[]{600, 400});
         THUMBNAIL_SIZES.put("large", new int[]{1200, 800});
+    }
+
+    /**
+     * WebP 지원 라이브러리 초기화
+     */
+    @PostConstruct
+    public void initWebPSupport() {
+        try {
+            // WebP ImageIO 플러그인 등록 확인
+            String[] readerFormats = ImageIO.getReaderFormatNames();
+            String[] writerFormats = ImageIO.getWriterFormatNames();
+            
+            boolean webpReadSupport = false;
+            boolean webpWriteSupport = false;
+            
+            for (String format : readerFormats) {
+                if ("webp".equalsIgnoreCase(format) || "WEBP".equals(format)) {
+                    webpReadSupport = true;
+                    break;
+                }
+            }
+            
+            for (String format : writerFormats) {
+                if ("webp".equalsIgnoreCase(format) || "WEBP".equals(format)) {
+                    webpWriteSupport = true;
+                    break;
+                }
+            }
+            
+            log.info("🖼️ ImageIO WebP 지원 상태 - 읽기: {}, 쓰기: {}", webpReadSupport, webpWriteSupport);
+            
+            if (webpReadSupport && webpWriteSupport) {
+                log.info("✅ WebP 형식이 완전히 지원됩니다.");
+            } else {
+                log.warn("⚠️ WebP 지원이 불완전합니다. 라이브러리 설정을 확인해주세요.");
+                log.info("📚 지원 가능한 읽기 형식: {}", String.join(", ", readerFormats));
+                log.info("📝 지원 가능한 쓰기 형식: {}", String.join(", ", writerFormats));
+            }
+            
+        } catch (Exception e) {
+            log.error("❌ WebP 초기화 중 오류 발생", e);
+        }
     }
 
     /**
