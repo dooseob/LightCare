@@ -9,6 +9,8 @@ import com.example.carelink.dto.LoginDTO;
 import com.example.carelink.dto.MemberDTO;
 import com.example.carelink.dto.FacilityDTO;
 import org.springframework.web.multipart.MultipartFile;
+import javax.imageio.ImageIO;
+import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
 import java.util.UUID;
@@ -682,20 +684,50 @@ public class MemberService {
             log.info("프로필 이미지 WebP 변환 시작: userId={}, originalFile={}", 
                     userId, file.getOriginalFilename());
             
-            // WebP 변환 및 최적화 처리
-            ImageOptimizationService.ImageConversionResult result = 
-                imageOptimizationService.processImage(file, baseFileName, uploadDir);
+            // 임시로 모든 환경에서 JPEG 저장 (WebP 처리 문제 해결 우선)
+            log.info("🔄 임시 JPEG 저장 모드 - WebP 처리 건너뜀");
+            String fileName = baseFileName + ".jpg";
+            String filePath = uploadDir + fileName;
             
-            log.info("프로필 이미지 WebP 변환 완료: userId={}, webpPath={}", 
-                    userId, result.getOriginalWebPPath());
+            // 디렉토리 생성
+            File dir = new File(uploadDir);
+            if (!dir.exists()) {
+                boolean created = dir.mkdirs();
+                log.info("디렉토리 생성 결과: {} -> {}", uploadDir, created);
+            }
             
-            // WebP 경로 반환 (우선)
-            return "/uploads/profile/" + result.getOriginalWebPPath();
+            // BufferedImage로 읽어서 JPG로 저장
+            BufferedImage image = ImageIO.read(file.getInputStream());
+            if (image == null) {
+                throw new IOException("이미지를 읽을 수 없습니다 - BufferedImage가 null입니다");
+            }
+            
+            log.info("이미지 로드 성공: {}x{}", image.getWidth(), image.getHeight());
+            
+            File outputFile = new File(filePath);
+            boolean writeSuccess = ImageIO.write(image, "jpg", outputFile);
+            if (!writeSuccess) {
+                throw new IOException("JPEG 파일 쓰기 실패: " + outputFile.getAbsolutePath());
+            }
+            
+            log.info("✅ JPEG 저장 완료: {} (크기: {}바이트)", fileName, outputFile.length());
+            return "/uploads/profile/" + fileName;
             
         } catch (Exception e) {
             log.error("프로필 이미지 저장 중 오류 발생: userId={}", userId, e);
             throw new RuntimeException("프로필 이미지 저장에 실패했습니다.", e);
         }
+    }
+    
+    /**
+     * Railway 환경 감지
+     */
+    private boolean isRailwayEnvironment() {
+        String railwayEnv = System.getenv("RAILWAY_ENVIRONMENT");
+        String userDir = System.getProperty("user.dir", "");
+        String os = System.getProperty("os.name", "").toLowerCase();
+        
+        return railwayEnv != null || userDir.startsWith("/app") || !os.contains("win");
     }
 
     /**

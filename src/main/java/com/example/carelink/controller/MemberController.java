@@ -517,6 +517,7 @@ public class MemberController {
         try {
             MemberDTO loginMember = (MemberDTO) session.getAttribute(Constants.SESSION_MEMBER);
             if (loginMember == null) {
+                log.error("❌ 세션에 로그인 정보가 없음");
                 result.put("success", false);
                 result.put("message", "로그인이 필요합니다.");
                 return result;
@@ -529,18 +530,22 @@ public class MemberController {
             
             // 업로드된 파일이 유효한지 확인
             if (croppedImageFile.isEmpty()) {
+                log.error("❌ 업로드된 이미지 파일이 비어있음");
                 result.put("success", false);
                 result.put("message", "업로드된 이미지 파일이 비어있습니다.");
                 return result;
             }
             
             // 기존 회원정보 조회
+            log.info("🔍 회원 정보 조회 시작 - memberId: {}", loginMember.getMemberId());
             MemberDTO memberDTO = memberService.findById(loginMember.getMemberId());
             if (memberDTO == null) {
+                log.error("❌ 회원 정보 조회 실패 - memberId: {}", loginMember.getMemberId());
                 result.put("success", false);
                 result.put("message", "회원 정보를 찾을 수 없습니다.");
                 return result;
             }
+            log.info("✅ 회원 정보 조회 성공 - userId: {}", memberDTO.getUserId());
             
             // Alt 텍스트 설정 (SEO 최적화용)
             log.info("📋 받은 파라미터 - altText: '{}', format: '{}', quality: '{}'", altText, format, quality);
@@ -567,27 +572,45 @@ public class MemberController {
             }
             
             // 프로필 이미지 업데이트 (원본 형식 유지)
+            log.info("💾 프로필 이미지 업데이트 시작");
             memberService.updateMember(memberDTO, croppedImageFile);
+            log.info("✅ 프로필 이미지 업데이트 완료");
             
             // 세션 정보 업데이트
+            log.info("🔄 세션 정보 업데이트 시작");
             MemberDTO updatedMember = memberService.findById(loginMember.getMemberId());
             if (updatedMember != null) {
                 session.setAttribute(Constants.SESSION_MEMBER, updatedMember);
+                log.info("✅ 세션 정보 업데이트 완료 - 새 프로필 이미지: {}", updatedMember.getProfileImage());
+            } else {
+                log.warn("⚠️ 업데이트된 회원 정보 조회 실패하지만 계속 진행");
             }
             
             // 임시 데이터 삭제
             session.removeAttribute("tempImageData");
             session.removeAttribute("tempImageName");
+            log.info("🧹 임시 데이터 삭제 완료");
             
             result.put("success", true);
             result.put("message", "프로필 이미지가 성공적으로 저장되었습니다.");
-            result.put("profileImageUrl", updatedMember.getProfileImage());
+            result.put("profileImageUrl", updatedMember != null ? updatedMember.getProfileImage() : "");
+            
+            log.info("🎉 크롭된 이미지 저장 성공 - memberId: {}, 응답: success=true", loginMember.getMemberId());
             
         } catch (Exception e) {
-            log.error("크롭된 이미지 저장 중 오류 발생", e);
+            log.error("❌ 크롭된 이미지 저장 중 오류 발생 - 상세 정보:", e);
+            log.error("❌ 예외 클래스: {}, 메시지: {}", e.getClass().getSimpleName(), e.getMessage());
+            if (e.getCause() != null) {
+                log.error("❌ 원인: {}", e.getCause().getMessage());
+            }
+            
             result.put("success", false);
-            result.put("message", "이미지 저장 중 오류가 발생했습니다.");
+            result.put("message", "이미지 저장 중 오류가 발생했습니다: " + e.getMessage());
+            result.put("error", e.getClass().getSimpleName());
         }
+        
+        log.info("📤 최종 응답 전송: success={}, message={}", 
+                result.get("success"), result.get("message"));
         
         return result;
     }

@@ -1319,9 +1319,13 @@ function saveCompressedImageToServer() {
             setButtonLoading(elements.buttons.saveImage, false);
         }
         
-        console.log('📄 서버 응답 데이터:', data);
+        console.log('📄 서버 응답 데이터 (전체):', data);
+        console.log('📄 success 값:', data.success, '(타입:', typeof data.success, ')');
+        console.log('📄 message 값:', data.message);
         
-        if (data.success) {
+        if (data.success === true) {
+            console.log('✅ 성공 조건 충족됨');
+            
             // 최종 완료 미리보기 설정
             if (elements.finalPreview) {
                 elements.finalPreview.src = window.compressedImageData;
@@ -1335,7 +1339,16 @@ function saveCompressedImageToServer() {
             showSuccessMessage('프로필 이미지가 성공적으로 저장되었습니다!');
             
         } else {
-            console.error('❌ 서버에서 실패 응답:', data.message);
+            console.error('❌ 실패 조건 - success:', data.success, 'message:', data.message);
+            console.error('❌ 서버에서 실패 응답 또는 success 값이 true가 아님');
+            
+            // 더 상세한 디버깅 정보
+            if (data.hasOwnProperty('success')) {
+                console.error('❌ success 속성 존재하지만 값이', data.success);
+            } else {
+                console.error('❌ success 속성이 응답에 없음');
+            }
+            
             alert(data.message || '이미지 저장에 실패했습니다.');
         }
     })
