@@ -17,6 +17,7 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile; // MultipartFile 유지
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+import org.springframework.http.ResponseEntity;
 
 import javax.servlet.http.HttpSession; // 세션 관리를 위해 필요
 import javax.validation.ConstraintViolation;
@@ -372,6 +373,66 @@ public class MemberController {
         
         model.addAttribute("memberDTO", loginMember);
         return "member/crop-image";
+    }
+
+    /**
+     * 일반 프로필 이미지 업로드 API
+     */
+    @PostMapping("/api/upload-profile")
+    @ResponseBody
+    public ResponseEntity<Map<String, Object>> uploadProfileImage(@RequestParam("file") MultipartFile file,
+                                                                  HttpSession session) {
+        Map<String, Object> result = new HashMap<>();
+        
+        try {
+            MemberDTO loginMember = (MemberDTO) session.getAttribute(Constants.SESSION_MEMBER);
+            if (loginMember == null) {
+                result.put("success", false);
+                result.put("message", "로그인이 필요합니다.");
+                return ResponseEntity.status(401).body(result);
+            }
+            
+            if (file.isEmpty()) {
+                result.put("success", false);
+                result.put("message", "이미지 파일이 없습니다.");
+                return ResponseEntity.badRequest().body(result);
+            }
+            
+            // 파일 크기 검증 (5MB)
+            if (file.getSize() > 5 * 1024 * 1024) {
+                result.put("success", false);
+                result.put("message", "파일 크기는 5MB 이하여야 합니다.");
+                return ResponseEntity.badRequest().body(result);
+            }
+            
+            // 파일 타입 검증
+            String contentType = file.getContentType();
+            if (contentType == null || !contentType.startsWith("image/")) {
+                result.put("success", false);
+                result.put("message", "이미지 파일만 업로드 가능합니다.");
+                return ResponseEntity.badRequest().body(result);
+            }
+            
+            // MemberService를 통해 이미지 저장 및 회원 정보 업데이트
+            String savedImagePath = memberService.updateMemberProfileImage(loginMember.getMemberId(), file);
+            
+            // 세션 정보 업데이트
+            loginMember.setProfileImage(savedImagePath);
+            session.setAttribute(Constants.SESSION_MEMBER, loginMember);
+            
+            result.put("success", true);
+            result.put("message", "프로필 이미지가 성공적으로 업데이트되었습니다.");
+            result.put("fileName", savedImagePath);
+            result.put("imageUrl", savedImagePath);
+            
+            return ResponseEntity.ok(result);
+            
+        } catch (Exception e) {
+            log.error("프로필 이미지 업로드 중 오류 발생", e);
+            result.put("success", false);
+            result.put("message", "이미지 저장 중 오류가 발생했습니다: " + e.getMessage());
+            return ResponseEntity.status(500).body(result);
+        }
     }
 
     /**
