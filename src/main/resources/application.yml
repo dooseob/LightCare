@@ -72,6 +72,7 @@ file:
   upload-dir:
     facility: C:/carelink-uploads/facility/
     profile: C:/carelink-uploads/profile/
+    board: C:/carelink-uploads/board/
     temp: C:/carelink-uploads/temp/
 
 # SpringDoc OpenAPI 설정

@@ -78,6 +78,34 @@
                         </div>
                     </div>
                     
+                    <!-- 첨부 이미지 표시 -->
+                    <div th:if="${boardImages != null and not #lists.isEmpty(boardImages)}" class="mt-4 pt-3 border-top">
+                        <h6 class="text-secondary mb-3">
+                            <i class="fas fa-images me-2"></i>첨부 이미지
+                            <small class="text-muted">(<span th:text="${#lists.size(boardImages)}">0</span>개)</small>
+                        </h6>
+                        <div class="row g-3">
+                            <div th:each="image : ${boardImages}" class="col-md-6 col-lg-4">
+                                <div class="card">
+                                    <a th:href="@{'/uploads/board/' + ${image.imagePath}}" 
+                                       data-bs-toggle="modal" 
+                                       data-bs-target="#imageModal"
+                                       th:data-image-url="@{'/uploads/board/' + ${image.imagePath}}"
+                                       th:data-image-caption="${image.caption}"
+                                       onclick="showImageModal(this); return false;">
+                                        <img th:src="@{'/uploads/board/' + ${image.thumbnailMedium != null ? image.thumbnailMedium : image.imagePath}}" 
+                                             th:alt="${image.altText ?: '첨부 이미지'}"
+                                             class="card-img-top"
+                                             style="height: 200px; object-fit: cover; cursor: pointer;">
+                                    </a>
+                                    <div th:if="${image.caption}" class="card-body p-2">
+                                        <small class="text-muted" th:text="${image.caption}">이미지 설명</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
                     <!-- 태그 -->
                     <div th:if="${not #strings.isEmpty(board.tags)}" class="mt-4 pt-3 border-top">
                         <small class="text-muted">태그: </small>
@@ -239,6 +267,28 @@
         </div>
     </main>
 
+    <!-- 이미지 모달 -->
+    <div class="modal fade" id="imageModal" tabindex="-1" aria-labelledby="imageModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-xl modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="imageModalLabel">이미지 보기</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body text-center">
+                    <img id="modalImage" src="" alt="이미지" class="img-fluid">
+                    <p id="modalCaption" class="mt-3 text-muted"></p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">닫기</button>
+                    <a id="modalDownload" href="" download class="btn btn-primary">
+                        <i class="fas fa-download me-1"></i>다운로드
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- 푸터 -->
     <footer th:replace="~{layout/footer :: footer}"></footer>
     
@@ -247,5 +297,20 @@
 
     <!-- 게시글 상세 페이지 전용 스크립트 -->
     <script src="/js/board-detail.js"></script>
+    
+    <!-- 이미지 모달 스크립트 -->
+    <script>
+        function showImageModal(element) {
+            const imageUrl = element.getAttribute('data-image-url');
+            const caption = element.getAttribute('data-image-caption') || '';
+            
+            document.getElementById('modalImage').src = imageUrl;
+            document.getElementById('modalCaption').textContent = caption;
+            document.getElementById('modalDownload').href = imageUrl;
+            
+            const modal = new bootstrap.Modal(document.getElementById('imageModal'));
+            modal.show();
+        }
+    </script>
 </body>
 </html> 

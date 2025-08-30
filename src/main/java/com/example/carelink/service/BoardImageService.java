@@ -117,9 +117,18 @@ public class BoardImageService {
     private BoardImageDTO processAndSaveImage(Long boardId, MultipartFile file, 
                                              int imageOrder, String altText) {
         
-        // 파일 검증
+        // 파일 검증 강화
         if (!imageOptimizationService.isSupportedImageFormat(file.getOriginalFilename())) {
-            throw new IllegalArgumentException("지원하지 않는 이미지 형식입니다.");
+            throw new IllegalArgumentException("지원하지 않는 이미지 형식입니다. (JPG, PNG, GIF, WebP, BMP, TIFF만 가능)");
+        }
+        
+        if (!imageOptimizationService.isValidImageMimeType(file.getContentType())) {
+            throw new IllegalArgumentException("올바른 이미지 파일이 아닙니다. 파일을 다시 확인해주세요.");
+        }
+        
+        // 빈 파일 검사
+        if (file.isEmpty() || file.getSize() == 0) {
+            throw new IllegalArgumentException("비어있는 파일은 업로드할 수 없습니다.");
         }
         
         // 파일명 생성
@@ -133,18 +142,18 @@ public class BoardImageService {
         ImageOptimizationService.ImageConversionResult result = 
             imageOptimizationService.processImage(file, baseFileName, BOARD_UPLOAD_PATH);
         
-        // DTO 생성
+        // DTO 생성 (원본 파일은 저장하지 않음 - 데이터 절감)
         BoardImageDTO imageDTO = BoardImageDTO.builder()
             .boardId(boardId)
-            .imagePath("/uploads/board/" + baseFileName + "_original.jpg")
-            .webpPath("/uploads/board/" + result.getOriginalWebPPath())
-            .thumbnailSmall("/uploads/board/" + result.getThumbnails().get("small"))
-            .thumbnailMedium("/uploads/board/" + result.getThumbnails().get("medium"))
-            .thumbnailLarge("/uploads/board/" + result.getThumbnails().get("large"))
-            .fallbackJpgPath("/uploads/board/" + result.getFallbackJpgPath())
-            .originalFilename(file.getOriginalFilename())
-            .fileSize(file.getSize())
-            .fileSizeWebp((long)(file.getSize() * 0.3)) // 예상 크기 (실제는 파일 시스템에서 읽어야 함)
+            .imagePath(result.getOriginalWebPPath())  // WebP(현재는 JPG) 경로를 메인으로 사용
+            .webpPath(result.getOriginalWebPPath())   // 동일한 경로 (WebP 변환 완료 시 사용)
+            .thumbnailSmall(result.getThumbnails().get("small"))
+            .thumbnailMedium(result.getThumbnails().get("medium"))
+            .thumbnailLarge(result.getThumbnails().get("large"))
+            .fallbackJpgPath(result.getFallbackJpgPath())
+            .originalFilename(file.getOriginalFilename())  // 원본 파일명은 참고용으로만 저장
+            .fileSize(result.getOriginalSize())
+            .fileSizeWebp(result.getWebpSize())  // 실제 변환된 파일 크기
             .width(result.getOriginalWidth())
             .height(result.getOriginalHeight())
             .altText(altText != null ? altText : generateDefaultAltText(boardId, imageOrder))

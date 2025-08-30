@@ -126,10 +126,12 @@
                                             <div class="upload-placeholder">
                                                 <i class="fas fa-cloud-upload-alt fa-3x text-muted mb-3"></i>
                                                 <p class="text-muted mb-2">이미지를 드래그하여 업로드하거나 클릭하여 파일을 선택하세요</p>
-                                                <p class="text-muted small">최대 10개, 각 파일당 5MB 이하 (JPG, PNG, GIF, WebP 지원)</p>
+                                                <p class="text-muted small">최대 10개, 각 파일당 10MB 이하<br>
+                                                지원 형식: JPG, PNG, GIF, WebP, BMP, TIFF</p>
                                             </div>
                                             <input type="file" id="imageFiles" name="imageFiles" multiple 
-                                                   accept="image/*" style="display: none;">
+                                                   accept="image/jpeg,image/jpg,image/png,image/gif,image/webp,image/bmp,image/tiff" 
+                                                   style="display: none;">
                                         </div>
                                         
                                         <!-- 업로드된 이미지 미리보기 -->
@@ -369,9 +371,30 @@
                     return;
                 }
                 
+                // 지원되는 이미지 형식
+                const supportedTypes = [
+                    'image/jpeg', 'image/jpg', 'image/png', 'image/gif', 
+                    'image/webp', 'image/bmp', 'image/tiff'
+                ];
+                
+                const maxSize = 10 * 1024 * 1024; // 10MB (서버와 일치)
+                
                 files.forEach((file, index) => {
-                    if (file.size > 5 * 1024 * 1024) {
-                        alert(`${file.name} 파일이 5MB를 초과합니다.`);
+                    // 파일 형식 검증
+                    if (!supportedTypes.includes(file.type)) {
+                        alert(`${file.name}: 지원하지 않는 파일 형식입니다.\n지원 형식: JPG, PNG, GIF, WebP, BMP, TIFF`);
+                        return;
+                    }
+                    
+                    // 파일 크기 검증 (10MB로 증가)
+                    if (file.size > maxSize) {
+                        alert(`${file.name}: 파일 크기가 너무 큽니다. (최대 10MB)`);
+                        return;
+                    }
+                    
+                    // 빈 파일 검사
+                    if (file.size === 0) {
+                        alert(`${file.name}: 빈 파일은 업로드할 수 없습니다.`);
                         return;
                     }
                     
