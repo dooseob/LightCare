@@ -11,6 +11,5 @@ restartPolicyMaxRetries = 3
 PORT = "8080"
 SPRING_PROFILES_ACTIVE = "railway"
 JAVA_VERSION = "11"
-GRADLE_OPTS = "-Xmx2g"
 
 # Nixpacks 빌드 설정 제거 - Railway 기본값 사용
