@@ -1,9 +1,0 @@
-[phases.build]
-cmd = "./gradlew clean build -x test --no-daemon"
-
-[phases.start] 
-cmd = "java -Dserver.port=$PORT -jar build/libs/*.jar"
-
-[variables]
-JAVA_VERSION = "11"
-GRADLE_OPTS = "-Xmx2g"
