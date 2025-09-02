@@ -18,4 +18,4 @@ GRADLE_OPTS = "-Xmx2g"
 cmd = "./gradlew clean build -x test --no-daemon"
 
 [phases.start]
-cmd = "java -Dserver.port=$PORT -jar build/libs/*.jar"
+cmd = "java -Dserver.port=$PORT -jar build/libs/lightcare-app.jar"
