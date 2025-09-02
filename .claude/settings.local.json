@@ -69,7 +69,8 @@
       "Read(/home/dooseob/.ssh/**)",
       "Bash(git remote:*)",
       "Bash(GIT_SSH_COMMAND=\"ssh -i ~/.ssh/lightcare_rsa -o IdentitiesOnly=yes\" git pull --tags origin main)",
-      "Read(/home/dooseob/.ssh/**)"
+      "Read(/home/dooseob/.ssh/**)",
+      "Bash(git revert:*)"
     ],
     "deny": []
   }
