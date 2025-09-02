@@ -75,21 +75,7 @@ tasks.named('test') {
     useJUnitPlatform()
 }
 
-// Railway 배포를 위한 bootJar 최적화
+// Railway 배포를 위한 JAR 설정
 jar {
     enabled = false
-    archiveClassifier = ''
-}
-
-bootJar {
-    archiveFileName = 'lightcare-app.jar'
-    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
-    
-    // 필요없는 파일들 제외하여 JAR 크기 축소
-    exclude '**/test/**'
-    exclude '**/backup/**'
-    exclude '**/images/**'
-    exclude '**/*.png'
-    exclude '**/*.jpg'
-    exclude '**/*.gif'
 } 

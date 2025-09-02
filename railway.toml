@@ -13,9 +13,4 @@ SPRING_PROFILES_ACTIVE = "railway"
 JAVA_VERSION = "11"
 GRADLE_OPTS = "-Xmx2g"
 
-# 빌드 및 시작 명령어
-[phases.build]
-cmd = "./gradlew clean build -x test --no-daemon"
-
-[phases.start]
-cmd = "java -Dserver.port=$PORT -jar build/libs/lightcare-app.jar"
+# Nixpacks 빌드 설정 제거 - Railway 기본값 사용
