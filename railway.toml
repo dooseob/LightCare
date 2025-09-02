@@ -10,3 +10,12 @@ restartPolicyMaxRetries = 3
 [env]
 PORT = "8080"
 SPRING_PROFILES_ACTIVE = "railway"
+JAVA_VERSION = "11"
+GRADLE_OPTS = "-Xmx2g"
+
+# 빌드 및 시작 명령어
+[phases.build]
+cmd = "./gradlew clean build -x test --no-daemon"
+
+[phases.start]
+cmd = "java -Dserver.port=$PORT -jar build/libs/*.jar"
