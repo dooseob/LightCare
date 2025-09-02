@@ -70,7 +70,9 @@
       "Bash(git remote:*)",
       "Bash(GIT_SSH_COMMAND=\"ssh -i ~/.ssh/lightcare_rsa -o IdentitiesOnly=yes\" git pull --tags origin main)",
       "Read(/home/dooseob/.ssh/**)",
-      "Bash(git revert:*)"
+      "Bash(git revert:*)",
+      "Bash(./migrate-railway.bat)",
+      "Bash(GIT_SSH_COMMAND=\"ssh -i ~/.ssh/lightcare_rsa -o IdentitiesOnly=yes\" git push origin main)"
     ],
     "deny": []
   }
