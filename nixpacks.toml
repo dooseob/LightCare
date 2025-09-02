@@ -1,5 +1,9 @@
-[phases.setup]
-nixPkgs = ["...", "jdk11"]
+[phases.build]
+cmd = "./gradlew clean build -x test --no-daemon"
 
-[start]
-cmd = "java -jar -Dserver.port=$PORT build/libs/carelink-0.0.1-SNAPSHOT.jar"
+[phases.start] 
+cmd = "java -Dserver.port=$PORT -jar build/libs/*.jar"
+
+[variables]
+JAVA_VERSION = "11"
+GRADLE_OPTS = "-Xmx2g"
