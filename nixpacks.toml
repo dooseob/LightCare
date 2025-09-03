@@ -1,0 +1,8 @@
+[phases.build]
+cmds = [
+  "chmod +x ./gradlew",
+  "./gradlew build -x test"
+]
+
+[phases.start]
+cmd = "java -Dserver.port=$PORT -Dspring.profiles.active=railway $JAVA_OPTS -jar build/libs/carelink-*.jar"

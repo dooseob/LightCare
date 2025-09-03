@@ -1,6 +1,6 @@
 [build]
 builder = "nixpacks"
-buildCommand = "./gradlew build -x test"
+buildCommand = "chmod +x ./gradlew && ./gradlew build -x test"
 
 [deploy]
 healthcheckPath = "/actuator/health"
