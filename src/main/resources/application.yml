@@ -35,6 +35,19 @@ spring:
       schema-locations: classpath:schema.sql
       data-locations: classpath:data.sql
       continue-on-error: true
+      separator: ;
+      encoding: UTF-8
+      
+  # JPA 설정 (테이블 자동 생성을 위한 옵션 - MyBatis와 병행)
+  jpa:
+    hibernate:
+      ddl-auto: none  # MyBatis 사용으로 none 설정
+    show-sql: true
+    database-platform: org.hibernate.dialect.MySQL8Dialect
+    properties:
+      hibernate:
+        format_sql: true
+        use_sql_comments: true
 
   # Thymeleaf 설정
   thymeleaf:
@@ -103,3 +116,42 @@ springdoc:
 api:
   kakao:
     app-key: ${KAKAO_APP_KEY:b97b58672807a40c122a5deed8a98ea4}
+
+---
+# Railway 환경 전용 설정
+spring:
+  config:
+    activate:
+      on-profile: railway
+  
+  datasource:
+    # Railway는 자동으로 DATABASE_URL을 제공
+    url: ${DATABASE_URL:jdbc:mysql://localhost:3306/carelink?useSSL=false&serverTimezone=Asia/Seoul&allowPublicKeyRetrieval=true&useUnicode=true&characterEncoding=UTF-8}
+    username: ${DATABASE_USERNAME:${DB_USERNAME:root}}
+    password: ${DATABASE_PASSWORD:${DB_PASSWORD:mysql}}
+    driver-class-name: ${DATABASE_DRIVER:com.mysql.cj.jdbc.Driver}
+    hikari:
+      connection-timeout: 60000  # Railway 환경에 맞게 조정
+      idle-timeout: 300000
+      max-lifetime: 1800000
+      maximum-pool-size: 5      # Railway 제한에 맞게 감소
+      minimum-idle: 2
+      leak-detection-threshold: 60000
+      
+  # Railway 환경에서 스키마 초기화 강화
+  sql:
+    init:
+      mode: always
+      schema-locations: classpath:schema.sql
+      data-locations: classpath:data.sql
+      continue-on-error: false  # Railway에서는 에러 시 명확하게 실패
+      separator: ;
+      encoding: UTF-8
+      
+# Railway 환경에서 로깅 레벨 조정
+logging:
+  level:
+    root: INFO
+    com.example.carelink: INFO
+    org.springframework.jdbc.datasource.init: DEBUG  # 스키마 초기화 로그 상세히
+    org.springframework.boot.autoconfigure.sql.init: DEBUG

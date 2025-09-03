@@ -3,9 +3,10 @@
 -- 4인 팀 프로젝트 전용 (개선 반영 버전)
 -- ================================================
 
--- 데이터베이스 생성 (필요 시)
-CREATE DATABASE carelink DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-USE carelink;
+-- ================================================
+-- Railway 환경에서는 데이터베이스가 자동으로 생성되므로
+-- CREATE DATABASE 구문 제거 (권한 문제 방지)
+-- ================================================
 
 -- ================================================
 -- 1. 회원 테이블 (팀원 A 담당)
@@ -149,6 +150,8 @@ CREATE TABLE review (
     parent_review_id BIGINT COMMENT '부모 리뷰 ID (답글인 경우)',
     reply_count INT NOT NULL DEFAULT 0 COMMENT '답글 수',
     reply_depth INT NOT NULL DEFAULT 0 COMMENT '답글 깊이',
+    image_count INT DEFAULT 0 COMMENT '첨부 이미지 개수',
+    has_images BOOLEAN DEFAULT FALSE COMMENT '이미지 포함 여부',
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '생성일시',
     updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '수정일시',
     is_deleted BOOLEAN NOT NULL DEFAULT FALSE COMMENT '삭제 여부',
@@ -194,12 +197,8 @@ CREATE TABLE board (
 ) COMMENT='정보 게시판';
 
 -- ================================================
--- 7. 게시판 이미지 테이블 (이미지 첨부 기능)
+-- 7. 게시판 이미지 테이블 (WebP 지원)
 -- ================================================
--- ================================================
--- 기존 테이블이 존재하면 삭제 후 재생성
--- ================================================
-DROP TABLE IF EXISTS board_images;
 CREATE TABLE board_images (
     image_id BIGINT AUTO_INCREMENT PRIMARY KEY COMMENT '이미지 ID',
     board_id BIGINT NOT NULL COMMENT '게시글 ID',
@@ -226,9 +225,8 @@ CREATE TABLE board_images (
 ) COMMENT='게시판 이미지 첨부파일 (WebP 지원)';
 
 -- ================================================
--- 8. 리뷰 이미지 테이블 (이미지 첨부 기능 개선)
+-- 8. 리뷰 이미지 테이블 (WebP 지원)
 -- ================================================
-DROP TABLE IF EXISTS review_images;
 CREATE TABLE review_images (
     image_id BIGINT AUTO_INCREMENT PRIMARY KEY COMMENT '이미지 ID',
     review_id BIGINT NOT NULL COMMENT '리뷰 ID',
@@ -255,24 +253,18 @@ CREATE TABLE review_images (
 ) COMMENT='리뷰 이미지 첨부파일 (WebP 지원)';
 
 -- ================================================
--- 9. 기존 테이블 업데이트 (이미지 카운트 추가)
+-- 9. 기존 테이블 업데이트 제거 (이미 테이블 생성 시 포함됨)
 -- ================================================
--- board 테이블에 이미지 카운트 추가 (컬럼이 이미 존재할 수 있으므로 에러 무시)
-ALTER TABLE board 
-ADD COLUMN image_count INT DEFAULT 0 COMMENT '첨부 이미지 개수',
-ADD COLUMN has_images BOOLEAN DEFAULT FALSE COMMENT '이미지 포함 여부';
-
--- review 테이블에 이미지 카운트 추가 (컬럼이 이미 존재할 수 있으므로 에러 무시)
-ALTER TABLE review 
-ADD COLUMN image_count INT DEFAULT 0 COMMENT '첨부 이미지 개수',
-ADD COLUMN has_images BOOLEAN DEFAULT FALSE COMMENT '이미지 포함 여부';
+-- board와 review 테이블에 image_count, has_images 컬럼이 이미 포함되어 있음
 
 -- ================================================
 -- 10. 통계 업데이트 트리거 (이미지 카운트 자동 업데이트)
 -- ================================================
--- 기존 트리거가 있다면 삭제
+-- 기존 트리거가 있다면 삭제 (모든 가능한 트리거명 포함)
+DROP TRIGGER IF EXISTS update_board_image_count;
 DROP TRIGGER IF EXISTS update_board_image_count_insert;
 DROP TRIGGER IF EXISTS update_board_image_count_delete;
+DROP TRIGGER IF EXISTS update_review_image_count;
 DROP TRIGGER IF EXISTS update_review_image_count_insert;
 DROP TRIGGER IF EXISTS update_review_image_count_delete;
 

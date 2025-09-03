@@ -34,6 +34,9 @@ dependencies {
 
     // MyBatis 연동
     implementation 'org.mybatis.spring.boot:mybatis-spring-boot-starter:2.3.1'
+    
+    // JPA/Hibernate 연동 (스키마 자동 생성용 - MyBatis와 병행 사용)
+    implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
 
     // Lombok (코드 자동 생성)
     compileOnly 'org.projectlombok:lombok'
