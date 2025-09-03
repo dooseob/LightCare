@@ -1,1 +1,1 @@
-web: java -Dserver.port=$PORT -Dspring.profiles.active=heroku -jar build/libs/carelink-*.jar
+web: java -Dserver.port=$PORT -Dspring.profiles.active=railway $JAVA_OPTS -jar build/libs/carelink-*.jar
