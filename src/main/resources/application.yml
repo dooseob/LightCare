@@ -28,6 +28,14 @@ spring:
       auto-commit: false
       transaction-isolation: TRANSACTION_READ_COMMITTED
 
+  # 데이터베이스 초기화 설정 (Railway 전용)
+  sql:
+    init:
+      mode: always
+      schema-locations: classpath:schema.sql
+      data-locations: classpath:data.sql
+      continue-on-error: true
+
   # Thymeleaf 설정
   thymeleaf:
     prefix: classpath:/templates/
