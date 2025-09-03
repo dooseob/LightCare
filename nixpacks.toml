@@ -5,4 +5,4 @@ cmds = [
 ]
 
 [phases.start]
-cmd = "java -Dserver.port=$PORT -Dspring.profiles.active=railway $JAVA_OPTS -jar build/libs/carelink-*.jar"
+cmd = "java -Xms256m -Xmx512m -Dserver.port=$PORT -Dspring.profiles.active=railway -jar build/libs/carelink-0.0.1-SNAPSHOT.jar"
