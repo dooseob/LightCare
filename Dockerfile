@@ -9,8 +9,8 @@ WORKDIR /app
 # 업로드 디렉터리 생성
 RUN mkdir -p /app/uploads/facility /app/uploads/profile /app/uploads/board /app/uploads/review /app/uploads/temp
 
-# 애플리케이션 JAR 파일 복사
-COPY build/libs/*.jar app.jar
+# 애플리케이션 JAR 파일 복사 (bootJar로 생성된 파일)
+COPY build/libs/carelink-0.0.1-SNAPSHOT.jar app.jar
 
 # 포트 노출
 EXPOSE 8080
