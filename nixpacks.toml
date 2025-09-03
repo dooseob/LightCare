@@ -1,3 +1,6 @@
+[phases.setup]
+nixPkgs = ["jdk11", "gradle"]
+
 [phases.build]
 cmds = [
   "chmod +x ./gradlew",
