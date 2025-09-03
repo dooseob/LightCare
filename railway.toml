@@ -12,5 +12,6 @@ PORT = "8080"
 SPRING_PROFILES_ACTIVE = "railway"
 JAVA_VERSION = "11"
 JAVA_OPTS = "-Xms512m -Xmx1024m -XX:+UseContainerSupport"
+RAILWAY_ENVIRONMENT = "true"
 
 # Nixpacks 빌드 설정 제거 - Railway 기본값 사용
