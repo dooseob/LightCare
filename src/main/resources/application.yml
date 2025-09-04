@@ -126,10 +126,10 @@ spring:
   
   datasource:
     # Railway는 자동으로 DATABASE_URL을 제공
-    url: ${DATABASE_URL:jdbc:mysql://localhost:3306/carelink?useSSL=false&serverTimezone=Asia/Seoul&allowPublicKeyRetrieval=true&useUnicode=true&characterEncoding=UTF-8}
-    username: ${DATABASE_USERNAME:${DB_USERNAME:root}}
-    password: ${DATABASE_PASSWORD:${DB_PASSWORD:mysql}}
-    driver-class-name: ${DATABASE_DRIVER:com.mysql.cj.jdbc.Driver}
+    url: ${MYSQL_URL:${DATABASE_URL:jdbc:mysql://localhost:3306/carelink?useSSL=false&serverTimezone=Asia/Seoul&allowPublicKeyRetrieval=true&useUnicode=true&characterEncoding=UTF-8}}
+    username: ${MYSQLUSER:${DATABASE_USERNAME:${DB_USERNAME:root}}}
+    password: ${MYSQLPASSWORD:${DATABASE_PASSWORD:${DB_PASSWORD:mysql}}}
+    driver-class-name: com.mysql.cj.jdbc.Driver
     hikari:
       connection-timeout: 60000  # Railway 환경에 맞게 조정
       idle-timeout: 300000
