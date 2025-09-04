@@ -1,14 +1,14 @@
-providers = ["java"]
-
 [variables]
 NIXPACKS_JDK_VERSION = "11"
-NIXPACKS_GRADLE_VERSION = "8.5"
 
 [phases.setup]
-nixPkgs = ["..."]
+nixPkgs = ["openjdk11", "gradle"]
 
-[phases.build]
-cmds = ["chmod +x gradlew", "./gradlew clean build -x test"]
+[phases.build] 
+cmds = [
+    "chmod +x gradlew",
+    "./gradlew clean build -x test --no-daemon"
+]
 
 [start]
-cmd = "java -jar build/libs/carelink-0.0.1-SNAPSHOT.jar"
+cmd = "java -Xmx300m -XX:+UseG1GC -XX:+UseStringDeduplication -Dspring.profiles.active=production -jar build/libs/carelink-0.0.1-SNAPSHOT.jar"
