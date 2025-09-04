@@ -1,8 +1,14 @@
+[variables]
+NIXPACKS_JDK_VERSION = "11"
+NIXPACKS_GRADLE_VERSION = "8.13"
+
+providers = ["java"]
+
 [phases.setup]
-nixPkgs = ["jdk11"]
+nixPkgs = ["..."]
 
 [phases.build]
-cmds = ["chmod +x gradlew && ./gradlew clean build -x test"]
+cmds = ["chmod +x gradlew", "./gradlew clean build -x test"]
 
-[phases.start]
+[start]
 cmd = "java -jar build/libs/carelink-0.0.1-SNAPSHOT.jar"
