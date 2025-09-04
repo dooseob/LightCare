@@ -1,0 +1,12 @@
+[phases.setup]
+nixPkgs = ["jdk11", "gradle"]
+
+[phases.build]
+cmds = [
+  "java -version",
+  "chmod +x ./gradlew",
+  "./gradlew build -x test"
+]
+
+[phases.start]
+cmd = "java -Xms512m -Xmx1024m -XX:+UseContainerSupport -XX:MaxRAMPercentage=75.0 -Dserver.port=$PORT -jar build/libs/carelink-0.0.1-SNAPSHOT.jar"
