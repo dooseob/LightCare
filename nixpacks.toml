@@ -2,7 +2,7 @@ providers = ["java"]
 
 [variables]
 NIXPACKS_JDK_VERSION = "11"
-NIXPACKS_GRADLE_VERSION = "8.13"
+NIXPACKS_GRADLE_VERSION = "8.5"
 
 [phases.setup]
 nixPkgs = ["..."]
