@@ -7,6 +7,9 @@ COPY build.gradle ./
 COPY gradle ./gradle
 COPY gradlew gradlew.bat ./
 
+# gradlew 실행 권한 부여
+RUN chmod +x gradlew
+
 # 의존성 다운로드 (캐시 활용)
 RUN ./gradlew dependencies --no-daemon
 
