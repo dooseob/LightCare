@@ -12,6 +12,12 @@ java {
     targetCompatibility = JavaVersion.VERSION_11
 }
 
+configurations {
+    compileOnly {
+        extendsFrom annotationProcessor
+    }
+}
+
 repositories {
     mavenCentral()
     maven { url 'https://jitpack.io' }
@@ -26,19 +32,19 @@ dependencies {
     // Thymeleaf 템플릿 엔진
     implementation 'org.springframework.boot:spring-boot-starter-thymeleaf'
 
-    // MySQL 데이터베이스 연결 (로컬 개발용)
+    // MySQL 데이터베이스 연결
     runtimeOnly 'com.mysql:mysql-connector-j'
     
-    // PostgreSQL 데이터베이스 연결 (Heroku용)
-    runtimeOnly 'org.postgresql:postgresql'
+    // PostgreSQL 데이터베이스 연결 (필요시)
+    // runtimeOnly 'org.postgresql:postgresql'
 
     // MyBatis 연동
     implementation 'org.mybatis.spring.boot:mybatis-spring-boot-starter:2.3.1'
     
-    // JPA/Hibernate 연동 (스키마 자동 생성용 - MyBatis와 병행 사용)
+    // JPA/Hibernate 연동
     implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
 
-    // Lombok (코드 자동 생성)
+    // Lombok
     compileOnly 'org.projectlombok:lombok'
     annotationProcessor 'org.projectlombok:lombok'
 
@@ -49,29 +55,18 @@ dependencies {
     implementation 'com.fasterxml.jackson.core:jackson-databind'
     implementation 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310'
 
-    // 테스트 의존성
-    testImplementation 'org.springframework.boot:spring-boot-starter-test'
-
     // Spring Security
     implementation 'org.springframework.boot:spring-boot-starter-security'
-
-    // Thymeleaf와 Spring Security 연동을 위한 확장 라이브러리
     implementation 'org.thymeleaf.extras:thymeleaf-extras-springsecurity5'
-
-    // SpringDoc OpenAPI 의존성 추가 (임시 비활성화 - 기능 구현 완료 후 활성화 예정)
-    // implementation 'org.springdoc:springdoc-openapi-ui:1.7.0'
-    // implementation 'org.springdoc:springdoc-openapi-security:1.7.0'
 
     // 이미지 처리
     implementation 'net.coobird:thumbnailator:0.4.19'
-    
-    // WebP 지원을 위한 ImageIO 확장 라이브러리들
     implementation 'com.github.gotson:webp-imageio:0.2.2'
     implementation 'com.twelvemonkeys.imageio:imageio-webp:3.9.4'
-    
-    // 추가 이미지 형식 지원 (AVIF, HEIF 등)
     implementation 'com.twelvemonkeys.imageio:imageio-core:3.9.4'
 
+    // 테스트 의존성
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
 }
 
 tasks.named('test') {
@@ -81,12 +76,16 @@ tasks.named('test') {
 // Railway 배포를 위한 JAR 설정
 jar {
     enabled = false
-    archiveClassifier = '' // 빈 classifier로 설정
+    archiveClassifier = ''
 }
 
-// Spring Boot JAR 생성 활성화
 bootJar {
     enabled = true
-    archiveClassifier = '' 
+    archiveClassifier = ''
     archiveFileName = "${archiveBaseName.get()}-${archiveVersion.get()}.${archiveExtension.get()}"
-} 
+    
+    // Railway 환경에서 메모리 최적화
+    if (System.getenv('RAILWAY_ENVIRONMENT') != null) {
+        systemProperty 'java.awt.headless', 'true'
+    }
+}

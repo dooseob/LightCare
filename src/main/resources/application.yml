@@ -1,6 +1,6 @@
-# 서버 설정
+# 기본 서버 설정
 server:
-  port: 8080
+  port: ${PORT:8080}
   servlet:
     context-path: /
     encoding:
@@ -8,46 +8,50 @@ server:
       enabled: true
       force: true
 
-# 데이터베이스 설정
+# 기본 데이터베이스 설정
 spring:
   jackson:
     serialization:
       write-dates-as-timestamps: false
+      
+  # Railway MySQL 설정 (환경변수 우선)
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
-    url: ${DB_URL:jdbc:mysql://localhost:3306/carelink?useSSL=false&serverTimezone=Asia/Seoul&allowPublicKeyRetrieval=true&useUnicode=true&characterEncoding=UTF-8}
-    username: ${DB_USERNAME:root}
-    password: ${DB_PASSWORD:mysql}
+    # Railway가 제공하는 환경변수들을 우선 사용
+    url: ${DATABASE_URL:${MYSQL_URL:jdbc:mysql://${MYSQLHOST:localhost}:${MYSQLPORT:3306}/${MYSQLDATABASE:carelink}?useSSL=false&serverTimezone=Asia/Seoul&allowPublicKeyRetrieval=true&useUnicode=true&characterEncoding=UTF-8}}
+    username: ${MYSQLUSER:${DB_USERNAME:root}}
+    password: ${MYSQLPASSWORD:${DB_PASSWORD:mysql}}
     hikari:
-      connection-timeout: 30000
-      idle-timeout: 600000
+      connection-timeout: 60000
+      idle-timeout: 300000
       max-lifetime: 1800000
-      maximum-pool-size: 10
-      minimum-idle: 5
+      maximum-pool-size: ${DB_MAX_POOL_SIZE:5}  # Railway 환경 고려
+      minimum-idle: 2
       pool-name: CareLink-HikariCP
       auto-commit: false
       transaction-isolation: TRANSACTION_READ_COMMITTED
+      leak-detection-threshold: 60000
 
-  # 데이터베이스 초기화 설정 (Railway 전용)
+  # 데이터베이스 초기화 설정
   sql:
     init:
-      mode: always
+      mode: ${SQL_INIT_MODE:always}
       schema-locations: classpath:schema.sql
       data-locations: classpath:data.sql
       continue-on-error: true
       separator: ;
       encoding: UTF-8
       
-  # JPA 설정 (테이블 자동 생성을 위한 옵션 - MyBatis와 병행)
+  # JPA 설정
   jpa:
     hibernate:
-      ddl-auto: none  # MyBatis 사용으로 none 설정
-    show-sql: true
+      ddl-auto: none
+    show-sql: false  # 프로덕션에서는 false
     database-platform: org.hibernate.dialect.MySQL8Dialect
     properties:
       hibernate:
-        format_sql: true
-        use_sql_comments: true
+        format_sql: false
+        use_sql_comments: false
 
   # Thymeleaf 설정
   thymeleaf:
@@ -55,13 +59,13 @@ spring:
     suffix: .html
     mode: HTML
     encoding: UTF-8
-    cache: false  # 개발 단계에서는 캐시 비활성화
+    cache: ${THYMELEAF_CACHE:true}  # Railway에서는 캐시 활성화
     
   # 파일 업로드 설정
   servlet:
     multipart:
-      max-file-size: 50MB
-      max-request-size: 50MB
+      max-file-size: ${MAX_FILE_SIZE:10MB}
+      max-request-size: ${MAX_REQUEST_SIZE:10MB}
 
 # MyBatis 설정
 mybatis:
@@ -73,28 +77,31 @@ mybatis:
     default-fetch-size: 100
     default-statement-timeout: 30
 
-# 로깅 설정
+# 로깅 설정 (환경별 조정)
 logging:
   level:
-    root: INFO # 기본 루트 로그 레벨 (필요시 DEBUG로 변경)
-    com.example.carelink: DEBUG # 본인의 애플리케이션 패키지 로그 레벨을 DEBUG로 높입니다.
-    com.example.carelink.dao: DEBUG
-    org.springframework.web: DEBUG # 웹 관련 로그를 자세히 봅니다.
-    org.springframework.jdbc: DEBUG
-    org.mybatis: DEBUG # MyBatis 관련 로그를 자세히 봅니다.
-    org.apache.ibatis: DEBUG
-    org.springframework.transaction: DEBUG
-    java.sql: DEBUG # SQL 쿼리를 직접적으로 봅니다. (MyBatis가 SQL을 콘솔에 출력하도록 설정했다면)
-    jdbc.sqltiming: INFO # 실제 쿼리 실행 시간 등을 보려면 INFO (혹은 DEBUG)
-    com.zaxxer.hikari: DEBUG # DB 커넥션 풀 관련
+    root: ${LOG_LEVEL_ROOT:INFO}
+    com.example.carelink: ${LOG_LEVEL_APP:INFO}
+    org.springframework: WARN
+    org.mybatis: WARN
+    org.springframework.jdbc.datasource.init: INFO
+    org.springframework.boot.autoconfigure.sql.init: INFO
+  pattern:
+    console: "%d{HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
 
-# 파일 업로드 경로 설정 (환경별 자동 설정)
+# 파일 업로드 경로 설정
 file:
   upload-dir:
-    facility: ${UPLOAD_DIR:/app/uploads/}facility/
-    profile: ${UPLOAD_DIR:/app/uploads/}profile/
-    board: ${UPLOAD_DIR:/app/uploads/}board/
-    temp: ${UPLOAD_DIR:/app/uploads/}temp/
+    facility: ${UPLOAD_BASE_PATH:/tmp/uploads}/facility/
+    profile: ${UPLOAD_BASE_PATH:/tmp/uploads}/profile/
+    board: ${UPLOAD_BASE_PATH:/tmp/uploads}/board/
+    review: ${UPLOAD_BASE_PATH:/tmp/uploads}/review/
+    temp: ${UPLOAD_BASE_PATH:/tmp/uploads}/temp/
+
+# 외부 API 키 설정
+api:
+  kakao:
+    app-key: ${KAKAO_APP_KEY:b97b58672807a40c122a5deed8a98ea4}
 
 # SpringDoc OpenAPI 설정
 springdoc:
@@ -110,48 +117,29 @@ springdoc:
   paths-to-match:
     - /api/**
   packages-to-scan:
-    - com.lightcare.controller
-
-# 외부 API 키 설정
-api:
-  kakao:
-    app-key: ${KAKAO_APP_KEY}
+    - com.example.carelink.controller  # 패키지명 수정
 
 ---
-# Railway 환경 전용 설정
+# 로컬 개발 환경 설정
 spring:
   config:
     activate:
-      on-profile: railway
-  
+      on-profile: local
+      
   datasource:
-    # Railway는 자동으로 DATABASE_URL을 제공
-    url: ${MYSQL_URL:${DATABASE_URL:jdbc:mysql://localhost:3306/carelink?useSSL=false&serverTimezone=Asia/Seoul&allowPublicKeyRetrieval=true&useUnicode=true&characterEncoding=UTF-8}}
-    username: ${MYSQLUSER:${DATABASE_USERNAME:${DB_USERNAME:root}}}
-    password: ${MYSQLPASSWORD:${DATABASE_PASSWORD:${DB_PASSWORD:mysql}}}
-    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://localhost:3306/carelink?useSSL=false&serverTimezone=Asia/Seoul&allowPublicKeyRetrieval=true&useUnicode=true&characterEncoding=UTF-8
+    username: root
+    password: mysql
     hikari:
-      connection-timeout: 60000  # Railway 환경에 맞게 조정
-      idle-timeout: 300000
-      max-lifetime: 1800000
-      maximum-pool-size: 5      # Railway 제한에 맞게 감소
-      minimum-idle: 2
-      leak-detection-threshold: 60000
+      maximum-pool-size: 10
       
-  # Railway 환경에서 스키마 초기화 강화
-  sql:
-    init:
-      mode: always
-      schema-locations: classpath:schema.sql
-      data-locations: classpath:data.sql
-      continue-on-error: false  # Railway에서는 에러 시 명확하게 실패
-      separator: ;
-      encoding: UTF-8
-      
-# Railway 환경에서 로깅 레벨 조정
+  thymeleaf:
+    cache: false
+    
 logging:
   level:
     root: INFO
-    com.example.carelink: INFO
-    org.springframework.jdbc.datasource.init: DEBUG  # 스키마 초기화 로그 상세히
-    org.springframework.boot.autoconfigure.sql.init: DEBUG
+    com.example.carelink: DEBUG
+    org.springframework.web: DEBUG
+    org.springframework.jdbc: DEBUG
+    org.mybatis: DEBUG
