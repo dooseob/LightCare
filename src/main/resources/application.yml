@@ -16,7 +16,7 @@ spring:
       
   # Railway MySQL 설정 (환경변수 우선)
   datasource:
-    driver-class-name: com.mysql.cj.jdbc.Driver
+    # 드라이버는 production 프로필에서 설정
     # Railway가 제공하는 환경변수들을 우선 사용
     url: ${DATABASE_URL:${MYSQL_URL:jdbc:mysql://${MYSQLHOST:localhost}:${MYSQLPORT:3306}/${MYSQLDATABASE:carelink}?useSSL=false&serverTimezone=Asia/Seoul&allowPublicKeyRetrieval=true&useUnicode=true&characterEncoding=UTF-8}}
     username: ${MYSQLUSER:${DB_USERNAME:root}}

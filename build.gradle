@@ -32,14 +32,11 @@ dependencies {
     // Thymeleaf 템플릿 엔진
     implementation 'org.springframework.boot:spring-boot-starter-thymeleaf'
 
-    // MySQL 데이터베이스 연결
-    runtimeOnly 'com.mysql:mysql-connector-j'
-    
     // PostgreSQL 데이터베이스 연결 (Render용)
     runtimeOnly 'org.postgresql:postgresql'
     
-    // PostgreSQL 데이터베이스 연결 (필요시)
-    // runtimeOnly 'org.postgresql:postgresql'
+    // MySQL 데이터베이스 연결 (로컬 개발용 - 주석 처리)
+    // runtimeOnly 'com.mysql:mysql-connector-j'
 
     // MyBatis 연동
     implementation 'org.mybatis.spring.boot:mybatis-spring-boot-starter:2.3.1'
