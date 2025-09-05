@@ -42,12 +42,12 @@ spring:
       separator: ;
       encoding: UTF-8
       
-  # JPA 설정
+  # JPA 설정 (환경별 데이터베이스 지원)
   jpa:
     hibernate:
       ddl-auto: none
     show-sql: false  # 프로덕션에서는 false
-    database-platform: org.hibernate.dialect.MySQL8Dialect
+    # 데이터베이스 플랫폼은 프로덕션에서 오버라이드
     properties:
       hibernate:
         format_sql: false

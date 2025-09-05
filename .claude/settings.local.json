@@ -75,7 +75,8 @@
       "Bash(GIT_SSH_COMMAND=\"ssh -i ~/.ssh/lightcare_rsa -o IdentitiesOnly=yes\" git push origin main)",
       "Bash(railway login:*)",
       "Bash(railway --version)",
-      "Bash(railway logs:*)"
+      "Bash(railway logs:*)",
+      "Bash(SPRING_PROFILES_ACTIVE=production gradle clean build -x test --no-daemon --no-build-cache)"
     ],
     "deny": []
   }

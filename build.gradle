@@ -32,11 +32,8 @@ dependencies {
     // Thymeleaf 템플릿 엔진
     implementation 'org.springframework.boot:spring-boot-starter-thymeleaf'
 
-    // PostgreSQL 데이터베이스 연결 (Render용)
+    // PostgreSQL 데이터베이스 연결 (프로덕션용 - Render)
     runtimeOnly 'org.postgresql:postgresql'
-    
-    // MySQL 데이터베이스 연결 (로컬 개발용 - 주석 처리)
-    // runtimeOnly 'com.mysql:mysql-connector-j'
 
     // MyBatis 연동
     implementation 'org.mybatis.spring.boot:mybatis-spring-boot-starter:2.3.1'
@@ -59,11 +56,16 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-security'
     implementation 'org.thymeleaf.extras:thymeleaf-extras-springsecurity5'
 
-    // 이미지 처리
+    // 이미지 처리 
     implementation 'net.coobird:thumbnailator:0.4.19'
     implementation 'com.github.gotson:webp-imageio:0.2.2'
     implementation 'com.twelvemonkeys.imageio:imageio-webp:3.9.4'
     implementation 'com.twelvemonkeys.imageio:imageio-core:3.9.4'
+    
+    // 로컬 개발환경용 MySQL (프로덕션에서는 제외)
+    if (System.getenv('SPRING_PROFILES_ACTIVE') != 'production') {
+        runtimeOnly 'com.mysql:mysql-connector-j'
+    }
 
     // 테스트 의존성
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
