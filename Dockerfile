@@ -1,23 +1,13 @@
-# 빌드 단계 - 캐시 무효화
+# 빌드 단계 - 간소화
 FROM gradle:7.6-jdk11 AS builder
 WORKDIR /app
-# 캐시 무효화를 위한 타임스탬프
-ARG CACHEBUST=1
 
-# Gradle 캐시를 위한 의존성 파일 복사
-COPY build.gradle ./
-COPY gradle ./gradle
-COPY gradlew gradlew.bat ./
-
-# gradlew 실행 권한 부여
-RUN chmod +x gradlew
-
-# 의존성 다운로드 (캐시 활용)
-RUN ./gradlew dependencies --no-daemon
-
-# 소스 코드 복사 및 빌드 (캐시 무효화)
+# 전체 프로젝트 복사
 COPY . .
-RUN rm -rf build && ./gradlew clean build -x test --no-daemon --no-build-cache
+
+# gradlew 실행 권한 부여 및 빌드
+RUN chmod +x gradlew
+RUN ./gradlew clean build -x test --no-daemon --no-build-cache
 
 # 실행 단계
 FROM openjdk:11-jre-slim
