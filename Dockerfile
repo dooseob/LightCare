@@ -1,13 +1,12 @@
-# 빌드 단계 - 간소화
+# 빌드 단계 - gradle 이미지 사용으로 wrapper 불필요
 FROM gradle:7.6-jdk11 AS builder
 WORKDIR /app
 
 # 전체 프로젝트 복사
 COPY . .
 
-# gradlew 실행 권한 부여 및 빌드
-RUN chmod +x gradlew
-RUN ./gradlew clean build -x test --no-daemon --no-build-cache
+# gradle 명령어 직접 사용 (wrapper 불필요)
+RUN gradle clean build -x test --no-daemon --no-build-cache
 
 # 실행 단계
 FROM openjdk:11-jre-slim
