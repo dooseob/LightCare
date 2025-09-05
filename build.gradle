@@ -35,6 +35,9 @@ dependencies {
     // MySQL 데이터베이스 연결
     runtimeOnly 'com.mysql:mysql-connector-j'
     
+    // PostgreSQL 데이터베이스 연결 (Render용)
+    runtimeOnly 'org.postgresql:postgresql'
+    
     // PostgreSQL 데이터베이스 연결 (필요시)
     // runtimeOnly 'org.postgresql:postgresql'
 
