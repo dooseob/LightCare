@@ -76,7 +76,8 @@
       "Bash(railway login:*)",
       "Bash(railway --version)",
       "Bash(railway logs:*)",
-      "Bash(SPRING_PROFILES_ACTIVE=production gradle clean build -x test --no-daemon --no-build-cache)"
+      "Bash(SPRING_PROFILES_ACTIVE=production gradle clean build -x test --no-daemon --no-build-cache)",
+      "Bash(GIT_SSH_COMMAND=\"ssh -i ~/.ssh/lightcare_rsa -o IdentitiesOnly=yes\" git push upstream main)"
     ],
     "deny": []
   }
