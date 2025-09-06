@@ -20,7 +20,16 @@ public class DatabaseConfig {
         
         // 환경 변수에서 DATABASE_URL 가져오기 (Render에서 자동 제공)
         String databaseUrl = System.getenv("DATABASE_URL");
-        if (databaseUrl == null || databaseUrl.isEmpty()) {
+        if (databaseUrl != null && !databaseUrl.isEmpty()) {
+            // postgres:// -> jdbc:postgresql:// 변환
+            if (databaseUrl.startsWith("postgres://")) {
+                databaseUrl = databaseUrl.replace("postgres://", "jdbc:postgresql://");
+            }
+            // SSL 모드 추가
+            if (!databaseUrl.contains("sslmode=")) {
+                databaseUrl += (databaseUrl.contains("?") ? "&" : "?") + "sslmode=require";
+            }
+        } else {
             // 환경 변수가 없으면 외부 URL 사용
             databaseUrl = "jdbc:postgresql://dpg-crr4d6pu0jms73a5rp80-a.oregon-postgres.render.com:5432/lightcare_db?sslmode=require";
             config.setUsername("lightcare_user");
