@@ -21,7 +21,7 @@ public class DatabaseConfig {
     public DataSource productionDataSource() {
         // 직접 HikariDataSource 구성
         HikariDataSource dataSource = new HikariDataSource();
-        dataSource.setJdbcUrl("jdbc:postgresql://dpg-crr4d6pu0jms73a5rp80-a.oregon-postgres.render.com:5432/lightcare_db?sslmode=disable");
+        dataSource.setJdbcUrl("jdbc:postgresql://dpg-crr4d6pu0jms73a5rp80-a.oregon-postgres.render.com:5432/lightcare_db?sslmode=require&sslrootcert=disable");
         dataSource.setUsername("lightcare_user");
         dataSource.setPassword("CqBmAY8J9rGY7xLsFzY7zNOuYg7sE6KY");
         dataSource.setDriverClassName("org.postgresql.Driver");

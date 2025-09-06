@@ -151,7 +151,7 @@ spring:
       on-profile: production
       
   datasource:
-    url: jdbc:postgresql://dpg-crr4d6pu0jms73a5rp80-a.oregon-postgres.render.com:5432/lightcare_db?sslmode=disable
+    url: jdbc:postgresql://dpg-crr4d6pu0jms73a5rp80-a.oregon-postgres.render.com:5432/lightcare_db?sslmode=require&sslrootcert=disable
     username: lightcare_user
     password: CqBmAY8J9rGY7xLsFzY7zNOuYg7sE6KY
     hikari:
