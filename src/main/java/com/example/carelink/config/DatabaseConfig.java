@@ -17,16 +17,22 @@ public class DatabaseConfig {
     public DataSource productionDataSource() {
         HikariConfig config = new HikariConfig();
         config.setDriverClassName("org.postgresql.Driver");
-        config.setJdbcUrl("jdbc:postgresql://dpg-crr4d6pu0jms73a5rp80-a.oregon-postgres.render.com:5432/lightcare_db");
+        
+        // Render PostgreSQL 연결 (SSL 필수)
+        config.setJdbcUrl("jdbc:postgresql://dpg-crr4d6pu0jms73a5rp80-a.oregon-postgres.render.com:5432/lightcare_db?sslmode=require");
         config.setUsername("lightcare_user");
         config.setPassword("CqBmAY8J9rGY7xLsFzY7zNOuYg7sE6KY");
         
         // Connection pool settings
         config.setMaximumPoolSize(3);
         config.setMinimumIdle(1);
-        config.setConnectionTimeout(20000);
+        config.setConnectionTimeout(30000);  // 30초로 증가
         config.setIdleTimeout(300000);
         config.setMaxLifetime(1200000);
+        
+        // PostgreSQL 특정 설정
+        config.addDataSourceProperty("ssl", "true");
+        config.addDataSourceProperty("sslmode", "require");
         
         return new HikariDataSource(config);
     }
