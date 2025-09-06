@@ -10,7 +10,10 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
  */
 @SpringBootApplication(exclude = {
     org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration.class,
-    org.springframework.boot.autoconfigure.sql.init.SqlInitializationAutoConfiguration.class
+    org.springframework.boot.autoconfigure.jdbc.DataSourceTransactionManagerAutoConfiguration.class,
+    org.springframework.boot.autoconfigure.jdbc.JdbcTemplateAutoConfiguration.class,
+    org.springframework.boot.autoconfigure.sql.init.SqlInitializationAutoConfiguration.class,
+    org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration.class
 })
 @MapperScan(basePackages = {"com.example.carelink.dao"})
 public class CarelinkApplication {
