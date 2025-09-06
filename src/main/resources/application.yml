@@ -175,12 +175,8 @@ spring:
         
   sql:
     init:
-      mode: always
-      schema-locations: classpath:schema-postgresql.sql
-      data-locations: classpath:data-postgresql.sql
+      mode: never
       continue-on-error: true
-      separator: ;
-      encoding: UTF-8
 
 logging:
   level:
