@@ -175,7 +175,12 @@ spring:
         
   sql:
     init:
-      mode: never  # 프로덕션에서는 스키마 자동 생성 비활성화
+      mode: always
+      schema-locations: classpath:schema-postgresql.sql
+      data-locations: classpath:data-postgresql.sql
+      continue-on-error: true
+      separator: ;
+      encoding: UTF-8
 
 logging:
   level:
