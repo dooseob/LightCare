@@ -18,10 +18,16 @@ public class DatabaseConfig {
         HikariConfig config = new HikariConfig();
         config.setDriverClassName("org.postgresql.Driver");
         
-        // Render PostgreSQL 내부 연결 URL 사용
-        config.setJdbcUrl("jdbc:postgresql://dpg-crr4d6pu0jms73a5rp80-a:5432/lightcare_db?sslmode=require");
-        config.setUsername("lightcare_user");
-        config.setPassword("CqBmAY8J9rGY7xLsFzY7zNOuYg7sE6KY");
+        // 환경 변수에서 DATABASE_URL 가져오기 (Render에서 자동 제공)
+        String databaseUrl = System.getenv("DATABASE_URL");
+        if (databaseUrl == null || databaseUrl.isEmpty()) {
+            // 환경 변수가 없으면 외부 URL 사용
+            databaseUrl = "jdbc:postgresql://dpg-crr4d6pu0jms73a5rp80-a.oregon-postgres.render.com:5432/lightcare_db?sslmode=require";
+            config.setUsername("lightcare_user");
+            config.setPassword("CqBmAY8J9rGY7xLsFzY7zNOuYg7sE6KY");
+        }
+        
+        config.setJdbcUrl(databaseUrl);
         
         // Connection pool settings
         config.setMaximumPoolSize(3);
