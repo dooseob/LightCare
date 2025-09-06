@@ -17,8 +17,11 @@ import javax.sql.DataSource;
 @EnableTransactionManagement
 public class MyBatisConfig {
 
-    @Autowired
-    private DataSource dataSource;
+    private final DataSource dataSource;
+    
+    public MyBatisConfig(DataSource dataSource) {
+        this.dataSource = dataSource;
+    }
 
     @Bean
     public SqlSessionFactory sqlSessionFactory() throws Exception {
