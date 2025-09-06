@@ -8,7 +8,10 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
  * 요양원 구인구직 사이트 메인 애플리케이션
  * 팀 프로젝트 - 4인 협업 개발
  */
-@SpringBootApplication
+@SpringBootApplication(exclude = {
+    org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration.class,
+    org.springframework.boot.autoconfigure.sql.init.SqlInitializationAutoConfiguration.class
+})
 @MapperScan(basePackages = {"com.example.carelink.dao"})
 public class CarelinkApplication {
 
