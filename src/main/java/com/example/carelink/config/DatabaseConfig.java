@@ -18,13 +18,22 @@ public class DatabaseConfig {
     @Bean
     @Primary
     @Profile("production")
-    @ConfigurationProperties("spring.datasource.hikari")
     public DataSource productionDataSource() {
-        // Spring Boot 자동 구성 사용
-        // 환경 변수 DATABASE_URL을 사용하도록 application.yml에서 설정
-        return DataSourceBuilder.create()
-                .type(HikariDataSource.class)
-                .build();
+        // 직접 HikariDataSource 구성
+        HikariDataSource dataSource = new HikariDataSource();
+        dataSource.setJdbcUrl("jdbc:postgresql://dpg-crr4d6pu0jms73a5rp80-a.oregon-postgres.render.com:5432/lightcare_db?sslmode=disable");
+        dataSource.setUsername("lightcare_user");
+        dataSource.setPassword("CqBmAY8J9rGY7xLsFzY7zNOuYg7sE6KY");
+        dataSource.setDriverClassName("org.postgresql.Driver");
+        
+        // Connection pool 설정
+        dataSource.setMaximumPoolSize(3);
+        dataSource.setMinimumIdle(1);
+        dataSource.setConnectionTimeout(30000);
+        dataSource.setIdleTimeout(300000);
+        dataSource.setMaxLifetime(1200000);
+        
+        return dataSource;
     }
     
     @Bean
