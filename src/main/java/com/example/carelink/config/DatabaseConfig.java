@@ -18,8 +18,8 @@ public class DatabaseConfig {
         HikariConfig config = new HikariConfig();
         config.setDriverClassName("org.postgresql.Driver");
         
-        // Render PostgreSQL 연결 (SSL 필수)
-        config.setJdbcUrl("jdbc:postgresql://dpg-crr4d6pu0jms73a5rp80-a.oregon-postgres.render.com:5432/lightcare_db?sslmode=require");
+        // Render PostgreSQL 내부 연결 URL 사용
+        config.setJdbcUrl("jdbc:postgresql://dpg-crr4d6pu0jms73a5rp80-a:5432/lightcare_db?sslmode=require");
         config.setUsername("lightcare_user");
         config.setPassword("CqBmAY8J9rGY7xLsFzY7zNOuYg7sE6KY");
         
