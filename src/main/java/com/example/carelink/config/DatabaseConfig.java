@@ -21,13 +21,32 @@ public class DatabaseConfig {
         // 환경 변수에서 DATABASE_URL 가져오기 (Render에서 자동 제공)
         String databaseUrl = System.getenv("DATABASE_URL");
         if (databaseUrl != null && !databaseUrl.isEmpty()) {
-            // postgres:// -> jdbc:postgresql:// 변환
-            if (databaseUrl.startsWith("postgres://")) {
-                databaseUrl = databaseUrl.replace("postgres://", "jdbc:postgresql://");
-            }
-            // SSL 모드 추가
-            if (!databaseUrl.contains("sslmode=")) {
-                databaseUrl += (databaseUrl.contains("?") ? "&" : "?") + "sslmode=require";
+            try {
+                // Render DATABASE_URL 파싱: postgres://user:pass@host:port/database
+                java.net.URI uri = new java.net.URI(databaseUrl);
+                String host = uri.getHost();
+                int port = uri.getPort();
+                String database = uri.getPath().substring(1); // '/' 제거
+                String userInfo = uri.getUserInfo();
+                
+                if (userInfo != null) {
+                    String[] parts = userInfo.split(":");
+                    String username = parts[0];
+                    String password = parts.length > 1 ? parts[1] : "";
+                    
+                    config.setUsername(username);
+                    config.setPassword(password);
+                }
+                
+                // JDBC URL 구성
+                databaseUrl = String.format("jdbc:postgresql://%s:%d/%s?sslmode=require", 
+                    host, port, database);
+            } catch (Exception e) {
+                // 파싱 실패시 폴백
+                System.err.println("DATABASE_URL 파싱 실패: " + e.getMessage());
+                databaseUrl = "jdbc:postgresql://dpg-crr4d6pu0jms73a5rp80-a.oregon-postgres.render.com:5432/lightcare_db?sslmode=require";
+                config.setUsername("lightcare_user");
+                config.setPassword("CqBmAY8J9rGY7xLsFzY7zNOuYg7sE6KY");
             }
         } else {
             // 환경 변수가 없으면 외부 URL 사용
