@@ -38,8 +38,8 @@ public class DatabaseConfig {
                     config.setPassword(password);
                 }
                 
-                // JDBC URL 구성
-                databaseUrl = String.format("jdbc:postgresql://%s:%d/%s?sslmode=require", 
+                // JDBC URL 구성 (SSL 관련 설정 완화)
+                databaseUrl = String.format("jdbc:postgresql://%s:%d/%s?sslmode=prefer&sslrootcert=disable", 
                     host, port, database);
             } catch (Exception e) {
                 // 파싱 실패시 폴백
@@ -64,9 +64,10 @@ public class DatabaseConfig {
         config.setIdleTimeout(300000);
         config.setMaxLifetime(1200000);
         
-        // PostgreSQL 특정 설정
+        // PostgreSQL 특정 설정 (SSL 설정 완화)
         config.addDataSourceProperty("ssl", "true");
-        config.addDataSourceProperty("sslmode", "require");
+        config.addDataSourceProperty("sslmode", "prefer");
+        config.addDataSourceProperty("sslfactory", "org.postgresql.ssl.NonValidatingFactory");
         
         return new HikariDataSource(config);
     }
